@@ -1,0 +1,9 @@
+[package]
+name = "op2ki-dll"
+version = "0.1.0"
+edition = "2021"
+[lib]
+name = "op2ki"
+crate-type = ["cdylib"]
+[dependencies]
+op2ki = { path = "../kern" }
