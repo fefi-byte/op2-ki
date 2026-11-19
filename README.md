@@ -83,6 +83,6 @@ cmake --build build --config Release
 
 ## License
 
-MIT, see [LICENSE](LICENSE), for the code in this repository. The missions are built against the
+GPL-3.0-or-later, see [LICENSE](LICENSE), for the code in this repository (copyright 2026 fefi-byte). The missions are built against the
 [OP2MissionSDK](https://github.com/OutpostUniverse/OP2MissionSDK) of Outpost Universe, whose OP2Helper and HFL parts
 are compiled into the mission DLLs in `fertig/`. Outpost 2 itself is not included.

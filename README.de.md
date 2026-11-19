@@ -68,4 +68,4 @@ plus `op2ki::start` und `op2ki::schritt` (`missionen/gemeinsam/op2ki.hpp`).
 
 ## Bauen
 
-Siehe [BAUEN.md](BAUEN.md). Lizenz: MIT ([LICENSE](LICENSE)) für den Code hier; die Missionen bauen gegen das OP2MissionSDK von Outpost Universe.
+Siehe [BAUEN.md](BAUEN.md). Lizenz: GPL-3.0-or-later ([LICENSE](LICENSE)) für den Code hier; die Missionen bauen gegen das OP2MissionSDK von Outpost Universe.
