@@ -1,4 +1,5 @@
-//! ERZEUGT von ki_rust/gen_bruecke.py: `Welt` ueber die Rufschnittstelle der Missions-DLL (Original unter Wine).
+//! ERZEUGT von werkzeug/bruecke.py aus dem Trait Welt: `Welt` ueber die Rufschnittstelle der Missions-DLL.
+//! Nicht von Hand aendern.
 #![allow(non_snake_case)]
 use op2ki::cpp::welt::{Gruppe, Id, Loc, Rect, TechInfo, Voraus, Welt};
 
@@ -107,7 +108,7 @@ impl Welt for ExternWelt {
     fn HasTechnology(&self, p: i32, tech_id: i32) -> bool { self.r(92, &[p, tech_id]) != 0 }
     fn SetOre(&mut self, p: i32, n: i32) { self.r(93, &[p, n]); }
     fn SetRareOre(&mut self, p: i32, n: i32) { self.r(94, &[p, n]); }
-    fn CenterViewOn(&mut self, _p: i32, _x: i32, _y: i32) { self.r(95, &[_p, _x, _y]); }
+    fn CenterViewOn(&mut self, p: i32, x: i32, y: i32) { self.r(95, &[p, x, y]); }
     fn IsAlliedTo(&self, p: i32, q: i32) -> bool { self.r(96, &[p, q]) != 0 }
     fn GetMaxOre(&self, p: i32) -> i32 { self.r(97, &[p]) }
     fn GetMaxRareOre(&self, p: i32) -> i32 { self.r(98, &[p]) }
@@ -128,7 +129,7 @@ impl Welt for ExternWelt {
     fn GetTotalRecreationFacilityCapacity(&self, p: i32) -> i32 { self.r(113, &[p]) }
     fn GetTotalForumCapacity(&self, p: i32) -> i32 { self.r(114, &[p]) }
     fn GetSatelliteCount(&self, p: i32, typ: i32) -> i32 { self.r(115, &[p, typ]) }
-    fn RecalculateValues(&mut self, _p: i32) { self.r(116, &[_p]); }
+    fn RecalculateValues(&mut self, p: i32) { self.r(116, &[p]); }
     fn CreateFightGroup(&mut self, p: i32) -> Gruppe { self.r(117, &[p]) }
     fn CreateBuildingGroup(&mut self, p: i32) -> Gruppe { self.r(118, &[p]) }
     fn CreateMiningGroup(&mut self, p: i32) -> Gruppe { self.r(119, &[p]) }

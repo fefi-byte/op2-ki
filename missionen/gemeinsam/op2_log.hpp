@@ -42,7 +42,7 @@ namespace detail {
 
 inline char g_path[600]   = { 0 };   // <dir>\<OP2LOG_NAME>.log     - the main mission log
 inline char g_aiPath[600] = { 0 };   // <dir>\<OP2LOG_NAME>-AI.log  - the scripted-AI action channel
-inline char g_kiPath[600] = { 0 };   // <dir>\<OP2LOG_NAME>-KI.jsonl - trace of the building AI (op2_ki.hpp)
+inline char g_kiPath[600] = { 0 };   // <dir>\<OP2LOG_NAME>-KI.jsonl - trace of the AI (op2ki.dll)
 inline bool g_ready       = false;
 
 // Optional game-tick source: the mission sets this (to e.g. op2::Game::tick) so every log line carries the

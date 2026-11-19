@@ -30,8 +30,8 @@ food. Chance decides which corner you get. Whoever has no core buildings left (c
 tokamak, agridomes, residence, labs) loses.
 
 At the start the message window must show **"KI: Rust-KI (op2ki.dll) geladen"** (Rust AI loaded). Without
-`op2ki.dll` next to the mission, an older built-in C++ AI plays (only in "you against the AI"; when watching, the
-AIs then stay idle).
+`op2ki.dll` next to the mission there is no opponent (and in "you against the AI" no start base); the message window
+says so.
 
 **Watching:** the `cKIKRR*.dll` missions let two AIs play each other. With the environment variable
 `OP2KI_KAMERA=1` the view follows the fighting.
@@ -49,8 +49,8 @@ Files `KI-Parameter-P1.txt` or `KI-Parameter-P2.txt` in `OPU\logs` change the AI
 
 ## How the AI works
 
-The AI was translated function by function from a C++ AI (`missionen/gemeinsam/op2_ki.hpp`) into Rust and then
-developed further. The missions still carry the C++ version as a fallback.
+The AI was translated function by function from an earlier C++ AI into Rust and then developed further. Rust is
+now its only source; the missions contain no AI of their own.
 
 | Area | Where | In short |
 |---|---|---|
@@ -63,8 +63,10 @@ developed further. The missions still carry the C++ version as a fallback.
 | Combat | `gefecht.rs`, `gefecht_netz.rs` | close combat by a learned network (`gefecht_netz.txt`) |
 
 The AI sees the game only through the `Welt` ("world") trait in `kern/src/cpp/welt.rs`. In the DLL,
-`dll/src/extern_welt.rs` maps it onto the function pointers the mission passes in; every mission brings the OP2 API
-as a bridge for that.
+`dll/src/extern_welt.rs` maps it onto a call interface the mission passes in, and
+`missionen/gemeinsam/op2ki_bruecke.hpp` answers those calls with the OP2 API. Both files are generated from the trait
+by `werkzeug/bruecke.py`; a mission itself is only map data plus a call to `op2ki::start` and `op2ki::schritt`
+(`missionen/gemeinsam/op2ki.hpp`).
 
 ## Building
 

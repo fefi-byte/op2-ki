@@ -29,8 +29,7 @@ Welche Ecke du bekommst, entscheidet der Zufall. Wer keine Kerngebäude mehr hat
 Tokamak, Agridome, Wohnhaus, Labore), hat verloren.
 
 Beim Start muss im Nachrichtenfenster **„KI: Rust-KI (op2ki.dll) geladen“** stehen. Fehlt `op2ki.dll` neben der
-Mission, spielt eine ältere, eingebaute C++-KI (nur bei „Du gegen die KI“; beim Zuschauen bleiben die KIs dann
-untätig).
+Mission, gibt es keinen Gegner (und bei „Du gegen die KI“ auch keine Startbasis); das Nachrichtenfenster sagt es.
 
 **Zuschauen:** Die Missionen `cKIKRR*.dll` lassen zwei KIs gegeneinander spielen. Mit der Umgebungsvariable
 `OP2KI_KAMERA=1` folgt die Ansicht den Kämpfen.
@@ -49,8 +48,8 @@ normales Spiel entfernen.
 
 ## Was die KI tut
 
-Die KI ist aus einer C++-KI (`missionen/gemeinsam/op2_ki.hpp`) Funktion für Funktion nach Rust übertragen und dann
-weiterentwickelt worden. Die Missionen enthalten die C++-Fassung noch als Rückfall.
+Die KI ist aus einer früheren C++-KI Funktion für Funktion nach Rust übertragen und dann weiterentwickelt worden.
+Rust ist jetzt ihre einzige Quelle; die Missionen enthalten keine eigene KI.
 
 | Bereich | Wo | Kurz |
 |---|---|---|
@@ -63,7 +62,9 @@ weiterentwickelt worden. Die Missionen enthalten die C++-Fassung noch als Rückf
 | Gefecht | `gefecht.rs`, `gefecht_netz.rs` | Nahkampf mit einem gelernten Netz (`gefecht_netz.txt`) |
 
 Die KI sieht das Spiel nur über den Trait `Welt` (`kern/src/cpp/welt.rs`). In der DLL setzt `dll/src/extern_welt.rs`
-ihn auf die Funktionszeiger der Mission um; jede Mission bringt dafür die OP2-API als Brücke mit.
+ihn auf eine Rufschnittstelle um, die die Mission übergibt; `missionen/gemeinsam/op2ki_bruecke.hpp` beantwortet die
+Rufe mit der OP2-API. Beide Dateien erzeugt `werkzeug/bruecke.py` aus dem Trait; eine Mission ist nur noch Kartendaten
+plus `op2ki::start` und `op2ki::schritt` (`missionen/gemeinsam/op2ki.hpp`).
 
 ## Bauen
 

@@ -62,12 +62,26 @@ Toolchain erzeugt sie deshalb aus `missionen/linux/Outpost2.def` neu.
 
 Ergebnis: `cDuGegenKI.dll`, `cDuGegenKI211.dll` und `cKIKRR<karte>.dll` in `build/`.
 
+## Brücke (erzeugt)
+
+`dll/src/extern_welt.rs` (Rust) und `missionen/gemeinsam/op2ki_bruecke.hpp` (C++) werden aus dem Trait `Welt`
+(`kern/src/cpp/welt.rs`) erzeugt, nicht von Hand geändert:
+
+```
+python3 werkzeug/bruecke.py
+```
+
+Jede Methode hat eine feste Rufnummer, damit ältere Missions-DLLs mit einer neueren `op2ki.dll` laufen. Eine neue
+Methode im Trait wird in `werkzeug/bruecke.py` am Ende von `CODES` eingetragen und bekommt dort ihren C++-Ausdruck.
+
 ## Aufbau
 
 ```
 kern/        die KI (Rust-Bibliothek op2ki); kern/src/cpp/welt.rs ist ihre Sicht auf das Spiel
 dll/         op2ki.dll: C-Schnittstelle ki2_neu / ki2_parameter / ki2_start / ki2_schritt
 missionen/   Missions-DLLs: du_gegen_ki/ (mp2_08, mp2_11), zuschauen/ (KI gegen KI je Karte),
-             gemeinsam/ (C++-KI als Rückfall, Log, Absturzbericht), linux/ (Cross-Toolchain)
+             gemeinsam/ (op2ki.hpp: KI laden und aufrufen, op2ki_bruecke.hpp: erzeugte Brücke, duell.hpp,
+             aufzeichnung.hpp, Log, Absturzbericht), linux/ (Cross-Toolchain)
+werkzeug/    bruecke.py: erzeugt die Brücke aus dem Trait Welt
 fertig/      gebaute DLLs
 ```
