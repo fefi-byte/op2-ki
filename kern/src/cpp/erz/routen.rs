@@ -188,7 +188,8 @@ pub(super) fn minerEinsetzen(welt: &mut dyn Welt, z: &mut Zustand, p: i32, t: i3
             melde(welt, z, "warte", mapCommonOreMine, blx, bly, &txt);
         }
     } else if darf && !minerAmWerk {
-        if minerLebt && t - z.minerSeit > 300 {
+        // >= : der Einsatz laeuft alle 300 Ticks; mit > kam nie ein anderer Weg, nur derselbe Befehl erneut (mp4_41)
+        if minerLebt && t - z.minerSeit >= 300 {
             let txt = format!("Robo-Miner {} steht, Mine nicht gebaut (Weg {}, vermessen: {})",
                               m, z.minerWeg, if vermessen { "ja" } else { "nein" });
             melde(welt, z, "fehler", mapCommonOreMine, blx, bly, &txt);
@@ -198,7 +199,9 @@ pub(super) fn minerEinsetzen(welt: &mut dyn Welt, z: &mut Zustand, p: i32, t: i3
         let mut miner = welt.PlayerVehicleEnum(p);
         if let Some(i) = miner.iter().position(|&u| u == z.minerVor) { let v = miner.remove(i); miner.insert(0, v); }
         for u in miner {
-            if welt.GetType(u) != mapRoboMiner || welt.IsBusy(u) { continue; }
+            // der vorgefahrene Miner zaehlt auch, solange er noch faehrt: sein einziger Auftrag ist das Vorfahren, und
+            // bleibt er unterwegs haengen, waere er sonst fuer immer "beschaeftigt" (mp2_05: nie eine Mine)
+            if welt.GetType(u) != mapRoboMiner || (welt.IsBusy(u) && u != z.minerVor) { continue; }
             if u == z.seltenMiner { continue; }                              // fuer Seltenerz reserviert
             if u == z.bakeMiner && t - z.minerSeit < 300 { break; }           // gleicher Auftrag, kurz warten
             let weg: &str;
@@ -256,6 +259,7 @@ fn lastwagenVorfahren(welt: &mut dyn Welt, z: &mut Zustand, p: i32, b: Id, bl: L
         if welt.GetType(u) != mapCargoTruck || welt.IsBusy(u) || !welt.IsLive(u) || welt.GetCurAction(u) != moDone { continue; }
         if lastwagenVergeben(welt, z, u) { continue; }
         welt.DoMove(u, Loc::new(bl.x + 3, bl.y + 2 + n));
+        z.lkwVor[n as usize] = u;
         n += 1;
     }
     if n > 0 {
@@ -350,9 +354,15 @@ pub(super) fn lastwagenZuteilen(welt: &mut dyn Welt, z: &mut Zustand, p: i32, gu
     let hat = welt.TotalUnitCount(z.minenGruppe[gu]);
     let soll = lastwagenSoll(welt, z, g);
     if hat < soll {
-        for u in welt.PlayerVehicleEnum(p) {
-            if welt.GetType(u) != mapCargoTruck || welt.IsBusy(u) || !welt.IsLive(u) { continue; }
+        // die zur Mine vorgefahrenen zuerst, auch wenn sie noch fahren: ihr einziger Auftrag ist das Vorfahren, und bleiben
+        // sie an der Mine haengen, waeren sie sonst fuer immer "beschaeftigt" (mp2_05: Route ohne Lastwagen, kein Erz)
+        let mut lkw = welt.PlayerVehicleEnum(p);
+        for &v in z.lkwVor.iter().rev() { if let Some(i) = lkw.iter().position(|&u| u == v && v != 0) { let x = lkw.remove(i); lkw.insert(0, x); } }
+        for u in lkw {
+            let vor = u != 0 && z.lkwVor.contains(&u);
+            if welt.GetType(u) != mapCargoTruck || (welt.IsBusy(u) && !vor) || !welt.IsLive(u) { continue; }
             if lastwagenVergeben(welt, z, u) { continue; }
+            for v in z.lkwVor.iter_mut() { if *v == u { *v = 0; } }
             welt.TakeUnit(z.minenGruppe[gu], u);
             let ul = welt.Location(u);
             let (ux, uy) = exy(welt, z, ul);

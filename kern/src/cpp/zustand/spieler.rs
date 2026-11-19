@@ -66,6 +66,7 @@ pub struct Zustand {
     pub minerSeit: i32,   // wann der Miner den Auftrag bekam
     pub minerVor: i32,   // Robo-Miner, der schon zur Bake faehrt, waehrend sie vermessen wird
     pub lkwVorBake: i32,   // Bake, zu der schon Lastwagen vorgefahren sind
+    pub lkwVor: [i32; 2],   // die zur Mine vorgefahrenen Lastwagen (bis zur Zuteilung)
     pub bakenX: [i32; 4],   // selbst angelegte Baken (Editor-Kacheln)
     pub bakenY: [i32; 4],   // selbst angelegte Baken (Editor-Kacheln)
     pub anzahlBaken: i32,
