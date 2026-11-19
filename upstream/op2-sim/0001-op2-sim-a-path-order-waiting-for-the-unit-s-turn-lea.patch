@@ -1,0 +1,224 @@
+From f7eeda127100fa30c9bb5ef96bf758494717c38e Mon Sep 17 00:00:00 2001
+From: fefi-byte <55361862+fefi-byte@users.noreply.github.com>
+Date: Thu, 19 Nov 2026 14:50:52 +0000
+Subject: [PATCH 1/5] op2-sim: a path order waiting for the unit's turn leaves
+ the old path context in place
+
+The packet fills the second path context (+0x38); the unit's own (+0x34) stays until its turn swaps them (0x44B640).
+Until then the bump (0x44BCB0) reads the old path's next step and turning state, a Stop restores the old waypoints, a
+side-step taken before the turn is dropped with the old context, and an idle unit with its Move context still there
+goes back to its waypoint. A Stop keeps the steps as well; a running side-step of an earthworker stays.
+Measured against the original in the Wine harness: mp2_05 seed 1 (tanks 54, 65, 66, 67), mp2_08 seed 1 (Lynx 57,
+Spider 49), mp4_12 seed 3 (Earthworker 53).
+
+Written with Claude Code.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ tools/crates/op2-sim/src/earthwork.rs |  4 +-
+ tools/crates/op2-sim/src/save.rs      |  6 +++
+ tools/crates/op2-sim/src/sim.rs       | 63 ++++++++++++++++++++++++---
+ 3 files changed, 67 insertions(+), 6 deletions(-)
+
+diff --git a/tools/crates/op2-sim/src/earthwork.rs b/tools/crates/op2-sim/src/earthwork.rs
+index 189fa242..1eea0998 100644
+--- a/tools/crates/op2-sim/src/earthwork.rs
++++ b/tools/crates/op2-sim/src/earthwork.rs
+@@ -639,7 +639,9 @@ impl Sim {
+         // to the tile of its group's earlier Move).
+         let u = &mut self.units[i];
+         u.goal = Some(goal);
+-        u.sidestep = None;
++        // A side-step in progress stays (path context waypoint -1): mp4_12 seed 3, Earthworker 53, pushed aside at
++        // 17028 (side tile 231,91), BuildWall at 17096 -- the original keeps wp -1 and, having arrived at 17204, goes
++        // back to the side tile instead of building.
+         u.long_path.clear();
+         u.path_range = beside.then_some((x, y, BESIDE, false));
+         // The walk reads the request's found flag (+0x38, 0x40A10E): a search that doesn't reach the tile (or beside
+diff --git a/tools/crates/op2-sim/src/save.rs b/tools/crates/op2-sim/src/save.rs
+index 13b45be0..368b0ac0 100644
+--- a/tools/crates/op2-sim/src/save.rs
++++ b/tools/crates/op2-sim/src/save.rs
+@@ -544,6 +544,9 @@ fn write_unit(w: &mut Writer, u: &Unit) {
+         target_tile,
+         attack_tile,
+         busy,
++        busy_old_next: _,
++        stale_ctx: _,
++        ctx_keep: _,
+         pending,
+         alive,
+         removed,
+@@ -1075,6 +1078,9 @@ fn read_unit(r: &mut Reader) -> Result<Unit, SaveError> {
+         target_tile: r.opt(|r| r.pair("ground target"))?,
+         attack_tile: r.opt(|r| r.pair("ground attack"))?,
+         busy: r.b()?,
++        busy_old_next: None,
++        stale_ctx: None,
++        ctx_keep: false,
+         pending: r.opt(|r| {
+             let (x, y) = r.pair("pending goal")?;
+             Ok((x, y, r.i32("pending stop")?))
+diff --git a/tools/crates/op2-sim/src/sim.rs b/tools/crates/op2-sim/src/sim.rs
+index 05bb54dd..de8c3faf 100644
+--- a/tools/crates/op2-sim/src/sim.rs
++++ b/tools/crates/op2-sim/src/sim.rs
+@@ -329,6 +329,15 @@ pub struct Unit {
+     pub attack_tile: Option<(i32, i32)>,
+     /// The order was (re)issued and the unit hasn't acted on it yet (MapObject isBusy).
+     pub busy: bool,
++    /// With an order waiting for the unit's turn, the old context's next step and whether
++    /// it was turning (the bump reads the old context until the turn, 0x44BCFE..0x44BD35).
++    pub busy_old_next: Option<(Option<Direction8>, bool)>,
++    /// The active path context's waypoints (+0x34) while a path order's packet waits in
++    /// +0x38 for the unit's turn (0x423210, 0x44B640).
++    pub stale_ctx: Option<(Waypoints, u8, bool)>,
++    /// The active path context's keep-trying flag (+0x34 bit 0), set by a path or Build
++    /// order's packet (0x423288, 0x423496) and taken in on its turn; a chase's or a freed context's is clear.
++    pub ctx_keep: bool,
+     /// An Attack order's path to plan when the unit acts on it: goal tile and stop range in tiles.
+     pub pending: Option<(i32, i32, i32)>,
+     /// Not destroyed (the game's dead flag, MoFlagDead): a dead unit no longer acts and is nobody's target.
+@@ -415,6 +424,7 @@ impl Unit {
+         self.frac = Unit::FRESH_FRAC;
+         self.kept_context = false;
+         self.sidestep_flag = false;
++        self.ctx_keep = false;
+     }
+ 
+     pub fn tile(&self) -> (i32, i32) {
+@@ -946,6 +956,9 @@ impl Sim {
+             target_tile: None,
+             attack_tile: None,
+             busy: false,
++            busy_old_next: None,
++            stale_ctx: None,
++            ctx_keep: false,
+             pending: None,
+             alive: true,
+             removed: false,
+@@ -1503,10 +1516,18 @@ impl Sim {
+                 }
+                 unit.release_pending = false;
+                 unit.goal = None;
++                // A path order still waiting for its turn never swaps its context in: the Stop leaves the unit's own
++                // (+0x34) with its old waypoints (mp2_05 seed 1: tank 66, its group's Move to 65,59 at 28523 while
++                // driving and a Stop at 28527 before the tile centre, keeps waypoint 63,54 and drives back to it after
++                // a side-step at 35856).
++                if let Some((w, wp, keep)) = unit.stale_ctx.take() {
++                    (unit.waypoints, unit.wp, unit.ctx_keep) = (w, wp, keep);
++                }
+                 // Neither the Stop packet (0x40E57D) nor the Stop command (0x43AED2) touches the path context: its
+                 // waypoints stay, and a later nudge resumes them (`arrive_or_replan`; e07_win tick 7840).
+-                unit.motion.clear();
+-                unit.long_path.clear();
++                // Its steps stay too: mp2_08 seed 1, Lynx 57, a FightGroup's Stop at 25667 -- the original keeps
++                // steps "6" (rawPath) and so isn't pushed aside as stuck; with the steps cleared op2-sim pushed it
++                // aside in the same tick.
+             }
+             Command::Attack { target } => self.issue_attack(i, CommandKind::Attack, target, 0),
+             Command::AttackGround { tile } => self.issue_attack_tile(i, (tile[0], tile[1]), 0),
+@@ -1657,6 +1678,11 @@ impl Sim {
+             w.tile = self.terrain.waypoint_tile(w.tile);
+         }
+         let unit = &mut self.units[i];
++        // The packet fills the second context (+0x38); the unit's own (+0x34) stays until
++        // its turn swaps them (0x44B640). A later packet before the turn overwrites +0x38 only.
++        if unit.stale_ctx.is_none() {
++            unit.stale_ctx = Some((unit.waypoints, unit.wp, unit.ctx_keep));
++        }
+         unit.waypoints = waypoints;
+         unit.wp = 0;
+         unit.patrol_loop = loop_to;
+@@ -1673,6 +1699,7 @@ impl Sim {
+     pub(crate) fn order_move(&mut self, i: usize, cmd: CommandKind, tile: (i32, i32), order: bool) {
+         let unit = &mut self.units[i];
+         let own = unit.cmd;
++        let old_turning = unit.motion.turn_step != 0;
+         unit.cmd = cmd;
+         unit.retry = 0;
+         // An order's packet makes a new context (0x423210 zeroes it); a nudge's path request reuses the unit's.
+@@ -1691,6 +1718,7 @@ impl Sim {
+         unit.sidestep = None;
+         unit.long_path.clear();
+         unit.path_range = None;
++        unit.busy_old_next = if order { Some((unit.motion.remaining().first().copied(), old_turning)) } else { None };
+         unit.busy = order;
+         unit.pending = None;
+         self.plan(i);
+@@ -1752,6 +1780,8 @@ impl Sim {
+         // is over (fuzz warfare seed 104, run fuzz_scatter_emped).
+         let frozen = self.units[i].action == Action::ObjFroze && self.units[i].status.emped();
+         self.units[i].busy = false;
++        self.units[i].stale_ctx = None;
++        self.units[i].ctx_keep = true;
+         let u = &mut self.units[i];
+         if !u.motion.moving() {
+             self.fresh_path_context(i);
+@@ -1773,6 +1803,12 @@ impl Sim {
+         // the same group processed before it have already set off (oracle `gm_rcc_nine`), and a unit given an order
+         // in the same tick may now be docking, which makes it an obstacle (p01_win, truck 37 at tick 12).
+         self.units[i].long_path.clear();
++        // A side-step taken before the turn was written into the old path context, which the
++        // order's context replaces now (0x44B640 frees +0x34 and moves the packet's +0x38 there): it is gone
++        // (mp2_05 seed 1 tick 25911: tank 67, re-ordered by its group and sent aside by tank 59 before its turn,
++        // drives its order's path and pushes 59 aside instead).
++        self.units[i].sidestep = None;
++        self.units[i].sidestep_flag = false;
+         self.plan(i);
+         // Already within range of a waypoint that isn't the last (a patrol starting on its first point): on to the
+         // next one at once (Vehicle::Move's test 0x44BFD0; oracle `grp_patrol`).
+@@ -1915,6 +1951,7 @@ impl Sim {
+         unit.goal = Some(t);
+         unit.waypoints = Waypoints::to([t.0, t.1]);
+         unit.wp = 0;
++        unit.ctx_keep = false;
+         unit.sidestep = None;
+         unit.long_path.clear();
+         let direct = unit.weapon.is_some_and(|w| !self.rules.weapon(w).indirect);
+@@ -2726,7 +2763,10 @@ impl Sim {
+     /// (an Attack's or Guard's chase: notes/uncertain-claims.md).
+     fn sidestep_over(&mut self, i: usize) {
+         let u = &self.units[i];
+-        let kept_build = u.cmd == CommandKind::Nop && u.kept_context;
++        // An idle unit whose context still holds a waypoint goes back to it too, whatever
++        // kept it (mp2_05 seed 1 tick 23141: tank 67, command Nop with its finished Move's waypoint 62,58 still in the
++        // context and a nudge's destination 61,59, side-stepped to 61,58, plans to 62,58).
++        let kept_build = u.cmd == CommandKind::Nop && (u.kept_context || u.waypoints.as_slice().get(u.wp as usize).is_some());
+         let earthwork = matches!(u.cmd, CommandKind::Doze | CommandKind::BuildWall | CommandKind::Salvage);
+         if u.cmd != CommandKind::Move && !kept_build && !earthwork {
+             return;
+@@ -2852,7 +2892,12 @@ impl Sim {
+                     CommandKind::Move | CommandKind::StandGround | CommandKind::Patrol | CommandKind::Build
+                 ))
+             // A nudge of an idle unit reuses a finished Build's context, flag and all (`Unit::kept_context`).
+-            || (unit.cmd == CommandKind::Nop && unit.kept_context);
++            || (unit.cmd == CommandKind::Nop && unit.kept_context)
++            // So does an idle unit whose Move context is still there, waypoint and all (its
++            // flags keep bit 0; mp2_05 seed 1 tick 23181: tank 67, back from a side-step, finds 62,58 taken by a truck
++            // and retries, one draw at 0x44C361). Only the flag counts: a Spider's finished repair walk leaves its
++            // waypoint with the flag clear and gives up (mp2_08 seed 1 tick 19884: Spider 49).
++            || (unit.cmd == CommandKind::Nop && unit.ctx_keep && unit.waypoints.as_slice().get(unit.wp as usize).is_some());
+         // The original's Move handler has no re-plan count: it asks for a path again whenever the last one runs out or
+         // is blocked, and gives up only when the request finds none (0x44C284..0x44C31A; e08 tick 31545: a rail Lynx's
+         // chase, on its eighth re-plan and blocked by the Lynx ahead of it, drives on).
+@@ -3208,7 +3253,15 @@ impl Sim {
+                 if b.sidestep_flag {
+                     return;
+                 }
+-                if b.motion.remaining().first().is_some_and(|&next| next != back) {
++                // While a path order still waits for the unit's turn, the old path's step counts: mp2_05 seed 1,
++                // Lynx 65, a group Move at 23075 -- Lynx 67 (before 65 in the order) doesn't push it aside in the
++                // original (old path "6"); op2-sim did with the new one ("700"). So does a turn that the order only
++                // ends on its turn (mp2_05 seed 1 tick 24163: Lynx 65 turning north, a new AI order, not pushed aside).
++                if b.busy && b.busy_old_next.is_some_and(|(_, turning)| turning) {
++                    return;
++                }
++                let next = match b.busy_old_next { Some((old, _)) if b.busy => old, _ => b.motion.remaining().first().copied() };
++                if next.is_some_and(|next| next != back) {
+                     return;
+                 }
+             }
+-- 
+2.47.3
+

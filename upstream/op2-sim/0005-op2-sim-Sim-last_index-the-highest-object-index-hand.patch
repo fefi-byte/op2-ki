@@ -1,0 +1,34 @@
+From 99e3807c96668d03f7ecd577ad0afb2e43a506b7 Mon Sep 17 00:00:00 2001
+From: fefi-byte <55361862+fefi-byte@users.noreply.github.com>
+Date: Thu, 19 Nov 2026 14:50:52 +0000
+Subject: [PATCH 5/5] op2-sim: Sim::last_index, the highest object index handed
+ out (lastUsedUnitIndex)
+
+Needed by an AI bridge that reads OP2Map's lastUsedUnitIndex (HFL +64).
+
+Written with Claude Code.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ tools/crates/op2-sim/src/sim.rs | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/tools/crates/op2-sim/src/sim.rs b/tools/crates/op2-sim/src/sim.rs
+index f91f6b98..8d5287fe 100644
+--- a/tools/crates/op2-sim/src/sim.rs
++++ b/tools/crates/op2-sim/src/sim.rs
+@@ -815,6 +815,11 @@ impl Sim {
+         self.index_of(id).is_some_and(|i| self.path_passable(i, self.terrain.wrap_x(x), y))
+     }
+ 
++    /// The highest object index handed out so far (OP2Map lastUsedUnitIndex, HFL +64).
++    pub fn last_index(&self) -> u16 {
++        self.indices.last
++    }
++
+     /// A structure's dock tile (GetDockLocation 0x482F40), if it has one.
+     pub fn dock_tile_of(&self, id: UnitId) -> Option<(i32, i32)> {
+         self.index_of(id).and_then(|i| self.dock_tile(i))
+-- 
+2.47.3
+

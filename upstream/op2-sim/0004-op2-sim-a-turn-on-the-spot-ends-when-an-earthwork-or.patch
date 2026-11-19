@@ -1,0 +1,35 @@
+From 3227033d5625d4298eb9ada4cfc89b8cfd29665d Mon Sep 17 00:00:00 2001
+From: fefi-byte <55361862+fefi-byte@users.noreply.github.com>
+Date: Thu, 19 Nov 2026 14:50:52 +0000
+Subject: [PATCH 4/5] op2-sim: a turn on the spot ends when an earthwork order
+ arrives
+
+Measured: mp2_08 seed 1, Earthworker 11, BuildWall at tick 1319 during a Move's turn; the original builds from 1324.
+
+Written with Claude Code.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ tools/crates/op2-sim/src/earthwork.rs | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/tools/crates/op2-sim/src/earthwork.rs b/tools/crates/op2-sim/src/earthwork.rs
+index 1eea0998..965dd646 100644
+--- a/tools/crates/op2-sim/src/earthwork.rs
++++ b/tools/crates/op2-sim/src/earthwork.rs
+@@ -292,6 +292,12 @@ impl Sim {
+                 if u.motion.moving() {
+                     (u.motion.vx, u.motion.vy) = (0, 0);
+                     u.motion.drop_countdown();
++                } else {
++                    // A turn on the spot that the order arrives during ends at once, as in the finished case
++                    // (mp2_08 seed 1, Earthworker 11, BuildWall at tick 1319 during a Move's turn: the original stays
++                    // at direction 80 and turns back to the wall from 1320, 76, 72, 68, 64, building from 1324;
++                    // without this op2-sim turned on to 84 and waited out the turn counter, building from 1328).
++                    u.motion.drop_countdown();
+                 }
+             }
+             Walk::Driving => u.action = Action::Move,
+-- 
+2.47.3
+

@@ -1,0 +1,94 @@
+From 9a2782e1dba6cf863f88e0a6b446fee765a3e6f7 Mon Sep 17 00:00:00 2001
+From: fefi-byte <55361862+fefi-byte@users.noreply.github.com>
+Date: Thu, 19 Nov 2026 14:50:52 +0000
+Subject: [PATCH 3/5] op2-sim: a building group's Produce and cargo transfer go
+ through the repeated structure packet check
+
+They are packets through ProcessCommandPacket (0x42A4A0 -> 0x40E300), so a factory that got one within the last turns
+drops the next (0x40E87B..0x40E90D). Measured: mp2_11 seed 1 tick 19215, a Guard Post kit asked for every turn is made
+at 19512 in the original.
+
+Written with Claude Code.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ tools/crates/op2-sim/src/groups_building.rs | 21 +++++++++++++++++----
+ tools/crates/op2-sim/src/packet.rs          |  2 +-
+ 2 files changed, 18 insertions(+), 5 deletions(-)
+
+diff --git a/tools/crates/op2-sim/src/groups_building.rs b/tools/crates/op2-sim/src/groups_building.rs
+index 64d39eef..6ba5f9f9 100644
+--- a/tools/crates/op2-sim/src/groups_building.rs
++++ b/tools/crates/op2-sim/src/groups_building.rs
+@@ -435,6 +435,17 @@ impl Sim {
+         self.player_command(unit, command);
+     }
+ 
++    /// A group's Produce is a packet through ProcessCommandPacket (0x42A4A0 -> 0x40E300), so
++    /// the repeat check of structure packets applies (0x40E87B..0x40E90D): a factory sent one within the last turns
++    /// drops it (mp2_11 seed 1 tick 19215: the rebuild's Guard Post kit, asked for every turn, isn't made with 1101
++    /// ore; the original makes it at 19512).
++    fn group_produce(&mut self, id: UnitId, kind: UnitKind, weapon: Option<crate::rules::WeaponKind>) -> bool {
++        if self.repeated_structure_packet(id) {
++            return false;
++        }
++        self.produce(id, kind, weapon)
++    }
++
+     /// BuildingGroup's update (vtable +0x34, 0x425C60).
+     pub(crate) fn building_update(&mut self, gi: usize) {
+         if self.groups.list[gi].members.is_empty() {
+@@ -579,7 +590,7 @@ impl Sim {
+                     self.groups.list[gi].members[k].issued = self.tick as i32;
+                 }
+                 let weapon = (want.weapon != 0).then(|| crate::rules::WeaponKind(want.weapon - 1));
+-                self.produce(id, rec.kind, weapon);
++                self.group_produce(id, rec.kind, weapon);
+             }
+             return false;
+         }
+@@ -620,7 +631,9 @@ impl Sim {
+             if let Some(k) = self.member_index(gi, id) {
+                 self.groups.list[gi].members[k].issued = self.tick as i32;
+             }
+-            self.transfer_cargo(id, bay as usize);
++            if !self.repeated_structure_packet(id) {
++                self.transfer_cargo(id, bay as usize);
++            }
+         }
+         false
+     }
+@@ -791,7 +804,7 @@ impl Sim {
+             if let Some(m) = self.member_index(gi, id) {
+                 self.groups.list[gi].members[m].issued = self.tick as i32;
+             }
+-            if self.produce(id, need, None) {
++            if self.group_produce(id, need, None) {
+                 self.groups.pending.push((id, group));
+             }
+             self.groups.list[gi].building.mines[k].miner = Some(id);
+@@ -1105,7 +1118,7 @@ impl Sim {
+                 if let Some(m) = self.member_index(gi, f) {
+                     self.groups.list[gi].members[m].issued = self.tick as i32;
+                 }
+-                if self.produce(f, kind, weapon) {
++                if self.group_produce(f, kind, weapon) {
+                     self.groups.pending.push((f, target_group));
+                 }
+             }
+diff --git a/tools/crates/op2-sim/src/packet.rs b/tools/crates/op2-sim/src/packet.rs
+index 99afefec..1a25fb28 100644
+--- a/tools/crates/op2-sim/src/packet.rs
++++ b/tools/crates/op2-sim/src/packet.rs
+@@ -842,7 +842,7 @@ impl Sim {
+     /// (the end of its command packet buffer), taken here to match nothing. So a Produce 8 to 15 ticks after a
+     /// TransferCargo to the same factory does nothing (CPS1_play tick 1512; fuzz seed 29's window 1556..1567 after a
+     /// packet at 1549).
+-    fn repeated_structure_packet(&mut self, id: UnitId) -> bool {
++    pub(crate) fn repeated_structure_packet(&mut self, id: UnitId) -> bool {
+         // The ring holds the packet's object index (MapObject +0x10), so a structure that took a freed index counts
+         // as the one before it.
+         let Some((owner, index)) = self.index_of(id).map(|i| (self.units[i].owner, u32::from(self.units[i].index))) else { return false };
+-- 
+2.47.3
+

@@ -1,0 +1,63 @@
+From d623f1d371123fa6a6d00f85a14103e5791e5c56 Mon Sep 17 00:00:00 2001
+From: fefi-byte <55361862+fefi-byte@users.noreply.github.com>
+Date: Thu, 19 Nov 2026 14:50:52 +0000
+Subject: [PATCH 2/5] op2-sim: a Guard order on the unit itself clears its
+ targets, and an Attack without a target ends
+
+The packet handler clears the targets before the self-Guard check (0x43AA10 at 0x40FC71), so a standing Attack reads
+its target word as a ground tile far off the map and ends at the next turn (0x43D28A..0x43D2D0).
+Measured: mp2_05 seed 1 tick 30207 (tank 54), on4_03 seed 1 tick 38528 (tank 79).
+
+Written with Claude Code.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ tools/crates/op2-sim/src/combat.rs | 10 ++++++++++
+ tools/crates/op2-sim/src/sim.rs    | 10 ++++++++++
+ 2 files changed, 20 insertions(+)
+
+diff --git a/tools/crates/op2-sim/src/combat.rs b/tools/crates/op2-sim/src/combat.rs
+index a18d019c..8f1b778a 100644
+--- a/tools/crates/op2-sim/src/combat.rs
++++ b/tools/crates/op2-sim/src/combat.rs
+@@ -1163,6 +1163,16 @@ impl Sim {
+             Some(g) => sim.issue_attack(i, CommandKind::Guard, g, 0),
+             None => sim.issue_attack(i, CommandKind::Guard, UnitId(0), 0),
+         };
++        // An Attack whose target word was cleared (high word 0x7FFF, 0x43AA10) has its +0x48
++        // dword read as a ground target (bit 31 clear, 0x43D28A): a tile far off the map, out of range, so the order
++        // ends and the weapon's target goes with it (0x43D29C..0x43D2D0; mp2_05 seed 1 tick 30209; on4_03 seed 1
++        // tick 38528: tank 79, its weapon back on Mine 65 by its own search, drops it and doesn't fire).
++        if u.attack.is_none() && u.attack_tile.is_none() && u.cmd == CommandKind::Attack && !self.rules.stats(u.kind).structure {
++            let u = &mut self.units[i];
++            u.cmd = CommandKind::Nop;
++            u.target = None;
++            return;
++        }
+         let Some(t) = u.attack else { return };
+         // The target checks (0x43D323, before the structure branch at 0x43D36A, so a Guard Post's Attack too): dead,
+         // MapObject flag 0x400 (MoFlagCanBeDamaged) clear, or the weapon's effect already on it. Of the flag only a
+diff --git a/tools/crates/op2-sim/src/sim.rs b/tools/crates/op2-sim/src/sim.rs
+index de8c3faf..f91f6b98 100644
+--- a/tools/crates/op2-sim/src/sim.rs
++++ b/tools/crates/op2-sim/src/sim.rs
+@@ -1534,6 +1534,16 @@ impl Sim {
+             Command::Guard { target } => {
+                 // A Guard order on the unit itself is ignored (0x40FC83), as is one for a unit without MapObject flag
+                 // 0x10 (0x40FC8F; a weaponless Scorpion has it: `offensive`).
++                // But the packet handler has already cleared the unit's targets (0x43AA10 at 0x40FC71: Attack, weapon
++                // and guard words to 0x7FFF), so a standing Attack ends at its next turn (mp2_05 seed 1 tick 30207:
++                // tank 54, its group's escort picks itself, target gone at 30208, Nop at 30209).
++                if target == id {
++                    let u = &mut self.units[i];
++                    if u.weapon.is_some() {
++                        (u.target, u.target_tile, u.guard, u.guarding) = (None, None, None, false);
++                    }
++                    u.attack = None;
++                }
+                 if target != id && self.offensive(id) && !self.rules.stats(self.units[i].kind).structure {
+                     self.issue_attack(i, CommandKind::Guard, target, 0);
+                 }
+-- 
+2.47.3
+
