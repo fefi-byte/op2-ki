@@ -1,5 +1,6 @@
 [workspace]
 resolver = "2"
 members = ["kern", "dll"]
+exclude = ["sim"]
 [profile.release]
 opt-level = 3

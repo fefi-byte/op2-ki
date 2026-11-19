@@ -1,0 +1,19 @@
+[package]
+name = "op2ki-sim"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-or-later"
+description = "op2-ki gegen op2-ki auf op2-sim (nativer Nachbau von Outpost 2), ohne Spiel und ohne Wine"
+
+# Eigener Workspace: braucht op2-rs (https://gitlab.com/bufke/op2-rs) neben diesem Repo, siehe sim/README.md
+[workspace]
+
+[dependencies]
+op2ki = { path = "../kern" }
+op2-sim = { path = "../../op2-rs/tools/crates/op2-sim" }
+op2-formats = "0.4"
+anyhow = "1"
+serde_json = "1"
+
+[profile.release]
+opt-level = 3

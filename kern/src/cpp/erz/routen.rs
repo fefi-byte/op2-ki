@@ -194,7 +194,10 @@ pub(super) fn minerEinsetzen(welt: &mut dyn Welt, z: &mut Zustand, p: i32, t: i3
             melde(welt, z, "fehler", mapCommonOreMine, blx, bly, &txt);
             z.minerWeg = if z.minerWeg == 1 { 2 } else if z.minerWeg == 2 { 0 } else { 1 };
         }
-        for u in welt.PlayerVehicleEnum(p) {
+        // der vorgefahrene Miner zuerst (steht schon an der Bake)
+        let mut miner = welt.PlayerVehicleEnum(p);
+        if let Some(i) = miner.iter().position(|&u| u == z.minerVor) { let v = miner.remove(i); miner.insert(0, v); }
+        for u in miner {
             if welt.GetType(u) != mapRoboMiner || welt.IsBusy(u) { continue; }
             if u == z.seltenMiner { continue; }                              // fuer Seltenerz reserviert
             if u == z.bakeMiner && t - z.minerSeit < 300 { break; }           // gleicher Auftrag, kurz warten
@@ -220,12 +223,44 @@ pub(super) fn minerEinsetzen(welt: &mut dyn Welt, z: &mut Zustand, p: i32, t: i3
                 welt.DoDeployMiner(u, bl);
                 weg = "Weg 0: HFL DoDeployMiner";
             }
-            z.bakeMiner = u; z.minerSeit = t;
+            z.bakeMiner = u; z.minerSeit = t; z.minerVor = 0;
+            lastwagenVorfahren(welt, z, p, b, bl);
             let txt = format!("Robo-Miner {} baut Mine ({}, {})", u, weg,
                               if vermessen { "Bake vermessen" } else if surveyor { "Surveyor braucht zu lange" } else { "ohne Surveyor" });
             melde(welt, z, "mine", mapCommonOreMine, blx, bly, &txt);
             break;
         }
+    } else if !darf && !minerAmWerk && !gruppeArbeitet {
+        // Vermessung laeuft: ein freier Robo-Miner faehrt schon zur Bake und wartet dort (spart den Anfahrtsweg)
+        let vor = z.minerVor;
+        let vorLebt = vor != 0 && welt.IsLive(vor) && welt.GetType(vor) == mapRoboMiner;
+        if !vorLebt {
+            for u in welt.PlayerVehicleEnum(p) {
+                if welt.GetType(u) != mapRoboMiner || welt.IsBusy(u) || welt.GetCurAction(u) != moDone || u == z.seltenMiner { continue; }
+                welt.DoMove(u, Loc::new(bl.x + 2, bl.y + 2));
+                z.minerVor = u;
+                melde(welt, z, "mine", mapRoboMiner, blx, bly, &format!("Robo-Miner {} faehrt schon zur Bake, waehrend sie vermessen wird", u));
+                break;
+            }
+        }
+    }
+}
+
+/// Mine geht in Bau: bis zu zwei freie Lastwagen fahren schon zur Bake (zugeteilt werden sie, wenn die Mine steht)
+fn lastwagenVorfahren(welt: &mut dyn Welt, z: &mut Zustand, p: i32, b: Id, bl: Loc) {
+    if z.lkwVorBake == b { return; }
+    z.lkwVorBake = b;
+    let mut n = 0;
+    for u in welt.PlayerVehicleEnum(p) {
+        if n >= 2 { break; }
+        if welt.GetType(u) != mapCargoTruck || welt.IsBusy(u) || !welt.IsLive(u) || welt.GetCurAction(u) != moDone { continue; }
+        if lastwagenVergeben(welt, z, u) { continue; }
+        welt.DoMove(u, Loc::new(bl.x + 3, bl.y + 2 + n));
+        n += 1;
+    }
+    if n > 0 {
+        let (bx, by) = exy(welt, z, bl);
+        melde(welt, z, "mine", mapCargoTruck, bx, by, &format!("{} Lastwagen fahren schon zur neuen Mine", n));
     }
 }
 
@@ -272,7 +307,9 @@ pub(super) fn schmelzeRoute(welt: &mut dyn Welt, z: &mut Zustand, p: i32, schmel
             if !welt.IsLive(minen[m]) { continue; }
             let ml = welt.Location(minen[m]);
             let d = abstand2(welt, ml.x, ml.y, sl.x, sl.y);
-            if n < 2 && (n < besteN || (n == besteN && d < besteD)) { beste = m as i32; besteN = n; besteD = d; }
+            // mit Zweitbasis: die naechste Mine, nicht die mit den wenigsten Routen (sonst faehrt die Schmelze der
+            // Zweitbasis zur Mine der Hauptbasis)
+            if n < 2 && d < besteD { beste = m as i32; besteN = n; besteD = d; }
         }
         if beste < 0 { return Route::Uebersprungen; }                                     // jede Mine hat schon zwei Schmelzen
         // Nicht mitten im Gefecht: Mine/Schmelze schwer beschaedigt oder Feind in der Naehe -> spaeter

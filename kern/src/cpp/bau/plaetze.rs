@@ -208,9 +208,8 @@ pub fn mauerVor(welt: &mut dyn Welt, z: &mut Zustand, x0: i32, y0: i32, w: i32, 
         let x = (cx + ux * vorn - uy * q as f64 + 0.5) as i32;
         let y = (cy + uy * vorn + ux * q as f64 + 0.5) as i32;
         let mut g: &'static str = "";
-        if !platzFrei(welt, z, x, y, 1, 1, &hin, nh, &mut g) { continue; }
-        let l = engine(welt, z, x, y);
-        welt.RecordWall(z.bau, l, mapWall);
+        if !platzFreiOhneMauer(welt, z, x, y, 1, 1, &hin, nh, &mut g) { continue; }
+        super::super::mauer::aufzeichnen(welt, z, x, y);
         n += 1;
     }
     if n != 0 { melde(welt, z, "kampf", mapWall, cx as i32, cy as i32, &format!("{} Mauerkacheln vor {},{} zur Feindseite", n, x0, y0)); }
@@ -230,9 +229,8 @@ pub fn mauerNeben(welt: &mut dyn Welt, z: &mut Zustand, tx: i32, ty: i32) {
         let x = (tx as f64 - uy * seite as f64 + 0.5) as i32;
         let y = (ty as f64 + ux * seite as f64 + 0.5) as i32;
         let mut g: &'static str = "";
-        if !platzFrei(welt, z, x, y, 1, 1, &hin, nh, &mut g) { continue; }
-        let l = engine(welt, z, x, y);
-        welt.RecordWall(z.bau, l, mapWall);
+        if !platzFreiOhneMauer(welt, z, x, y, 1, 1, &hin, nh, &mut g) { continue; }
+        super::super::mauer::aufzeichnen(welt, z, x, y);
         gesetzt += 1;
     }
     // Mauern davor: lohnt nur, wenn der eigene Turm darueber schiessen kann und mindestens die Haelfte der feindlichen
@@ -256,9 +254,8 @@ pub fn mauerNeben(welt: &mut dyn Welt, z: &mut Zustand, tx: i32, ty: i32) {
                 let x = (tx as f64 + ux * 2.0 - uy * q as f64 + 0.5) as i32;
                 let y = (ty as f64 + uy * 2.0 + ux * q as f64 + 0.5) as i32;
                 let mut g: &'static str = "";
-                if !platzFrei(welt, z, x, y, 1, 1, &hin, nh, &mut g) { continue; }
-                let l = engine(welt, z, x, y);
-                welt.RecordWall(z.bau, l, mapWall);
+                if !platzFreiOhneMauer(welt, z, x, y, 1, 1, &hin, nh, &mut g) { continue; }
+                super::super::mauer::aufzeichnen(welt, z, x, y);
                 vorn += 1;
             }
             if vorn != 0 {

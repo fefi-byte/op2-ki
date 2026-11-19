@@ -28,7 +28,7 @@ pub fn parameterLaden(welt: &mut dyn Welt, z: &mut Zustand) {
     if f.is_none() && text.is_none() { return; }
     fn feld<'a>(q: &'a mut Parameter, name: &str) -> Option<&'a mut f64> {
         Some(match name {
-            "reaktion" => &mut q.reaktion, "horizont" => &mut q.horizont, "ueberlegenheit" => &mut q.ueberlegenheit,
+            "reaktion" => &mut q.reaktion, "horizont" => &mut q.horizont, "zbMinWeg" => &mut q.zbMinWeg, "zbNutzen" => &mut q.zbNutzen, "zbTuerme" => &mut q.zbTuerme, "zbFabrik" => &mut q.zbFabrik, "zbStruktur" => &mut q.zbStruktur, "zbFeindAbstand" => &mut q.zbFeindAbstand, "zbArmee" => &mut q.zbArmee, "zbAnzahl" => &mut q.zbAnzahl, "zbOffen" => &mut q.zbOffen, "zbBedrohung" => &mut q.zbBedrohung, "zbFeind" => &mut q.zbFeind, "zbErz" => &mut q.zbErz, "zbArbeiter" => &mut q.zbArbeiter, "zbUeberschuss" => &mut q.zbUeberschuss, "parallelUmweg" => &mut q.parallelUmweg, "parallelAbstand" => &mut q.parallelAbstand, "parallelTiefe" => &mut q.parallelTiefe, "ueberlegenheit" => &mut q.ueberlegenheit,
             "fabrikGewinn" => &mut q.fabrikGewinn, "reserveStart" => &mut q.reserveStart, "reserveLernrate" => &mut q.reserveLernrate,
             "reserveRueckgang" => &mut q.reserveRueckgang, "reserveMax" => &mut q.reserveMax, "turmAnteil" => &mut q.turmAnteil,
             "zermuerbAbstand" => &mut q.zermuerbAbstand, "schmelzeNutzen" => &mut q.schmelzeNutzen,

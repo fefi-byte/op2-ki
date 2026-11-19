@@ -71,6 +71,13 @@ pub fn ueberlappt(_welt: &mut dyn Welt, ax: i32, ay: i32, aw: i32, ah: i32, bx: 
 // kein Roehrenstutzen unter der Grundflaeche.
 /// C++: bool platzFrei(const Zustand& z, int x0, int y0, int w, int h, const Rechteck* hin, int nh, const char** grund)  (op2_ki.hpp:789)
 pub fn platzFrei(welt: &mut dyn Welt, z: &Zustand, x0: i32, y0: i32, w: i32, h: i32, hin: &[Rechteck], nh: i32, grund: &mut &'static str) -> bool {
+    // aufgezeichnete, noch nicht gebaute Mauern samt Rand freihalten (sonst raeumt der Bau die Mauer ab)
+    if super::super::mauer::geplantIn(z, x0 - 1, y0 - 1, w + 2, h + 2) { *grund = "Mauer geplant"; return false; }
+    platzFreiOhneMauer(welt, z, x0, y0, w, h, hin, nh, grund)
+}
+
+/// platzFrei ohne die Pruefung auf geplante Mauern (fuer Mauerkacheln selbst: sie duerfen aneinander liegen)
+pub fn platzFreiOhneMauer(welt: &mut dyn Welt, z: &Zustand, x0: i32, y0: i32, w: i32, h: i32, hin: &[Rechteck], nh: i32, grund: &mut &'static str) -> bool {
     if !aufKarte(welt, z, x0 - 1, y0 - 1, 2) || !aufKarte(welt, z, x0 + w, y0 + h, 2) { *grund = "Kartenrand"; return false; }
     // Baken freihalten: Grundflaeche der Mine (2x1, Bake rechts) samt Rand
     for i in 0..z.kbN as usize {

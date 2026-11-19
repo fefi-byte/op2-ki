@@ -294,7 +294,7 @@ fn feindTuerme(welt: &mut dyn Welt, z: &mut Zustand) -> (i32, i32) {
                 let w = kampfWert(welt, g);
                 feindWTWert += w;
                 // Fuer den Basisangriff zaehlen nur Tuerme, die die Basis decken (15 Kacheln um ihre
-                // Mitte, wie feindArmeeHeim) -- Tuerme an fernen Aussenposten oder Paessen stehen nicht im Weg.
+                // Mitte, wie feindArmeeZurueck) -- Tuerme an fernen Aussenposten oder Paessen stehen nicht im Weg.
                 let gl = welt.Location(g);
                 let (gx, gy) = (edX(welt, z, gl), edY(welt, z, gl));
                 if abstand2(welt, gx, gy, z.feindX, z.feindY) <= 15 * 15 { feindWTBasis += w; }
@@ -315,10 +315,12 @@ fn aufmarschUndRakete(welt: &mut dyn Welt, z: &mut Zustand, t: i32, b: &mut Best
     if z.kampfModus == 3 {
         let mut dort = 0;
         for v in AngriffEnum(welt, z) {
-            if welt.IsLive(v) { let lo = welt.Location(v); let (ex, ey) = (edX(welt, z, lo), edY(welt, z, lo)); if abstand2(welt, ex, ey, z.aufmarschX, z.aufmarschY) <= 5 * 5 { dort += 1; } }
+            if welt.IsLive(v) { let lo = welt.Location(v); let (ex, ey) = (edX(welt, z, lo), edY(welt, z, lo)); if abstand2(welt, ex, ey, z.aufmarschX, z.aufmarschY) <= 5 * 5
+                || (z.aufmarsch2X != 0 && abstand2(welt, ex, ey, z.aufmarsch2X, z.aufmarsch2Y) <= 5 * 5) { dort += 1; } }
         }
         // Frist nach der Entfernung (Lynx ~50 Ticks je Kachel im Pulk)
-        let aufD = abstand2(welt, z.bx, z.by, z.aufmarschX, z.aufmarschY);
+        let mut aufD = abstand2(welt, z.bx, z.by, z.aufmarschX, z.aufmarschY);
+        if z.aufmarsch2X != 0 { aufD = aufD.max(abstand2(welt, z.bx, z.by, z.aufmarsch2X, z.aufmarsch2Y)); }
         let aufFrist = 1000 + (70.0 * (aufD as f64).sqrt()) as i32;
         if dort * 10 >= na * 7 || t - z.aufmarschSeit > aufFrist {
             let mut sp: Id = 0;

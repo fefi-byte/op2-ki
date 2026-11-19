@@ -5,9 +5,9 @@
 An AI opponent for **Outpost 2**, written in Rust. It builds a colony, researches, raises armies and attacks like
 a fellow player. It runs inside the original game as `op2ki.dll`, loaded by a mission DLL.
 
-This repository holds only what is needed to play and watch: the AI, its interface to the game and the missions.
-The simulator and the training and measuring tools are not part of it. Code comments and in-game messages are in
-German.
+This repository holds what is needed to play and watch: the AI, its interface to the game and the missions, plus
+[`sim/`](sim/), which runs the AI against itself on op2-sim (the native engine rebuild of op2-rs) without the game.
+The training and measuring tools are not part of it. Code comments and in-game messages are in German.
 
 ## Playing
 
@@ -61,12 +61,21 @@ now its only source; the missions contain no AI of their own.
 | Research | `kern/src/cpp/forschung` | tech tree forecast (benefit per cost), labs, training |
 | Military | `kern/src/cpp/kampf`, `paarung.rs` | army target, weapon choice by matchups, raids, base attack |
 | Combat | `gefecht.rs`, `gefecht_netz.rs` | close combat by a learned network (`gefecht_netz.txt`) |
+| Two routes | `parallel.rs`, `gelaende.rs` | attacks over two separate paths when the terrain has them |
+| Second base | `zweitbasis.rs` | an outpost with command center and smelter at a far beacon field, once the main base stands, ore is spare and workers are free |
+| Walls | `mauer.rs` | remembers recorded walls so no building is planned on them; guard towers get a tube to the command center |
 
 The AI sees the game only through the `Welt` ("world") trait in `kern/src/cpp/welt.rs`. In the DLL,
 `dll/src/extern_welt.rs` maps it onto a call interface the mission passes in, and
 `missionen/gemeinsam/op2ki_bruecke.hpp` answers those calls with the OP2 API. Both files are generated from the trait
 by `werkzeug/bruecke.py`; a mission itself is only map data plus a call to `op2ki::start` and `op2ki::schritt`
 (`missionen/gemeinsam/op2ki.hpp`).
+
+## Simulator
+
+[`sim/`](sim/) plays op2-ki against op2-ki on op2-sim in seconds and writes the same decision log as the game. It is
+also the reference implementation of the `Welt` trait for another engine. Setup and options in
+[sim/README.md](sim/README.md).
 
 ## Building
 

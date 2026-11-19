@@ -169,7 +169,7 @@ pub(super) fn unterwegsMessen(welt: &mut dyn Welt, z: &mut Zustand, geb: i32) {
     {
         let mut unterwegs = 0;
         let (mut neuId, mut neuD, mut neuN) = ([0i32; 128], [0i32; 128], 0usize);
-        let mut heim = 0;
+        let mut zurueck = 0.0f64;
         let mut drohung = 0;
         let mut p = 0;
         while p < welt.NoPlayers() {
@@ -181,7 +181,13 @@ pub(super) fn unterwegsMessen(welt: &mut dyn Welt, z: &mut Zustand, geb: i32) {
                 let ex = edX(welt, z, lo);
                 let ey = edY(welt, z, lo);
                 let draussen = geb == 0 || abstand2(welt, ex, ey, z.feindX, z.feindY) > 15 * 15;
-                if !draussen { heim += w; }
+                if geb != 0 {
+                    // Abwehr der Feindbasis: wer vor unserer Truppe zurueck sein kann, zaehlt voll, weiter weg abnehmend
+                    let dHeim = (abstand2(welt, ex, ey, z.feindX, z.feindY) as f64).sqrt();
+                    let dUns = (abstand2(welt, z.bx, z.by, z.feindX, z.feindY) as f64).sqrt();
+                    let f = if dHeim <= 15.0 || dHeim <= dUns { 1.0 } else { (1.0 - (dHeim - dUns) / 30.0).clamp(0.0, 1.0) };
+                    zurueck += w as f64 * f;
+                }
                 // Unterwegs zaehlt nur, was auf uns zukommt -- seit dem letzten Scan mehr als 2 Kacheln naeher an der
                 // eigenen Basis. Stehende Wachen an Aussenposten oder Paessen sperren sonst jeden Angriff (mp4_12).
                 let d = (abstand2(welt, ex, ey, z.bx, z.by) as f64).sqrt() as i32;
@@ -198,7 +204,7 @@ pub(super) fn unterwegsMessen(welt: &mut dyn Welt, z: &mut Zustand, geb: i32) {
             p += 1;
         }
         z.unterwegsN = neuN as i32; z.unterwegsId = neuId; z.unterwegsD = neuD;
-        z.feindArmeeHeim = heim;
+        z.feindArmeeZurueck = zurueck as i32;
         z.feindDrohung = drohung;
         z.feindUnterwegs = unterwegs;
     }

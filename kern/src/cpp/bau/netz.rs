@@ -41,7 +41,7 @@ pub fn wegSuchen(welt: &mut dyn Welt, z: &Zustand, von: &Rechteck, ziele: &[Rech
         if !aufKarte(welt, z, x, y, 1) { return false; }
         let c = zelle(welt, z, x, y);
         if ohneRoehren && zelleRoehre(welt, c) { return false; }
-        (zelleBebaubar(welt, c) || zelleRoehre(welt, c)) && !belegt(welt, hin, nh, x, y)
+        (zelleBebaubar(welt, c) || zelleRoehre(welt, c)) && !belegt(welt, hin, nh, x, y) && !super::super::mauer::geplantIn(z, x, y, 1, 1)
     };
     for y in (von.y0 - 1)..=(von.y0 + von.h) {
         for x in (von.x0 - 1)..=(von.x0 + von.w) {
@@ -247,6 +247,12 @@ pub(super) fn loseErfassen(welt: &mut dyn Welt, z: &mut Zustand, _l: &Lage) -> L
             let lo = welt.Location(u);
             let (ex, ey) = (edX(welt, z, lo), edY(welt, z, lo));
             let r = rechteckUm(welt, typ, ex, ey);
+            // Wachtuerme haben keinen Stutzen, brauchen aber die Roehre zur Kommandozentrale (ohne sie weniger Schaden) --
+            // jeder unverbundene fertige Turm wird wie ein loses Gebaeude angeschlossen.
+            if typ == mapGuardPost {
+                if nl >= 8 || welt.GetCurAction(u) != moDone || welt.IsBusy(u) || turmAngeschlossen(welt, u) { continue; }
+                lose[nl] = u; loseR[nl] = r; nl += 1; continue;
+            }
             let verbunden = imNetz(z, &netz, &r);
             if typ == mapCommandCenter || (hatStutzen(welt, typ) && verbunden) { if nz < 64 { ziele[nz] = r; nz += 1; } continue; }
             if !hatStutzen(welt, typ) || nl >= 8 { continue; }

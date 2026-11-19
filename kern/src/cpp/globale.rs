@@ -34,6 +34,8 @@ pub fn zuruecksetzen() {
     super::gefecht::zuruecksetzen_gefecht();
     super::paarung::zuruecksetzen_paarung();
     super::hilfen::zuruecksetzen_turmnetz();
+    super::mauer::zuruecksetzen_mauer();
+    super::zweitbasis::zuruecksetzen_zweitbasis();
     par.with(|p| *p.borrow_mut() = [Parameter::default(); 8]);
     g_vorhaben.with(|v| *v.borrow_mut() = [[Anspruch::default(); MAX_VORHABEN]; 8]);
     g_nVorhaben.with(|v| *v.borrow_mut() = [0; 8]);

@@ -81,9 +81,10 @@ pub(super) fn empBereit(welt: &mut dyn Welt, z: &mut Zustand) -> bool {
     w > 0
 }
 
-/// Sammeln vor jedem Angriff: auf der Linie zur eigenen Basis, ausserhalb der Reichweite aller Tuerme
+/// Sammeln vor jedem Angriff: auf der Linie zur eigenen Basis, ausserhalb der Reichweite aller Tuerme; gibt es einen
+/// getrennten zweiten Weg, sammelt die zweite Haelfte an einem eigenen Aufmarschpunkt
 #[allow(clippy::too_many_arguments)]
-pub(super) fn aufmarschOhneEmp(welt: &mut dyn Welt, z: &mut Zustand, t: i32, fz: i32, _art: i32, wunsch: i32, _ns: i32) {
+pub(super) fn aufmarschOhneEmp(welt: &mut dyn Welt, z: &mut Zustand, t: i32, fz: i32, _art: i32, wunsch: i32, ns: i32) {
     let mut zx = z.feindX; let mut zy = z.feindY;
     { let w: Id = wunsch; if wunsch != 0 && welt.IsLive(w) { let l0 = welt.Location(w); zx = edX(welt, z, l0); zy = edY(welt, z, l0); } }
     let rx = (z.bx - zx) as f64; let ry = (z.by - zy) as f64;
@@ -112,10 +113,31 @@ pub(super) fn aufmarschOhneEmp(welt: &mut dyn Welt, z: &mut Zustand, t: i32, fz:
     z.aufmarschSeit = t;
     let warte = Rect::new(engine(welt, z, z.aufmarschX - 2, z.aufmarschY - 2), engine(welt, z, z.aufmarschX + 2, z.aufmarschY + 2));
     let schutz = Rect::new(engine(welt, z, z.aufmarschX - 5, z.aufmarschY - 5), engine(welt, z, z.aufmarschX + 5, z.aufmarschY + 5));
-    wachen(welt, z.angriff, warte, &[schutz], 1);
-    if z.angriff2An != 0 { wachen(welt, z.angriff2, warte, &[schutz], 1); }
-    melde(welt, z, "kampf", if fz != 0 { fz } else { mapLynx }, z.aufmarschX, z.aufmarschY,
-          &format!("Sammeln bei {},{} vor dem Angriff auf {},{}", z.aufmarschX, z.aufmarschY, zx, zy));
+    // zweite Haelfte ueber einen getrennten Weg, eigener Aufmarschpunkt
+    z.aufmarsch2X = 0; z.aufmarsch2Y = 0;
+    let mut zweiter: Option<(i32, i32)> = None;
+    if z.angriff2An != 0 && ns >= 4 {
+        let mut breite = 0;
+        zweiter = super::parallel::zweiterAufmarsch(welt, z, (zx, zy), (z.aufmarschX, z.aufmarschY), ns, &mut breite);
+        if zweiter.is_none() {
+            melde(welt, z, "kampf", mapLynx, z.aufmarschX, z.aufmarschY, &format!("Ein Weg: {} Fahrzeuge, schmalste Stelle {} Kacheln", ns, breite));
+        } else { z.parallelBreite = breite; }
+    }
+    if let Some((ax, ay)) = zweiter {
+        let (n1, n2) = super::parallel::teilen(welt, z);
+        z.aufmarsch2X = ax; z.aufmarsch2Y = ay;
+        let warte2 = Rect::new(engine(welt, z, ax - 2, ay - 2), engine(welt, z, ax + 2, ay + 2));
+        let schutz2 = Rect::new(engine(welt, z, ax - 5, ay - 5), engine(welt, z, ax + 5, ay + 5));
+        wachen(welt, z.angriff, warte, &[schutz], 1);
+        wachen(welt, z.angriff2, warte2, &[schutz2], 1);
+        melde(welt, z, "kampf", if fz != 0 { fz } else { mapLynx }, ax, ay,
+              &format!("Zwei Wege: {} Fahrzeuge sammeln bei {},{}, {} bei {},{} vor dem Angriff auf {},{} (schmalste Stelle des ersten Wegs {} Kacheln)", n1, z.aufmarschX, z.aufmarschY, n2, ax, ay, zx, zy, z.parallelBreite));
+    } else {
+        wachen(welt, z.angriff, warte, &[schutz], 1);
+        if z.angriff2An != 0 { wachen(welt, z.angriff2, warte, &[schutz], 1); }
+        melde(welt, z, "kampf", if fz != 0 { fz } else { mapLynx }, z.aufmarschX, z.aufmarschY,
+              &format!("Sammeln bei {},{} vor dem Angriff auf {},{}", z.aufmarschX, z.aufmarschY, zx, zy));
+    }
 }
 
 /// Mit EMP-Rakete: Aufmarsch knapp ausserhalb des EMP-Radius, ausserhalb der Reichweite nicht getroffener Tuerme

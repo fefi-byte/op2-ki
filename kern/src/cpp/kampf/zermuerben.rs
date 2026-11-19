@@ -23,7 +23,7 @@ pub(super) fn neuerAngriff(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, t: i3
     if z.feindUnterwegs == 0 && z.feindGeb != 0 && gesamt > 0 && (ns + if ueber > 0 { 2 } else { 0 }) >= 2 {
         // a) ganze Feindbasis, wenn die Truppe Tuerme plus Armee mit Reserve schlaegt
         // Zur Abwehr zaehlt nur die Feindarmee in ihrer Basis (15 Kacheln), nicht Wachen an fernen Aussenposten oder Paessen.
-        let feindAbwehrArmee = z.feindArmeeHeim;
+        let feindAbwehrArmee = z.feindArmeeZurueck;
         if basisangriff(welt, z, l, t, fz, ueber, &mut sw, &mut ns, gesamt, bereit, feindWTBasis, feindAbwehrArmee, empAbzug) { return; }
         zermuerbenHand(welt, z, t, fz, ueber, &mut sw, &mut ns, gesamt, sammelZiel, eskalation, feindWTWert, feindAbwehrArmee, empAbzug);
     }

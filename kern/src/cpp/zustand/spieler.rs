@@ -49,6 +49,7 @@ pub struct Zustand {
     pub kitGesperrtTyp: [i32; 8],   // Bausaetze, die die Fabrik (noch) nicht herstellt
     pub kitGesperrtBis: [i32; 8],
     pub fzTyp: i32,   // Fahrzeug, das gerade in der Fahrzeugfabrik entsteht
+    pub fzVf: Id,   // Fabrik dieses Auftrags
     pub fzSeit: i32,
     pub fzPauseBis: i32,
     pub meldungenSeit: [i32; 32],   // Entprellung wiederkehrender Meldungen
@@ -63,6 +64,8 @@ pub struct Zustand {
     pub bakeMiner: i32,   // unitID des Miners, der gerade eine Mine baut
     pub bakeSeit: i32,   // seit wann diese Bake das Ziel ist
     pub minerSeit: i32,   // wann der Miner den Auftrag bekam
+    pub minerVor: i32,   // Robo-Miner, der schon zur Bake faehrt, waehrend sie vermessen wird
+    pub lkwVorBake: i32,   // Bake, zu der schon Lastwagen vorgefahren sind
     pub bakenX: [i32; 4],   // selbst angelegte Baken (Editor-Kacheln)
     pub bakenY: [i32; 4],   // selbst angelegte Baken (Editor-Kacheln)
     pub anzahlBaken: i32,
@@ -128,6 +131,10 @@ pub struct Zustand {
     pub aufmarschX: i32,
     pub aufmarschY: i32,
     pub aufmarschSeit: i32,
+    /// Aufmarschpunkt der zweiten Angriffsgruppe bei zwei Wegen (0,0 = keiner), schmalste Stelle des ersten Wegs
+    pub aufmarsch2X: i32,
+    pub aufmarsch2Y: i32,
+    pub parallelBreite: i32,
     pub eigeneArmee: i32,
     pub sollArmee: i32,
     pub bedrohung: i32,
@@ -190,7 +197,7 @@ pub struct Zustand {
     pub garRausSeit: i32,   // Garage: wer steht in welcher Bucht, wer faehrt hin
     pub zielEmp: i32,   // EMP-Anteil der Sammelgruppe; Spinnen: wer uebernimmt wen
     pub zielEmpFz: i32,   // Fahrgestell der EMP-Beimischung
-    pub feindArmeeHeim: i32,   // Kampfwert feindlicher Fahrzeuge innerhalb von 15 Kacheln um ihre Basis
+    pub feindArmeeZurueck: i32,   // Kampfwert feindlicher Fahrzeuge, die vor unserer Truppe wieder daheim sein koennen (voll bis 15 Kacheln um ihre Basis, weiter weg abnehmend)
     pub unterwegsN: i32,   // Abstaende feindlicher Kampffahrzeuge zur eigenen Basis beim letzten Scan
     pub unterwegsId: [i32; 128],
     pub unterwegsD: [i32; 128],

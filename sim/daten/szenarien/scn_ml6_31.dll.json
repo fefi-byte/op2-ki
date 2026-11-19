@@ -1,0 +1,1741 @@
+{
+  "disasters": [],
+  "groups": [],
+  "map": "on6_03.map",
+  "mapEdits": [
+    "SetCellType((55,86), 6)",
+    "InitialSetTile((55,86), 1531)",
+    "SetCellType((55,87), 6)",
+    "InitialSetTile((55,87), 1533)",
+    "SetCellType((56,86), 6)",
+    "InitialSetTile((56,86), 1532)",
+    "SetCellType((56,87), 6)",
+    "InitialSetTile((56,87), 1534)",
+    "SetCellType((60,41), 6)",
+    "InitialSetTile((60,41), 1531)",
+    "SetCellType((60,42), 6)",
+    "InitialSetTile((60,42), 1533)",
+    "SetCellType((61,41), 6)",
+    "InitialSetTile((61,41), 1532)",
+    "SetCellType((61,42), 6)",
+    "InitialSetTile((61,42), 1534)",
+    "SetCellType((108,98), 6)",
+    "InitialSetTile((108,98), 1531)",
+    "SetCellType((108,99), 6)",
+    "InitialSetTile((108,99), 1533)",
+    "SetCellType((109,98), 6)",
+    "InitialSetTile((109,98), 1532)",
+    "SetCellType((109,99), 6)",
+    "InitialSetTile((109,99), 1534)",
+    "SetCellType((146,81), 6)",
+    "InitialSetTile((146,81), 1531)",
+    "SetCellType((146,82), 6)",
+    "InitialSetTile((146,82), 1533)",
+    "SetCellType((147,81), 6)",
+    "InitialSetTile((147,81), 1532)",
+    "SetCellType((147,82), 6)",
+    "InitialSetTile((147,82), 1534)"
+  ],
+  "messages": [],
+  "mission": {
+    "level_desc": "6 Player, LastOne, 'Earlobe' map.",
+    "map_name": "on6_03.map",
+    "max_tech_level": 12,
+    "mission_type": -8,
+    "num_players": 6,
+    "techtree_name": "MULTITEK.TXT",
+    "unit_mission": false
+  },
+  "note": "recorded from ml6_31.dll InitProc by op2-missionhost",
+  "options": {
+    "ForceMoraleGood": "-1",
+    "SetCheatFastProduction": "0",
+    "SetCheatFastUnits": "0",
+    "SetCheatProduceAll": "0",
+    "SetCheatUnlimitedResources": "0",
+    "SetDaylightEverywhere": "0"
+  },
+  "players": [
+    {
+      "allies": [],
+      "color": 1,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": true,
+      "food": 3000,
+      "human": true,
+      "id": 0,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        141,
+        87
+      ],
+      "workers": 27
+    },
+    {
+      "allies": [],
+      "color": 2,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": true,
+      "food": 3000,
+      "human": true,
+      "id": 1,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        103,
+        106
+      ],
+      "workers": 27
+    },
+    {
+      "allies": [],
+      "color": 3,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": false,
+      "food": 3000,
+      "human": true,
+      "id": 2,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        98,
+        25
+      ],
+      "workers": 27
+    },
+    {
+      "allies": [],
+      "color": 4,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": true,
+      "food": 3000,
+      "human": true,
+      "id": 3,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        140,
+        35
+      ],
+      "workers": 27
+    },
+    {
+      "allies": [],
+      "color": 5,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": false,
+      "food": 3000,
+      "human": true,
+      "id": 4,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        64,
+        93
+      ],
+      "workers": 27
+    },
+    {
+      "allies": [],
+      "color": 0,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": true,
+      "food": 3000,
+      "human": true,
+      "id": 5,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        55,
+        46
+      ],
+      "workers": 27
+    }
+  ],
+  "seed": 1,
+  "spawn": [
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        106,
+        85
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        106,
+        85
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        106,
+        85
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        106,
+        85
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        106,
+        85
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        106,
+        85
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        106,
+        85
+      ],
+      "type": "WALL_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        68,
+        104
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        68,
+        104
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        68,
+        104
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        68,
+        104
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        68,
+        104
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        68,
+        104
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        68,
+        104
+      ],
+      "type": "WALL_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        64,
+        24
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        64,
+        24
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        64,
+        24
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        64,
+        24
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        64,
+        24
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        64,
+        24
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        64,
+        24
+      ],
+      "type": "WALL_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        106,
+        34
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        106,
+        34
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        106,
+        34
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        106,
+        34
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        106,
+        34
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        106,
+        34
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        106,
+        34
+      ],
+      "type": "WALL_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 4,
+      "tile": [
+        29,
+        91
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 4,
+      "tile": [
+        29,
+        91
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 4,
+      "tile": [
+        29,
+        91
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 4,
+      "tile": [
+        29,
+        91
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 4,
+      "tile": [
+        29,
+        91
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 4,
+      "tile": [
+        29,
+        91
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 4,
+      "tile": [
+        29,
+        91
+      ],
+      "type": "WALL_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 5,
+      "tile": [
+        21,
+        45
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 5,
+      "tile": [
+        21,
+        45
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 5,
+      "tile": [
+        21,
+        45
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 5,
+      "tile": [
+        21,
+        45
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 5,
+      "tile": [
+        21,
+        45
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 5,
+      "tile": [
+        21,
+        45
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 5,
+      "tile": [
+        21,
+        45
+      ],
+      "type": "WALL_TRUCK"
+    }
+  ],
+  "structures": [
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        68,
+        40
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        37,
+        53
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        40,
+        81
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        72,
+        90
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        93,
+        78
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        93,
+        47
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        79,
+        26
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        92,
+        28
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        88,
+        13
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        124,
+        6
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        113,
+        11
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        115,
+        22
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        126,
+        38
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        107,
+        54
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        126,
+        57
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        113,
+        64
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        125,
+        80
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        86,
+        60
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        80,
+        43
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        65,
+        51
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        75,
+        63
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        70,
+        77
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        88,
+        93
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        92,
+        115
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        114,
+        105
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        117,
+        121
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        58,
+        121
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        49,
+        107
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        54,
+        94
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        44,
+        69
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        50,
+        53
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        23,
+        69
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        3,
+        83
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        12,
+        119
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        7,
+        93
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        5,
+        57
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        6,
+        42
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        3,
+        19
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        3,
+        5
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        22,
+        5
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        48,
+        26
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        36,
+        35
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        32,
+        22
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        52,
+        9
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        53,
+        83
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        60,
+        77
+      ],
+      "type": "FUMAROLE"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        90,
+        64
+      ],
+      "type": "FUMAROLE"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        84,
+        13
+      ],
+      "type": "FUMAROLE"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        94,
+        118
+      ],
+      "type": "FUMAROLE"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        110,
+        83
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        109,
+        87
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        104,
+        87
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        109,
+        90
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        104,
+        90
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "extra": {
+        "bay0": 3145728,
+        "bay1": 2031616,
+        "bay2": 2293760,
+        "bay3": 2490368,
+        "bay4": 3801088,
+        "bay5": 1966080
+      },
+      "owner": 0,
+      "tile": [
+        105,
+        83
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        98,
+        79
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        72,
+        102
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        71,
+        106
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        66,
+        106
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        71,
+        109
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        66,
+        109
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "extra": {
+        "bay0": 3145728,
+        "bay1": 2031616,
+        "bay2": 2293760,
+        "bay3": 2490368,
+        "bay4": 3801088,
+        "bay5": 1966080
+      },
+      "owner": 1,
+      "tile": [
+        67,
+        102
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        72,
+        96
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        67,
+        28
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        66,
+        25
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        66,
+        22
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        61,
+        22
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        61,
+        25
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "extra": {
+        "bay0": 3145728,
+        "bay1": 2031616,
+        "bay2": 2293760,
+        "bay3": 2490368,
+        "bay4": 3801088,
+        "bay5": 1966080
+      },
+      "owner": 2,
+      "tile": [
+        62,
+        28
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        66,
+        34
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        109,
+        38
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        108,
+        35
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        108,
+        32
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        103,
+        32
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        103,
+        35
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "extra": {
+        "bay0": 3145728,
+        "bay1": 2031616,
+        "bay2": 2293760,
+        "bay3": 2490368,
+        "bay4": 3801088,
+        "bay5": 1966080
+      },
+      "owner": 3,
+      "tile": [
+        104,
+        38
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        100,
+        43
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 4,
+      "tile": [
+        33,
+        89
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "owner": 4,
+      "tile": [
+        32,
+        93
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "owner": 4,
+      "tile": [
+        27,
+        93
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "owner": 4,
+      "tile": [
+        32,
+        96
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "owner": 4,
+      "tile": [
+        27,
+        96
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "extra": {
+        "bay0": 3145728,
+        "bay1": 2031616,
+        "bay2": 2293760,
+        "bay3": 2490368,
+        "bay4": 3801088,
+        "bay5": 1966080
+      },
+      "owner": 4,
+      "tile": [
+        28,
+        89
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 4,
+      "tile": [
+        35,
+        86
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 5,
+      "tile": [
+        24,
+        49
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "owner": 5,
+      "tile": [
+        23,
+        46
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "owner": 5,
+      "tile": [
+        23,
+        43
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "owner": 5,
+      "tile": [
+        18,
+        43
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "owner": 5,
+      "tile": [
+        18,
+        46
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "extra": {
+        "bay0": 3145728,
+        "bay1": 2031616,
+        "bay2": 2293760,
+        "bay3": 2490368,
+        "bay4": 3801088,
+        "bay5": 1966080
+      },
+      "owner": 5,
+      "tile": [
+        19,
+        49
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 5,
+      "tile": [
+        28,
+        51
+      ],
+      "type": "TOWER_GUARD"
+    }
+  ],
+  "ticks": 100,
+  "triggers": [
+    {
+      "args": [
+        "1",
+        "1",
+        "\"NoResponseToTrigger\""
+      ],
+      "callback": "NoResponseToTrigger",
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 0,
+      "kind": "OnePlayerLeftTrigger",
+      "one_shot": true,
+      "period": 0,
+      "player": null,
+      "spec": "OnePlayerLeft",
+      "units": []
+    },
+    {
+      "args": [
+        "1",
+        "1",
+        "Trigger#0",
+        "\"Eliminate your opponents.\""
+      ],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 1,
+      "kind": "VictoryCondition",
+      "one_shot": true,
+      "period": 0,
+      "player": null,
+      "spec": {
+        "Victory": {
+          "linked": 0,
+          "objective": "Eliminate your opponents."
+        }
+      },
+      "units": [
+        0
+      ]
+    }
+  ],
+  "walls": []
+}

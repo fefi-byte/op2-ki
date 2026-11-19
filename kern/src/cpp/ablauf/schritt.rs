@@ -121,6 +121,7 @@ pub fn schritt(welt: &mut dyn Welt, z: &mut Zustand) {
     reparatur(welt, z, &l);          // beschaedigte Gebaeude reparieren
     seltenErz(welt, z, &l);          // vor erz(): reserviert den Robo-Miner fuer Seltenerz
     erz(welt, z, &l);
+    super::zweitbasis::schritt(welt, z, &l);   // zweite Basis an einem fernen Bakenfeld
     super::vorplan::planen(welt, z, &l);   // Bebauungsplan (Rust)
     anschluss(welt, z, &l);         // Roehren ueber die BuildingGroup
     vorhersageMelden(welt, z, &l);   // Techbaum-Vorhersage in die Spur (alle 10000 Ticks)

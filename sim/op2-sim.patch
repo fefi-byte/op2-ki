@@ -1,0 +1,401 @@
+diff --git a/tools/crates/op2-sim/src/combat.rs b/tools/crates/op2-sim/src/combat.rs
+index d5faf3d..153c068 100644
+--- a/tools/crates/op2-sim/src/combat.rs
++++ b/tools/crates/op2-sim/src/combat.rs
+@@ -1133,6 +1133,16 @@ impl Sim {
+             Some(g) => sim.issue_attack(i, CommandKind::Guard, g, 0),
+             None => sim.issue_attack(i, CommandKind::Guard, UnitId(0), 0),
+         };
++        // Lokale Aenderung (op2ki): an Attack whose target word was cleared (high word 0x7FFF, 0x43AA10) has its +0x48
++        // dword read as a ground target (bit 31 clear, 0x43D28A): a tile far off the map, out of range, so the order
++        // ends and the weapon's target goes with it (0x43D29C..0x43D2D0; mp2_05 seed 1 tick 30209; on4_03 seed 1
++        // tick 38528: tank 79, its weapon back on Mine 65 by its own search, drops it and doesn't fire).
++        if u.attack.is_none() && u.attack_tile.is_none() && u.cmd == CommandKind::Attack && !self.rules.stats(u.kind).structure {
++            let u = &mut self.units[i];
++            u.cmd = CommandKind::Nop;
++            u.target = None;
++            return;
++        }
+         let Some(t) = u.attack else { return };
+         // The target checks (0x43D323, before the structure branch at 0x43D36A, so a Guard Post's Attack too): dead,
+         // MapObject flag 0x400 (MoFlagCanBeDamaged) clear, or the weapon's effect already on it. Of the flag only a
+diff --git a/tools/crates/op2-sim/src/earthwork.rs b/tools/crates/op2-sim/src/earthwork.rs
+index 93c1971..eee0756 100644
+--- a/tools/crates/op2-sim/src/earthwork.rs
++++ b/tools/crates/op2-sim/src/earthwork.rs
+@@ -204,6 +204,13 @@ impl Sim {
+                 if u.motion.moving() {
+                     (u.motion.vx, u.motion.vy) = (0, 0);
+                     u.motion.drop_countdown();
++                } else {
++                    // Lokale Aenderung (op2ki, 2026-11-12): eine Drehung auf der Stelle, waehrend der der Auftrag kommt,
++                    // endet wie im Finished-Fall sofort. Gemessen mp2_08 Seed 1, Earthworker 11, BuildWall bei Tick
++                    // 1319 waehrend einer Move-Drehung: das Original bleibt bei Richtung 80 und dreht ab 1320 zur Mauer
++                    // zurueck (76, 72, 68, 64, Bau ab 1324); ohne das drehte op2-sim weiter auf 84 und wartete den
++                    // Drehzaehler ab (Bau ab 1328).
++                    u.motion.drop_countdown();
+                 }
+             }
+             Walk::Driving => u.action = Action::Move,
+@@ -549,7 +556,9 @@ impl Sim {
+         // to the tile of its group's earlier Move).
+         let u = &mut self.units[i];
+         u.goal = Some(goal);
+-        u.sidestep = None;
++        // Lokale Aenderung (op2ki, 2026-11-12): ein laufendes Ausweichen bleibt (PathContext-Wegpunkt -1). Gemessen
++        // mp4_12 Seed 3, Earthworker 53: zur Seite geschoben bei 17028 (Seitenkachel 231,91), BuildWall bei 17096
++        // -- das Original behaelt wp -1 und kehrt nach dem Ankommen bei 17204 zur Seitenkachel zurueck, statt zu bauen.
+         u.long_path.clear();
+         u.path_range = beside.then_some((x, y, BESIDE, false));
+         // The walk reads the request's found flag (+0x38, 0x40A10E): a search that doesn't reach the tile (or beside
+diff --git a/tools/crates/op2-sim/src/groups_building.rs b/tools/crates/op2-sim/src/groups_building.rs
+index 64d39ee..3224cef 100644
+--- a/tools/crates/op2-sim/src/groups_building.rs
++++ b/tools/crates/op2-sim/src/groups_building.rs
+@@ -435,6 +435,17 @@ impl Sim {
+         self.player_command(unit, command);
+     }
+ 
++    /// Lokale Aenderung (op2ki): a group's Produce is a packet through ProcessCommandPacket (0x42A4A0 -> 0x40E300), so
++    /// the repeat check of structure packets applies (0x40E87B..0x40E90D): a factory sent one within the last turns
++    /// drops it (mp2_11 seed 1 tick 19215: the rebuild's Guard Post kit, asked for every turn, isn't made with 1101
++    /// ore; the original makes it at 19512).
++    fn group_produce(&mut self, id: UnitId, kind: UnitKind, weapon: Option<crate::rules::WeaponKind>) -> bool {
++        if self.repeated_structure_packet(id) {
++            return false;
++        }
++        self.produce(id, kind, weapon)
++    }
++
+     /// BuildingGroup's update (vtable +0x34, 0x425C60).
+     pub(crate) fn building_update(&mut self, gi: usize) {
+         if self.groups.list[gi].members.is_empty() {
+@@ -579,7 +590,7 @@ impl Sim {
+                     self.groups.list[gi].members[k].issued = self.tick as i32;
+                 }
+                 let weapon = (want.weapon != 0).then(|| crate::rules::WeaponKind(want.weapon - 1));
+-                self.produce(id, rec.kind, weapon);
++                self.group_produce(id, rec.kind, weapon);
+             }
+             return false;
+         }
+@@ -620,7 +631,9 @@ impl Sim {
+             if let Some(k) = self.member_index(gi, id) {
+                 self.groups.list[gi].members[k].issued = self.tick as i32;
+             }
+-            self.transfer_cargo(id, bay as usize);
++            if !self.repeated_structure_packet(id) {
++                self.transfer_cargo(id, bay as usize);
++            }
+         }
+         false
+     }
+@@ -791,7 +804,7 @@ impl Sim {
+             if let Some(m) = self.member_index(gi, id) {
+                 self.groups.list[gi].members[m].issued = self.tick as i32;
+             }
+-            if self.produce(id, need, None) {
++            if self.group_produce(id, need, None) {
+                 self.groups.pending.push((id, group));
+             }
+             self.groups.list[gi].building.mines[k].miner = Some(id);
+@@ -1105,7 +1118,7 @@ impl Sim {
+                 if let Some(m) = self.member_index(gi, f) {
+                     self.groups.list[gi].members[m].issued = self.tick as i32;
+                 }
+-                if self.produce(f, kind, weapon) {
++                if self.group_produce(f, kind, weapon) {
+                     self.groups.pending.push((f, target_group));
+                 }
+             }
+diff --git a/tools/crates/op2-sim/src/packet.rs b/tools/crates/op2-sim/src/packet.rs
+index b1f5faa..de612af 100644
+--- a/tools/crates/op2-sim/src/packet.rs
++++ b/tools/crates/op2-sim/src/packet.rs
+@@ -799,7 +799,7 @@ impl Sim {
+     /// (the end of its command packet buffer), taken here to match nothing. So a Produce 8 to 15 ticks after a
+     /// TransferCargo to the same factory does nothing (CPS1_play tick 1512; fuzz seed 29's window 1556..1567 after a
+     /// packet at 1549).
+-    fn repeated_structure_packet(&mut self, id: UnitId) -> bool {
++    pub(crate) fn repeated_structure_packet(&mut self, id: UnitId) -> bool {
+         // The ring holds the packet's object index (MapObject +0x10), so a structure that took a freed index counts
+         // as the one before it.
+         let Some((owner, index)) = self.index_of(id).map(|i| (self.units[i].owner, u32::from(self.units[i].index))) else { return false };
+diff --git a/tools/crates/op2-sim/src/save.rs b/tools/crates/op2-sim/src/save.rs
+index d4c612c..49f3b66 100644
+--- a/tools/crates/op2-sim/src/save.rs
++++ b/tools/crates/op2-sim/src/save.rs
+@@ -540,6 +540,9 @@ fn write_unit(w: &mut Writer, u: &Unit) {
+         target_tile,
+         attack_tile,
+         busy,
++        busy_old_next: _,
++        stale_ctx: _,
++        ctx_keep: _,
+         pending,
+         alive,
+         removed,
+@@ -1066,6 +1069,9 @@ fn read_unit(r: &mut Reader) -> Result<Unit, SaveError> {
+         target_tile: r.opt(|r| r.pair("ground target"))?,
+         attack_tile: r.opt(|r| r.pair("ground attack"))?,
+         busy: r.b()?,
++        busy_old_next: None,
++        stale_ctx: None,
++        ctx_keep: false,
+         pending: r.opt(|r| {
+             let (x, y) = r.pair("pending goal")?;
+             Ok((x, y, r.i32("pending stop")?))
+diff --git a/tools/crates/op2-sim/src/sim.rs b/tools/crates/op2-sim/src/sim.rs
+index fa1e368..d99cafe 100644
+--- a/tools/crates/op2-sim/src/sim.rs
++++ b/tools/crates/op2-sim/src/sim.rs
+@@ -317,6 +317,17 @@ pub struct Unit {
+     pub attack_tile: Option<(i32, i32)>,
+     /// The order was (re)issued and the unit hasn't acted on it yet (MapObject isBusy).
+     pub busy: bool,
++    /// Lokale Aenderung (op2ki): der naechste Schritt des Pfads von vor einem noch wartenden Fahrbefehl. Bis zum Zug der
++    /// Einheit liest das Beiseiteschieben (0x44BCB0) im Original noch diesen Pfad.
++    /// Lokale Aenderung (op2ki): with an order waiting for the unit's turn, the old context's next step and whether
++    /// it was turning (the bump reads the old context until the turn, 0x44BCFE..0x44BD35).
++    pub busy_old_next: Option<(Option<Direction8>, bool)>,
++    /// Lokale Aenderung (op2ki): the active path context's waypoints (+0x34) while a path order's packet waits in
++    /// +0x38 for the unit's turn (0x423210, 0x44B640).
++    pub stale_ctx: Option<(Waypoints, u8, bool)>,
++    /// Lokale Aenderung (op2ki): the active path context's keep-trying flag (+0x34 bit 0), set by a path or Build
++    /// order's packet (0x423288, 0x423496) and taken in on its turn; a chase's or a freed context's is clear.
++    pub ctx_keep: bool,
+     /// An Attack order's path to plan when the unit acts on it: goal tile and stop range in tiles.
+     pub pending: Option<(i32, i32, i32)>,
+     /// Not destroyed (the game's dead flag, MoFlagDead): a dead unit no longer acts and is nobody's target.
+@@ -399,6 +410,7 @@ impl Unit {
+         self.frac = Unit::FRESH_FRAC;
+         self.kept_context = false;
+         self.sidestep_flag = false;
++        self.ctx_keep = false;
+     }
+ 
+     pub fn tile(&self) -> (i32, i32) {
+@@ -742,6 +754,11 @@ impl Sim {
+     }
+ 
+     /// A structure's dock tile (GetDockLocation 0x482F40), if it has one.
++    /// The highest object index handed out so far (OP2Map lastUsedUnitIndex, HFL +64). Local addition (op2ki).
++    pub fn last_index(&self) -> u16 {
++        self.indices.last
++    }
++
+     pub fn dock_tile_of(&self, id: UnitId) -> Option<(i32, i32)> {
+         self.index_of(id).and_then(|i| self.dock_tile(i))
+     }
+@@ -877,6 +894,9 @@ impl Sim {
+             target_tile: None,
+             attack_tile: None,
+             busy: false,
++            busy_old_next: None,
++            stale_ctx: None,
++            ctx_keep: false,
+             pending: None,
+             alive: true,
+             removed: false,
+@@ -1356,15 +1376,38 @@ impl Sim {
+                 }
+                 unit.release_pending = false;
+                 unit.goal = None;
++                // Lokale Aenderung (op2ki): a path order still waiting for its turn never swaps its context in: the
++                // Stop leaves the unit's own (+0x34) with its old waypoints (mp2_05 seed 1: tank 66, its group's Move
++                // to 65,59 at 28523 while driving and a Stop at 28527 before the tile centre, keeps waypoint 63,54 and
++                // drives back to it after a side-step at 35856).
++                if let Some((w, wp, keep)) = unit.stale_ctx.take() {
++                    (unit.waypoints, unit.wp, unit.ctx_keep) = (w, wp, keep);
++                }
+                 // Neither the Stop packet (0x40E57D) nor the Stop command (0x43AED2) touches the path context: its
+                 // waypoints stay, and a later nudge resumes them (`arrive_or_replan`; e07_win tick 7840).
+-                unit.motion.clear();
+-                unit.long_path.clear();
++                // Lokale Aenderung (op2ki, 2026-11-12): auch die Schritte bleiben. Gemessen mp2_08 Seed 1, Lynx 57: Stop
++                // einer FightGroup bei 25667, das Original behaelt steps "6" (rawPath) und wird deshalb nicht als
++                // festgefahren beiseitegeschoben; mit geleerten Schritten schob op2-sim ihn im selben Tick.
++                if std::env::var("OP2SIM_STOP_ALT").is_ok() {
++                    unit.motion.clear();
++                    unit.long_path.clear();
++                }
+             }
+             Command::Attack { target } => self.issue_attack(i, CommandKind::Attack, target, 0),
+             Command::AttackGround { tile } => self.issue_attack_tile(i, (tile[0], tile[1]), 0),
+             Command::Guard { target } => {
+                 // A Guard order on the unit itself is ignored (0x40FC83), as is one for an unarmed unit.
++                // Lokale Aenderung (op2ki): but the packet handler has already cleared the unit's targets (0x43AA10 at
++                // 0x40FC71: Attack, weapon and guard words to 0x7FFF), so a standing Attack ends at its next turn
++                // (mp2_05 seed 1 tick 30207: tank 54, its group's escort picks itself, target gone at 30208, Nop at
++                // 30209).
++                if target == id {
++                    let u = &mut self.units[i];
++                    if u.weapon.is_some() {
++                        (u.target, u.target_tile, u.guard, u.guarding) = (None, None, None, false);
++                    }
++                    u.attack = None;
++                }
+                 if target != id && self.units[i].weapon.is_some() && !self.rules.stats(self.units[i].kind).structure {
+                     self.issue_attack(i, CommandKind::Guard, target, 0);
+                 }
+@@ -1506,6 +1549,11 @@ impl Sim {
+             w.tile = self.terrain.waypoint_tile(w.tile);
+         }
+         let unit = &mut self.units[i];
++        // Lokale Aenderung (op2ki): the packet fills the second context (+0x38); the unit's own (+0x34) stays until
++        // its turn swaps them (0x44B640). A later packet before the turn overwrites +0x38 only.
++        if unit.stale_ctx.is_none() {
++            unit.stale_ctx = Some((unit.waypoints, unit.wp, unit.ctx_keep));
++        }
+         unit.waypoints = waypoints;
+         unit.wp = 0;
+         unit.patrol_loop = loop_to;
+@@ -1522,6 +1570,7 @@ impl Sim {
+     pub(crate) fn order_move(&mut self, i: usize, cmd: CommandKind, tile: (i32, i32), order: bool) {
+         let unit = &mut self.units[i];
+         let own = unit.cmd;
++        let old_turning = unit.motion.turn_step != 0;
+         unit.cmd = cmd;
+         unit.retry = 0;
+         // An order's packet makes a new context (0x423210 zeroes it); a nudge's path request reuses the unit's.
+@@ -1540,6 +1589,7 @@ impl Sim {
+         unit.sidestep = None;
+         unit.long_path.clear();
+         unit.path_range = None;
++        unit.busy_old_next = if order { Some((unit.motion.remaining().first().copied(), old_turning)) } else { None };
+         unit.busy = order;
+         unit.pending = None;
+         self.plan(i);
+@@ -1601,6 +1651,8 @@ impl Sim {
+         // is over (fuzz warfare seed 104, run fuzz_scatter_emped).
+         let frozen = self.units[i].action == Action::ObjFroze && self.units[i].status.emped();
+         self.units[i].busy = false;
++        self.units[i].stale_ctx = None;
++        self.units[i].ctx_keep = true;
+         let u = &mut self.units[i];
+         if !u.motion.moving() {
+             self.fresh_path_context(i);
+@@ -1622,6 +1674,12 @@ impl Sim {
+         // the same group processed before it have already set off (oracle `gm_rcc_nine`), and a unit given an order
+         // in the same tick may now be docking, which makes it an obstacle (p01_win, truck 37 at tick 12).
+         self.units[i].long_path.clear();
++        // Lokale Aenderung (op2ki): a side-step taken before the turn was written into the old path context, which the
++        // order's context replaces now (0x44B640 frees +0x34 and moves the packet's +0x38 there): it is gone
++        // (mp2_05 seed 1 tick 25911: tank 67, re-ordered by its group and sent aside by tank 59 before its turn,
++        // drives its order's path and pushes 59 aside instead).
++        self.units[i].sidestep = None;
++        self.units[i].sidestep_flag = false;
+         self.plan(i);
+         // Already within range of a waypoint that isn't the last (a patrol starting on its first point): on to the
+         // next one at once (Vehicle::Move's test 0x44BFD0; oracle `grp_patrol`).
+@@ -1764,6 +1822,7 @@ impl Sim {
+         unit.goal = Some(t);
+         unit.waypoints = Waypoints::to([t.0, t.1]);
+         unit.wp = 0;
++        unit.ctx_keep = false;
+         unit.sidestep = None;
+         unit.long_path.clear();
+         let direct = unit.weapon.is_some_and(|w| !self.rules.weapon(w).indirect);
+@@ -1901,6 +1960,9 @@ impl Sim {
+         while k < self.order.len() {
+             match self.order[k] {
+                 Obj::Unit(i) if self.units[i].alive => {
++                    if std::env::var("OP2SIM_BUMP").is_ok() && [57u16, 58, 59, 63, 70, 21, 24].contains(&self.units[i].index) {
++                        eprintln!("order tick {} k {} unit {} py {}", self.tick, k, self.units[i].index, self.units[i].py);
++                    }
+                     self.cursor = k;
+                     self.chase_stood = None;
+                     self.process_commands(i);
+@@ -2569,7 +2631,10 @@ impl Sim {
+     /// (an Attack's or Guard's chase: notes/uncertain-claims.md).
+     fn sidestep_over(&mut self, i: usize) {
+         let u = &self.units[i];
+-        let kept_build = u.cmd == CommandKind::Nop && u.kept_context;
++        // Lokale Aenderung (op2ki): an idle unit whose context still holds a waypoint goes back to it too, whatever
++        // kept it (mp2_05 seed 1 tick 23141: tank 67, command Nop with its finished Move's waypoint 62,58 still in the
++        // context and a nudge's destination 61,59, side-stepped to 61,58, plans to 62,58).
++        let kept_build = u.cmd == CommandKind::Nop && (u.kept_context || u.waypoints.as_slice().get(u.wp as usize).is_some());
+         let earthwork = matches!(u.cmd, CommandKind::Doze | CommandKind::BuildWall);
+         if u.cmd != CommandKind::Move && !kept_build && !earthwork {
+             return;
+@@ -2695,7 +2760,12 @@ impl Sim {
+                     CommandKind::Move | CommandKind::StandGround | CommandKind::Patrol | CommandKind::Build
+                 ))
+             // A nudge of an idle unit reuses a finished Build's context, flag and all (`Unit::kept_context`).
+-            || (unit.cmd == CommandKind::Nop && unit.kept_context);
++            || (unit.cmd == CommandKind::Nop && unit.kept_context)
++            // Lokale Aenderung (op2ki): so does an idle unit whose Move context is still there, waypoint and all (its
++            // flags keep bit 0; mp2_05 seed 1 tick 23181: tank 67, back from a side-step, finds 62,58 taken by a truck
++            // and retries, one draw at 0x44C361). Only the flag counts: a Spider's finished repair walk leaves its
++            // waypoint with the flag clear and gives up (mp2_08 seed 1 tick 19884: Spider 49).
++            || (unit.cmd == CommandKind::Nop && unit.ctx_keep && unit.waypoints.as_slice().get(unit.wp as usize).is_some());
+         // The original's Move handler has no re-plan count: it asks for a path again whenever the last one runs out or
+         // is blocked, and gives up only when the request finds none (0x44C284..0x44C31A; e08 tick 31545: a rail Lynx's
+         // chase, on its eighth re-plan and blocked by the Lynx ahead of it, drives on).
+@@ -3013,6 +3083,9 @@ impl Sim {
+             return;
+         }
+         let back = (mover_dir + 4) & 7;
++        if std::env::var("OP2SIM_BUMP").is_ok() {
++            eprintln!("bump? tick {} blocker {} act {:?} rem {:?} moving {} turn {} sideflag {} back {}", self.tick, b.index, b.action, b.motion.remaining(), b.motion.moving(), b.motion.turn_step, b.sidestep_flag, back);
++        }
+         match b.action {
+             Action::ObjWait
+             | Action::Develop
+@@ -3035,7 +3108,16 @@ impl Sim {
+                 if b.sidestep_flag {
+                     return;
+                 }
+-                if b.motion.remaining().first().is_some_and(|&next| next != back) {
++                // Lokale Aenderung (op2ki, 2026-11-12): wartet ein Fahrbefehl noch auf den Zug der Einheit, zaehlt der
++                // Schritt des alten Pfads. Gemessen mp2_05 Seed 1, Lynx 65: Gruppen-Move bei 23075, Lynx 67 (vor 65 an
++                // der Reihe) schiebt ihn im Original nicht beiseite (alter Pfad "6"), op2-sim tat es mit dem neuen ("700").
++                // Ebenso eine Drehung, die der Befehl erst auf dem Zug beendet (mp2_05 Seed 1 Tick 24163: Lynx 65 dreht
++                // nach Norden, neuer KI-Befehl, im Original nicht beiseitegeschoben).
++                if b.busy && b.busy_old_next.is_some_and(|(_, turning)| turning) {
++                    return;
++                }
++                let next = match b.busy_old_next { Some((old, _)) if b.busy => old, _ => b.motion.remaining().first().copied() };
++                if next.is_some_and(|next| next != back) {
+                     return;
+                 }
+             }
+@@ -3066,10 +3148,16 @@ impl Sim {
+             if after_next == Some(d) {
+                 score = score * 3 / 2;
+             }
++            if std::env::var("OP2SIM_BUMP").is_ok() {
++                eprintln!("  kand d {} ({},{}) speed {} score {} occ {:?}", d, x, y, speed, score, self.occupying(x, y).map(|o| (self.units[o].index, self.units[o].action, self.units[o].motion.moving(), self.units[o].motion.turn_step)));
++            }
+             if best.is_none_or(|(s, _, _)| score < s) {
+                 best = Some((score, d, (x, y)));
+             }
+         }
++        if std::env::var("OP2SIM_BUMP").is_ok() {
++            eprintln!("bump tick {} blocker {} act {:?} mover_dir {} back {} next {:?} best {:?}", self.tick, self.units[blocker].index, self.units[blocker].action, mover_dir, back, mover_next, best);
++        }
+         let Some((_, dir, (x, y))) = best else { return };
+         let unit = &mut self.units[blocker];
+         if unit.action == Action::Done && unit.busy {
+diff --git a/tools/crates/op2-sim/src/works.rs b/tools/crates/op2-sim/src/works.rs
+index ecec592..e3645a7 100644
+--- a/tools/crates/op2-sim/src/works.rs
++++ b/tools/crates/op2-sim/src/works.rs
+@@ -119,6 +119,17 @@ impl Sim {
+ 
+     /// Train scientists at a University (packet 0x40F43D): it must be enabled and free. The class counts as workers
+     /// until it graduates after the University's training time (storage capacity, 5000 ticks; halved in multiplayer).
++    /// HFL UnitEx::SetLabScientistCount: das Team eines forschenden Labors aendern (+0x64), Fortschritt bleibt.
++    /// (Lokale Ergaenzung fuer die op2ki-Bruecke.)
++    pub fn set_lab_team(&mut self, id: UnitId, n: i32) -> bool {
++        let Some(i) = self.idx(id) else { return false };
++        if self.units[i].cmd != CommandKind::Research { return false; }
++        self.units[i].eco.slot64 = n.max(1);
++        let o = self.units[i].owner;
++        self.colony_mut(o).recalc = true;
++        true
++    }
++
+     pub fn train_scientists(&mut self, id: UnitId, students: i32) -> bool {
+         let Some(i) = self.idx(id) else { return false };
+         if self.units[i].cmd != CommandKind::Nop || !self.is_enabled(i) {

@@ -1,0 +1,578 @@
+{
+  "disasters": [],
+  "groups": [
+    {
+      "args": [],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 0,
+      "kind": "FightGroup",
+      "one_shot": false,
+      "period": 0,
+      "player": 2,
+      "units": []
+    },
+    {
+      "args": [],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 1,
+      "kind": "FightGroup",
+      "one_shot": false,
+      "period": 0,
+      "player": 3,
+      "units": []
+    },
+    {
+      "args": [],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 2,
+      "kind": "FightGroup",
+      "one_shot": false,
+      "period": 0,
+      "player": 4,
+      "units": []
+    },
+    {
+      "args": [],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 3,
+      "kind": "FightGroup",
+      "one_shot": false,
+      "period": 0,
+      "player": 5,
+      "units": []
+    }
+  ],
+  "map": "mp2_08.map",
+  "mapEdits": [
+    "InitialSetTile((42,9), 3)",
+    "InitialSetTile((42,10), 13)",
+    "InitialSetTile((43,9), 13)",
+    "InitialSetTile((43,10), 3)",
+    "InitialSetTile((43,11), 13)",
+    "InitialSetTile((44,11), 3)",
+    "InitialSetTile((44,12), 13)",
+    "InitialSetTile((84,49), 9)",
+    "InitialSetTile((85,49), 9)",
+    "InitialSetTile((87,50), 13)",
+    "InitialSetTile((87,51), 9)",
+    "InitialSetTile((88,50), 9)",
+    "InitialSetTile((88,51), 13)"
+  ],
+  "messages": [],
+  "mission": {
+    "level_desc": "2 Player, LastOne, 'Ambush Alley' map.",
+    "map_name": "mp2_08.map",
+    "max_tech_level": 12,
+    "mission_type": -8,
+    "num_players": 2,
+    "techtree_name": "MULTITEK.TXT",
+    "unit_mission": false
+  },
+  "note": "recorded from ml2_08.dll InitProc by op2-missionhost",
+  "options": {
+    "ForceMoraleGood": "-1",
+    "SetCheatFastProduction": "0",
+    "SetCheatFastUnits": "0",
+    "SetCheatProduceAll": "0",
+    "SetCheatUnlimitedResources": "0",
+    "SetDaylightEverywhere": "0"
+  },
+  "players": [
+    {
+      "allies": [],
+      "color": 1,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": true,
+      "food": 3000,
+      "human": true,
+      "id": 0,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        40,
+        10
+      ],
+      "workers": 27
+    },
+    {
+      "allies": [],
+      "color": 2,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": true,
+      "food": 3000,
+      "human": true,
+      "id": 1,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        90,
+        53
+      ],
+      "workers": 27
+    }
+  ],
+  "seed": 1,
+  "spawn": [
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        7,
+        4
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        8,
+        5
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        2,
+        12
+      ],
+      "type": "WALL_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        6,
+        8
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        6,
+        8
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        6,
+        8
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        3,
+        16
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        6,
+        16
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        7,
+        15
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        55,
+        53
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        56,
+        54
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        61,
+        54
+      ],
+      "type": "WALL_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        55,
+        51
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        55,
+        51
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        55,
+        51
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        62,
+        58
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        61,
+        61
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        62,
+        61
+      ],
+      "type": "BIG_TRUCK"
+    }
+  ],
+  "structures": [
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 0
+      },
+      "owner": 6,
+      "tile": [
+        18,
+        3
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 0
+      },
+      "owner": 6,
+      "tile": [
+        39,
+        60
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        14,
+        56
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        42,
+        13
+      ],
+      "type": "BEACON"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        8,
+        10
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        5,
+        14
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "extra": {
+        "bay0": 3801088,
+        "bay1": 2293760,
+        "bay2": 2490368,
+        "bay3": 3145728,
+        "bay4": 2031616,
+        "bay5": 1966080
+      },
+      "owner": 0,
+      "tile": [
+        5,
+        6
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        9,
+        7
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        4,
+        10
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        13,
+        15
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        58,
+        53
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        52,
+        60
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        60,
+        59
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "extra": {
+        "bay0": 3801088,
+        "bay1": 2293760,
+        "bay2": 2490368,
+        "bay3": 3145728,
+        "bay4": 2031616,
+        "bay5": 1966080
+      },
+      "owner": 1,
+      "tile": [
+        53,
+        50
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        57,
+        50
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        58,
+        56
+      ],
+      "type": "LAB_STANDARD"
+    }
+  ],
+  "ticks": 100,
+  "triggers": [
+    {
+      "args": [
+        "1",
+        "1",
+        "\"NoResponseToTrigger\""
+      ],
+      "callback": "NoResponseToTrigger",
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 4,
+      "kind": "OnePlayerLeftTrigger",
+      "one_shot": true,
+      "period": 0,
+      "player": null,
+      "spec": "OnePlayerLeft",
+      "units": []
+    },
+    {
+      "args": [
+        "1",
+        "1",
+        "Trigger#4",
+        "\"Eliminate your opponents.\""
+      ],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 5,
+      "kind": "VictoryCondition",
+      "one_shot": true,
+      "period": 0,
+      "player": null,
+      "spec": {
+        "Victory": {
+          "linked": 4,
+          "objective": "Eliminate your opponents."
+        }
+      },
+      "units": [
+        4
+      ]
+    }
+  ],
+  "walls": [
+    {
+      "tile": [
+        4,
+        12
+      ],
+      "type": "TUBE"
+    }
+  ]
+}

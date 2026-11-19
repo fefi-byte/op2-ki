@@ -1,0 +1,1033 @@
+{
+  "disasters": [],
+  "groups": [
+    {
+      "args": [],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 0,
+      "kind": "FightGroup",
+      "one_shot": false,
+      "period": 0,
+      "player": 2,
+      "units": []
+    },
+    {
+      "args": [],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 1,
+      "kind": "FightGroup",
+      "one_shot": false,
+      "period": 0,
+      "player": 3,
+      "units": []
+    },
+    {
+      "args": [],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 2,
+      "kind": "FightGroup",
+      "one_shot": false,
+      "period": 0,
+      "player": 4,
+      "units": []
+    },
+    {
+      "args": [],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 3,
+      "kind": "FightGroup",
+      "one_shot": false,
+      "period": 0,
+      "player": 5,
+      "units": []
+    }
+  ],
+  "map": "mp2_11.map",
+  "mapEdits": [],
+  "messages": [],
+  "mission": {
+    "level_desc": "2 Player, LastOne, 'Labyrinth' map.",
+    "map_name": "mp2_11.map",
+    "max_tech_level": 12,
+    "mission_type": -8,
+    "num_players": 2,
+    "techtree_name": "MULTITEK.TXT",
+    "unit_mission": false
+  },
+  "note": "recorded from ml2_11.dll InitProc by op2-missionhost",
+  "options": {
+    "ForceMoraleGood": "-1",
+    "SetCheatFastProduction": "0",
+    "SetCheatFastUnits": "0",
+    "SetCheatProduceAll": "0",
+    "SetCheatUnlimitedResources": "0",
+    "SetDaylightEverywhere": "0"
+  },
+  "players": [
+    {
+      "allies": [],
+      "color": 1,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": true,
+      "food": 3000,
+      "human": true,
+      "id": 0,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        37,
+        15
+      ],
+      "workers": 27
+    },
+    {
+      "allies": [],
+      "color": 2,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": true,
+      "food": 3000,
+      "human": true,
+      "id": 1,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        144,
+        115
+      ],
+      "workers": 27
+    }
+  ],
+  "seed": 1,
+  "spawn": [
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        5,
+        10
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        5,
+        8
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        8,
+        10
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        8,
+        10
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        8,
+        10
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        8,
+        4
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        11,
+        1
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        14,
+        14
+      ],
+      "type": "WALL_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        102,
+        109
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        105,
+        105
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        122,
+        109
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        120,
+        105
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        108,
+        120
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        108,
+        120
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        108,
+        120
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        112,
+        106
+      ],
+      "type": "WALL_TRUCK"
+    }
+  ],
+  "structures": [
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        36,
+        4
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        88,
+        122
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        33,
+        112
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        9,
+        70
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        54,
+        63
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        115,
+        33
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        95,
+        15
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        64,
+        87
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        50,
+        116
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        72,
+        14
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        51,
+        50
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        89,
+        65
+      ],
+      "type": "BEACON"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        5,
+        15
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        15,
+        2
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "extra": {
+        "bay0": 3801088,
+        "bay1": 2293760,
+        "bay2": 2490368,
+        "bay3": 3145728,
+        "bay4": 2031616,
+        "bay5": 1966080
+      },
+      "owner": 0,
+      "tile": [
+        16,
+        9
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        16,
+        19
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        15,
+        27
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        6,
+        24
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        112,
+        115
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        120,
+        119
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        104,
+        119
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "extra": {
+        "bay0": 3801088,
+        "bay1": 2293760,
+        "bay2": 2490368,
+        "bay3": 3145728,
+        "bay4": 2031616,
+        "bay5": 1966080
+      },
+      "owner": 1,
+      "tile": [
+        107,
+        108
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        118,
+        108
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        115,
+        102
+      ],
+      "type": "TOKAMAK"
+    }
+  ],
+  "ticks": 100,
+  "triggers": [
+    {
+      "args": [
+        "1",
+        "1",
+        "\"NoResponseToTrigger\""
+      ],
+      "callback": "NoResponseToTrigger",
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 4,
+      "kind": "OnePlayerLeftTrigger",
+      "one_shot": true,
+      "period": 0,
+      "player": null,
+      "spec": "OnePlayerLeft",
+      "units": []
+    },
+    {
+      "args": [
+        "1",
+        "1",
+        "Trigger#4",
+        "\"Eliminate your opponents.\""
+      ],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 5,
+      "kind": "VictoryCondition",
+      "one_shot": true,
+      "period": 0,
+      "player": null,
+      "spec": {
+        "Victory": {
+          "linked": 4,
+          "objective": "Eliminate your opponents."
+        }
+      },
+      "units": [
+        4
+      ]
+    }
+  ],
+  "walls": [
+    {
+      "tile": [
+        8,
+        15
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        9,
+        15
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        10,
+        15
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        11,
+        15
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        12,
+        15
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        13,
+        15
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        14,
+        15
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        15,
+        4
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        15,
+        5
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        15,
+        6
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        15,
+        7
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        15,
+        15
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        16,
+        12
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        16,
+        13
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        16,
+        14
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        16,
+        15
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        16,
+        16
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        16,
+        17
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        16,
+        22
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        16,
+        23
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        16,
+        24
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        16,
+        24
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        16,
+        25
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        104,
+        115
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        104,
+        116
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        104,
+        117
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        105,
+        115
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        106,
+        111
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        106,
+        112
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        106,
+        113
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        106,
+        114
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        106,
+        115
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        107,
+        111
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        107,
+        115
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        108,
+        115
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        109,
+        115
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        110,
+        108
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        110,
+        115
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        111,
+        108
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        112,
+        108
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        113,
+        108
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        114,
+        108
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        115,
+        108
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        115,
+        115
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        116,
+        115
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        117,
+        115
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        118,
+        111
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        118,
+        115
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        119,
+        111
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        119,
+        112
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        119,
+        113
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        119,
+        114
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        119,
+        115
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        120,
+        115
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        120,
+        116
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        120,
+        117
+      ],
+      "type": "TUBE"
+    }
+  ]
+}

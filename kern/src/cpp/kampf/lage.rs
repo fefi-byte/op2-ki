@@ -13,6 +13,24 @@ pub fn rueckzugPruefen(welt: &mut dyn Welt, z: &mut Zustand, wache: Gruppe) {
     if k == 0 { return; }
     let (mut nah, mut alle, mut e, mut d) = (0, 0, 0, 0);
     kontaktStaerken(welt, z, mx / k, my / k, &mut nah, &mut alle, &mut e, &mut d);
+    // Zwei getrennte Haelften (zwei Wege) -- der gemeinsame Schwerpunkt liegt zwischen ihnen (oft hinter Felsen).
+    // Je Haelfte am eigenen Schwerpunkt messen; eigene Staerke zusammen, Abwehr die groessere der beiden.
+    if z.aufmarsch2X != 0 && z.angriff2An != 0 {
+        let schwer = |welt: &mut dyn Welt, g: Gruppe| -> Option<(i32, i32)> {
+            let (mut sx, mut sy, mut n) = (0, 0, 0);
+            for v in welt.GroupEnumerator(g) { if welt.IsLive(v) && welt.IsVehicle(v) { let l = welt.Location(v); sx += l.x; sy += l.y; n += 1; } }
+            if n == 0 { None } else { Some((sx / n, sy / n)) }
+        };
+        if let (Some(c1), Some(c2)) = (schwer(welt, z.angriff), schwer(welt, z.angriff2)) {
+            if abstand2(welt, c1.0, c1.1, c2.0, c2.1) > 24 * 24 {
+                let (mut n1, mut a1, mut e1, mut d1) = (0, 0, 0, 0);
+                let (mut n2, mut a2, mut e2, mut d2) = (0, 0, 0, 0);
+                kontaktStaerken(welt, z, c1.0, c1.1, &mut n1, &mut a1, &mut e1, &mut d1);
+                kontaktStaerken(welt, z, c2.0, c2.1, &mut n2, &mut a2, &mut e2, &mut d2);
+                alle = a1; e = e1 + e2; d = d1.max(d2);
+            }
+        }
+    }
     if d <= 0 || e as f64 >= d as f64 * PAR(z.spieler).rueckzugAb { return; }
     z.bilRueck = 1;
     let mut raus = [0 as Id; 64]; let mut n = 0usize;

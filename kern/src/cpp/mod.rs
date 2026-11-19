@@ -17,6 +17,10 @@ pub mod vorplan;
 pub mod gefecht;
 pub mod gefecht_netz;
 pub mod paarung;
+pub mod mauer;
+pub mod gelaende;
+pub mod parallel;
+pub mod zweitbasis;
 pub mod ablauf;
 
 // Alle Module sehen einander (wie ein C++-Namensraum).

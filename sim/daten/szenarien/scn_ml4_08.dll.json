@@ -1,0 +1,1267 @@
+{
+  "disasters": [],
+  "groups": [
+    {
+      "args": [],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 0,
+      "kind": "FightGroup",
+      "one_shot": false,
+      "period": 0,
+      "player": 4,
+      "units": []
+    },
+    {
+      "args": [],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 1,
+      "kind": "FightGroup",
+      "one_shot": false,
+      "period": 0,
+      "player": 5,
+      "units": []
+    }
+  ],
+  "map": "mp4_08.map",
+  "mapEdits": [],
+  "messages": [],
+  "mission": {
+    "level_desc": "4 Player, LastOne, 'The Rift' map.",
+    "map_name": "mp4_08.map",
+    "max_tech_level": 12,
+    "mission_type": -8,
+    "num_players": 4,
+    "techtree_name": "MULTITEK.TXT",
+    "unit_mission": false
+  },
+  "note": "recorded from ml4_08.dll InitProc by op2-missionhost",
+  "options": {
+    "ForceMoraleGood": "-1",
+    "SetCheatFastProduction": "0",
+    "SetCheatFastUnits": "0",
+    "SetCheatProduceAll": "0",
+    "SetCheatUnlimitedResources": "0",
+    "SetDaylightEverywhere": "0"
+  },
+  "players": [
+    {
+      "allies": [],
+      "color": 1,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": true,
+      "food": 3000,
+      "human": true,
+      "id": 0,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        265,
+        92
+      ],
+      "workers": 27
+    },
+    {
+      "allies": [],
+      "color": 2,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": true,
+      "food": 3000,
+      "human": true,
+      "id": 1,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        57,
+        49
+      ],
+      "workers": 27
+    },
+    {
+      "allies": [],
+      "color": 3,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": false,
+      "food": 3000,
+      "human": true,
+      "id": 2,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        88,
+        28
+      ],
+      "workers": 27
+    },
+    {
+      "allies": [],
+      "color": 4,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": true,
+      "food": 3000,
+      "human": true,
+      "id": 3,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        195,
+        99
+      ],
+      "workers": 27
+    }
+  ],
+  "seed": 1,
+  "spawn": [
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        232,
+        86
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        233,
+        87
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        227,
+        94
+      ],
+      "type": "WALL_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        231,
+        90
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        231,
+        90
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        231,
+        90
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        228,
+        98
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        231,
+        98
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        232,
+        97
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        25,
+        52
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        26,
+        51
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        26,
+        53
+      ],
+      "type": "WALL_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        32,
+        48
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        32,
+        48
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        32,
+        48
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        32,
+        54
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        31,
+        52
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        32,
+        51
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        59,
+        33
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        60,
+        32
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        62,
+        31
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        55,
+        33
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        55,
+        33
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        55,
+        33
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        51,
+        24
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        52,
+        25
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        53,
+        25
+      ],
+      "type": "WALL_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        163,
+        102
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        164,
+        101
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        164,
+        103
+      ],
+      "type": "WALL_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        170,
+        98
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        170,
+        98
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        170,
+        98
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        170,
+        104
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        169,
+        102
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        170,
+        101
+      ],
+      "type": "BIG_TRUCK"
+    }
+  ],
+  "structures": [
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        114,
+        78
+      ],
+      "type": "MAGMA_VENT"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        135,
+        58
+      ],
+      "type": "MAGMA_VENT"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        115,
+        88
+      ],
+      "type": "MAGMA_VENT"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        131,
+        18
+      ],
+      "type": "MAGMA_VENT"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        170,
+        5
+      ],
+      "type": "MAGMA_VENT"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        80,
+        124
+      ],
+      "type": "MAGMA_VENT"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        77,
+        89
+      ],
+      "type": "MAGMA_VENT"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        106,
+        98
+      ],
+      "type": "FUMAROLE"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        111,
+        112
+      ],
+      "type": "FUMAROLE"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        138,
+        43
+      ],
+      "type": "FUMAROLE"
+    },
+    {
+      "extra": {
+        "oreType": -1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        128,
+        2
+      ],
+      "type": "FUMAROLE"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        182,
+        84
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        189,
+        118
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        70,
+        33
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        44,
+        56
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        69,
+        25
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        32,
+        107
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        154,
+        125
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        166,
+        50
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        99,
+        41
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        25,
+        93
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        107,
+        121
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        242,
+        28
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        60,
+        3
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        85,
+        83
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        121,
+        82
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        208,
+        72
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        119,
+        7
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        7,
+        78
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        117,
+        101
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        188,
+        74
+      ],
+      "type": "BEACON"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        236,
+        78
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        233,
+        92
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        230,
+        96
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "extra": {
+        "bay0": 3801088,
+        "bay1": 2293760,
+        "bay2": 2490368,
+        "bay3": 3145728,
+        "bay4": 2031616,
+        "bay5": 1966080
+      },
+      "owner": 0,
+      "tile": [
+        230,
+        88
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        234,
+        89
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        229,
+        92
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        238,
+        97
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        22,
+        70
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        25,
+        49
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        22,
+        56
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        30,
+        50
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "extra": {
+        "bay0": 3801088,
+        "bay1": 2293760,
+        "bay2": 2490368,
+        "bay3": 3145728,
+        "bay4": 2031616,
+        "bay5": 1966080
+      },
+      "owner": 1,
+      "tile": [
+        30,
+        46
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        29,
+        54
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        25,
+        46
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        63,
+        15
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        56,
+        28
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "extra": {
+        "bay0": 3801088,
+        "bay1": 2293760,
+        "bay2": 2490368,
+        "bay3": 3145728,
+        "bay4": 2031616,
+        "bay5": 1966080
+      },
+      "owner": 2,
+      "tile": [
+        53,
+        31
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        58,
+        31
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        52,
+        28
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        60,
+        28
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        61,
+        22
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        162,
+        114
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        163,
+        99
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        160,
+        106
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        168,
+        100
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "extra": {
+        "bay0": 3801088,
+        "bay1": 2293760,
+        "bay2": 2490368,
+        "bay3": 3145728,
+        "bay4": 2031616,
+        "bay5": 1966080
+      },
+      "owner": 3,
+      "tile": [
+        168,
+        96
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        167,
+        104
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        163,
+        96
+      ],
+      "type": "AGRIDOME"
+    }
+  ],
+  "ticks": 100,
+  "triggers": [
+    {
+      "args": [
+        "1",
+        "1",
+        "\"NoResponseToTrigger\""
+      ],
+      "callback": "NoResponseToTrigger",
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 2,
+      "kind": "OnePlayerLeftTrigger",
+      "one_shot": true,
+      "period": 0,
+      "player": null,
+      "spec": "OnePlayerLeft",
+      "units": []
+    },
+    {
+      "args": [
+        "1",
+        "1",
+        "Trigger#2",
+        "\"Eliminate your opponents.\""
+      ],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 3,
+      "kind": "VictoryCondition",
+      "one_shot": true,
+      "period": 0,
+      "player": null,
+      "spec": {
+        "Victory": {
+          "linked": 2,
+          "objective": "Eliminate your opponents."
+        }
+      },
+      "units": [
+        2
+      ]
+    }
+  ],
+  "walls": [
+    {
+      "tile": [
+        229,
+        94
+      ],
+      "type": "TUBE"
+    }
+  ]
+}

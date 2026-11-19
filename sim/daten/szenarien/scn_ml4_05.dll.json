@@ -1,0 +1,1967 @@
+{
+  "disasters": [],
+  "groups": [
+    {
+      "args": [],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 0,
+      "kind": "FightGroup",
+      "one_shot": false,
+      "period": 0,
+      "player": 4,
+      "units": []
+    },
+    {
+      "args": [],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 1,
+      "kind": "FightGroup",
+      "one_shot": false,
+      "period": 0,
+      "player": 5,
+      "units": []
+    }
+  ],
+  "map": "mp4_05.map",
+  "mapEdits": [
+    "SetLavaPossible((205,88), 1)",
+    "SetLavaPossible((205,89), 1)",
+    "SetLavaPossible((206,88), 1)",
+    "SetLavaPossible((206,89), 1)",
+    "SetLavaPossible((206,90), 1)",
+    "SetLavaPossible((206,91), 1)",
+    "SetLavaPossible((207,87), 1)",
+    "SetLavaPossible((207,88), 1)",
+    "SetLavaPossible((207,89), 1)",
+    "SetLavaPossible((207,90), 1)",
+    "SetLavaPossible((207,91), 1)",
+    "SetLavaPossible((208,87), 1)",
+    "SetLavaPossible((208,88), 1)",
+    "SetLavaPossible((208,89), 1)",
+    "SetLavaPossible((208,90), 1)",
+    "SetLavaPossible((208,91), 1)",
+    "SetLavaPossible((209,87), 1)",
+    "SetLavaPossible((209,88), 1)",
+    "SetLavaPossible((209,89), 1)",
+    "SetLavaPossible((209,90), 1)",
+    "SetLavaPossible((209,91), 1)",
+    "SetLavaPossible((209,92), 1)",
+    "SetLavaPossible((210,87), 1)",
+    "SetLavaPossible((210,88), 1)",
+    "SetLavaPossible((210,89), 1)",
+    "SetLavaPossible((210,90), 1)",
+    "SetLavaPossible((210,91), 1)",
+    "SetLavaPossible((210,92), 1)",
+    "SetLavaPossible((210,93), 1)",
+    "SetLavaPossible((211,87), 1)",
+    "SetLavaPossible((211,88), 1)",
+    "SetLavaPossible((211,89), 1)",
+    "SetLavaPossible((211,90), 1)",
+    "SetLavaPossible((211,91), 1)",
+    "SetLavaPossible((211,92), 1)",
+    "SetLavaPossible((211,93), 1)",
+    "SetLavaPossible((211,94), 1)",
+    "SetLavaPossible((212,86), 1)",
+    "SetLavaPossible((212,87), 1)",
+    "SetLavaPossible((212,88), 1)",
+    "SetLavaPossible((212,89), 1)",
+    "SetLavaPossible((212,90), 1)",
+    "SetLavaPossible((212,91), 1)",
+    "SetLavaPossible((212,92), 1)",
+    "SetLavaPossible((212,93), 1)",
+    "SetLavaPossible((212,94), 1)",
+    "SetLavaPossible((213,85), 1)",
+    "SetLavaPossible((213,86), 1)",
+    "SetLavaPossible((213,87), 1)",
+    "SetLavaPossible((213,88), 1)",
+    "SetLavaPossible((213,89), 1)",
+    "SetLavaPossible((213,91), 1)",
+    "SetLavaPossible((213,92), 1)",
+    "SetLavaPossible((213,93), 1)",
+    "SetLavaPossible((214,85), 1)",
+    "SetLavaPossible((214,86), 1)",
+    "SetLavaPossible((214,87), 1)",
+    "SetLavaPossible((214,88), 1)",
+    "SetLavaPossible((214,89), 1)",
+    "SetLavaPossible((215,84), 1)",
+    "SetLavaPossible((215,85), 1)",
+    "SetLavaPossible((215,86), 1)",
+    "SetLavaPossible((215,87), 1)",
+    "SetLavaPossible((215,88), 1)",
+    "SetLavaPossible((216,81), 1)",
+    "SetLavaPossible((216,82), 1)",
+    "SetLavaPossible((216,84), 1)",
+    "SetLavaPossible((216,85), 1)",
+    "SetLavaPossible((216,86), 1)",
+    "SetLavaPossible((216,87), 1)",
+    "SetLavaPossible((216,88), 1)",
+    "SetLavaPossible((217,81), 1)",
+    "SetLavaPossible((217,82), 1)",
+    "SetLavaPossible((217,83), 1)",
+    "SetLavaPossible((217,84), 1)",
+    "SetLavaPossible((217,85), 1)",
+    "SetLavaPossible((217,86), 1)",
+    "SetLavaPossible((217,87), 1)",
+    "SetLavaPossible((218,75), 1)",
+    "SetLavaPossible((218,76), 1)",
+    "SetLavaPossible((218,77), 1)",
+    "SetLavaPossible((218,81), 1)",
+    "SetLavaPossible((218,82), 1)",
+    "SetLavaPossible((218,83), 1)",
+    "SetLavaPossible((218,84), 1)",
+    "SetLavaPossible((218,85), 1)",
+    "SetLavaPossible((218,86), 1)",
+    "SetLavaPossible((218,87), 1)",
+    "SetLavaPossible((219,75), 1)",
+    "SetLavaPossible((219,76), 1)",
+    "SetLavaPossible((219,77), 1)",
+    "SetLavaPossible((219,78), 1)",
+    "SetLavaPossible((219,81), 1)",
+    "SetLavaPossible((219,82), 1)",
+    "SetLavaPossible((219,83), 1)",
+    "SetLavaPossible((219,84), 1)",
+    "SetLavaPossible((219,85), 1)",
+    "SetLavaPossible((219,86), 1)",
+    "SetLavaPossible((219,87), 1)",
+    "SetLavaPossible((220,75), 1)",
+    "SetLavaPossible((220,76), 1)",
+    "SetLavaPossible((220,77), 1)",
+    "SetLavaPossible((220,78), 1)",
+    "SetLavaPossible((220,79), 1)",
+    "SetLavaPossible((220,80), 1)",
+    "SetLavaPossible((220,81), 1)",
+    "SetLavaPossible((220,82), 1)",
+    "SetLavaPossible((220,83), 1)",
+    "SetLavaPossible((220,84), 1)",
+    "SetLavaPossible((220,85), 1)",
+    "SetLavaPossible((220,86), 1)",
+    "SetLavaPossible((221,74), 1)",
+    "SetLavaPossible((221,75), 1)",
+    "SetLavaPossible((221,76), 1)",
+    "SetLavaPossible((221,77), 1)",
+    "SetLavaPossible((221,78), 1)",
+    "SetLavaPossible((221,79), 1)",
+    "SetLavaPossible((221,80), 1)",
+    "SetLavaPossible((221,81), 1)",
+    "SetLavaPossible((221,82), 1)",
+    "SetLavaPossible((221,83), 1)",
+    "SetLavaPossible((221,84), 1)",
+    "SetLavaPossible((221,85), 1)",
+    "SetLavaPossible((221,86), 1)",
+    "SetLavaPossible((222,73), 1)",
+    "SetLavaPossible((222,74), 1)",
+    "SetLavaPossible((222,75), 1)",
+    "SetLavaPossible((222,76), 1)",
+    "SetLavaPossible((222,77), 1)",
+    "SetLavaPossible((222,78), 1)",
+    "SetLavaPossible((222,79), 1)",
+    "SetLavaPossible((222,80), 1)",
+    "SetLavaPossible((222,81), 1)",
+    "SetLavaPossible((222,82), 1)",
+    "SetLavaPossible((222,83), 1)",
+    "SetLavaPossible((222,84), 1)",
+    "SetLavaPossible((222,85), 1)",
+    "SetLavaPossible((222,86), 1)",
+    "SetLavaPossible((223,73), 1)",
+    "SetLavaPossible((223,74), 1)",
+    "SetLavaPossible((223,75), 1)",
+    "SetLavaPossible((223,76), 1)",
+    "SetLavaPossible((223,77), 1)",
+    "SetLavaPossible((223,78), 1)",
+    "SetLavaPossible((223,79), 1)",
+    "SetLavaPossible((223,80), 1)",
+    "SetLavaPossible((223,81), 1)",
+    "SetLavaPossible((223,82), 1)",
+    "SetLavaPossible((223,83), 1)",
+    "SetLavaPossible((223,84), 1)",
+    "SetLavaPossible((223,85), 1)",
+    "SetLavaPossible((224,73), 1)",
+    "SetLavaPossible((224,74), 1)",
+    "SetLavaPossible((224,75), 1)",
+    "SetLavaPossible((224,76), 1)",
+    "SetLavaPossible((224,77), 1)",
+    "SetLavaPossible((224,78), 1)",
+    "SetLavaPossible((224,79), 1)",
+    "SetLavaPossible((224,80), 1)",
+    "SetLavaPossible((224,81), 1)",
+    "SetLavaPossible((224,82), 1)",
+    "SetLavaPossible((224,83), 1)",
+    "SetLavaPossible((224,84), 1)",
+    "SetLavaPossible((225,72), 1)",
+    "SetLavaPossible((225,73), 1)",
+    "SetLavaPossible((225,74), 1)",
+    "SetLavaPossible((225,75), 1)",
+    "SetLavaPossible((225,76), 1)",
+    "SetLavaPossible((225,77), 1)",
+    "SetLavaPossible((225,78), 1)",
+    "SetLavaPossible((225,79), 1)",
+    "SetLavaPossible((225,80), 1)",
+    "SetLavaPossible((225,81), 1)",
+    "SetLavaPossible((225,82), 1)",
+    "SetLavaPossible((225,83), 1)",
+    "SetLavaPossible((226,68), 1)",
+    "SetLavaPossible((226,69), 1)",
+    "SetLavaPossible((226,70), 1)",
+    "SetLavaPossible((226,71), 1)",
+    "SetLavaPossible((226,72), 1)",
+    "SetLavaPossible((226,73), 1)",
+    "SetLavaPossible((226,74), 1)",
+    "SetLavaPossible((226,75), 1)",
+    "SetLavaPossible((226,76), 1)",
+    "SetLavaPossible((226,77), 1)",
+    "SetLavaPossible((226,78), 1)",
+    "SetLavaPossible((226,79), 1)",
+    "SetLavaPossible((226,80), 1)",
+    "SetLavaPossible((226,81), 1)",
+    "SetLavaPossible((226,82), 1)",
+    "SetLavaPossible((227,69), 1)",
+    "SetLavaPossible((227,70), 1)",
+    "SetLavaPossible((227,71), 1)",
+    "SetLavaPossible((227,72), 1)",
+    "SetLavaPossible((227,73), 1)",
+    "SetLavaPossible((227,74), 1)",
+    "SetLavaPossible((227,75), 1)",
+    "SetLavaPossible((227,76), 1)",
+    "SetLavaPossible((227,77), 1)",
+    "SetLavaPossible((227,78), 1)",
+    "SetLavaPossible((227,79), 1)",
+    "SetLavaPossible((227,80), 1)",
+    "SetLavaPossible((227,81), 1)",
+    "SetLavaPossible((227,82), 1)",
+    "SetLavaPossible((228,68), 1)",
+    "SetLavaPossible((228,69), 1)",
+    "SetLavaPossible((228,70), 1)",
+    "SetLavaPossible((228,71), 1)",
+    "SetLavaPossible((228,72), 1)",
+    "SetLavaPossible((228,73), 1)",
+    "SetLavaPossible((228,74), 1)",
+    "SetLavaPossible((228,75), 1)",
+    "SetLavaPossible((228,76), 1)",
+    "SetLavaPossible((228,77), 1)",
+    "SetLavaPossible((228,78), 1)",
+    "SetLavaPossible((228,79), 1)",
+    "SetLavaPossible((228,80), 1)",
+    "SetLavaPossible((228,81), 1)",
+    "SetLavaPossible((228,82), 1)",
+    "SetLavaPossible((229,64), 1)",
+    "SetLavaPossible((229,65), 1)",
+    "SetLavaPossible((229,66), 1)",
+    "SetLavaPossible((229,67), 1)",
+    "SetLavaPossible((229,68), 1)",
+    "SetLavaPossible((229,69), 1)",
+    "SetLavaPossible((229,70), 1)",
+    "SetLavaPossible((229,71), 1)",
+    "SetLavaPossible((229,72), 1)",
+    "SetLavaPossible((229,73), 1)",
+    "SetLavaPossible((229,74), 1)",
+    "SetLavaPossible((229,75), 1)",
+    "SetLavaPossible((229,76), 1)",
+    "SetLavaPossible((229,77), 1)",
+    "SetLavaPossible((229,78), 1)",
+    "SetLavaPossible((229,79), 1)",
+    "SetLavaPossible((229,80), 1)",
+    "SetLavaPossible((229,81), 1)",
+    "SetLavaPossible((229,82), 1)",
+    "SetLavaPossible((230,65), 1)",
+    "SetLavaPossible((230,66), 1)",
+    "SetLavaPossible((230,67), 1)",
+    "SetLavaPossible((230,68), 1)",
+    "SetLavaPossible((230,69), 1)",
+    "SetLavaPossible((230,70), 1)",
+    "SetLavaPossible((230,71), 1)",
+    "SetLavaPossible((230,72), 1)",
+    "SetLavaPossible((230,73), 1)",
+    "SetLavaPossible((230,74), 1)",
+    "SetLavaPossible((230,75), 1)",
+    "SetLavaPossible((230,76), 1)",
+    "SetLavaPossible((230,77), 1)",
+    "SetLavaPossible((230,78), 1)",
+    "SetLavaPossible((230,79), 1)",
+    "SetLavaPossible((230,80), 1)",
+    "SetLavaPossible((230,81), 1)",
+    "SetLavaPossible((230,82), 1)",
+    "SetLavaPossible((231,64), 1)",
+    "SetLavaPossible((231,65), 1)",
+    "SetLavaPossible((231,66), 1)",
+    "SetLavaPossible((231,67), 1)",
+    "SetLavaPossible((231,68), 1)",
+    "SetLavaPossible((231,69), 1)",
+    "SetLavaPossible((231,70), 1)",
+    "SetLavaPossible((231,71), 1)",
+    "SetLavaPossible((231,72), 1)",
+    "SetLavaPossible((231,73), 1)",
+    "SetLavaPossible((231,74), 1)",
+    "SetLavaPossible((231,75), 1)",
+    "SetLavaPossible((231,76), 1)",
+    "SetLavaPossible((231,77), 1)",
+    "SetLavaPossible((231,78), 1)",
+    "SetLavaPossible((231,79), 1)",
+    "SetLavaPossible((231,80), 1)",
+    "SetLavaPossible((231,81), 1)",
+    "SetLavaPossible((231,82), 1)",
+    "SetLavaPossible((232,64), 1)",
+    "SetLavaPossible((232,65), 1)",
+    "SetLavaPossible((232,66), 1)",
+    "SetLavaPossible((232,67), 1)",
+    "SetLavaPossible((232,68), 1)",
+    "SetLavaPossible((232,69), 1)",
+    "SetLavaPossible((232,70), 1)",
+    "SetLavaPossible((232,71), 1)",
+    "SetLavaPossible((232,72), 1)",
+    "SetLavaPossible((232,73), 1)",
+    "SetLavaPossible((232,74), 1)",
+    "SetLavaPossible((232,75), 1)",
+    "SetLavaPossible((232,76), 1)",
+    "SetLavaPossible((232,77), 1)",
+    "SetLavaPossible((232,78), 1)",
+    "SetLavaPossible((232,79), 1)",
+    "SetLavaPossible((232,80), 1)",
+    "SetLavaPossible((232,81), 1)",
+    "SetLavaPossible((232,82), 1)",
+    "SetLavaPossible((233,65), 1)",
+    "SetLavaPossible((233,66), 1)",
+    "SetLavaPossible((233,67), 1)",
+    "SetLavaPossible((233,68), 1)",
+    "SetLavaPossible((233,69), 1)",
+    "SetLavaPossible((233,70), 1)",
+    "SetLavaPossible((233,71), 1)",
+    "SetLavaPossible((233,72), 1)",
+    "SetLavaPossible((233,73), 1)",
+    "SetLavaPossible((233,74), 1)",
+    "SetLavaPossible((233,75), 1)",
+    "SetLavaPossible((233,76), 1)",
+    "SetLavaPossible((233,77), 1)",
+    "SetLavaPossible((233,78), 1)",
+    "SetLavaPossible((233,79), 1)",
+    "SetLavaPossible((233,80), 1)",
+    "SetLavaPossible((233,81), 1)",
+    "SetLavaPossible((233,82), 1)",
+    "SetLavaPossible((234,66), 1)",
+    "SetLavaPossible((234,67), 1)",
+    "SetLavaPossible((234,68), 1)",
+    "SetLavaPossible((234,69), 1)",
+    "SetLavaPossible((234,70), 1)",
+    "SetLavaPossible((234,71), 1)",
+    "SetLavaPossible((234,72), 1)",
+    "SetLavaPossible((234,73), 1)",
+    "SetLavaPossible((234,74), 1)",
+    "SetLavaPossible((234,75), 1)",
+    "SetLavaPossible((234,76), 1)",
+    "SetLavaPossible((234,77), 1)",
+    "SetLavaPossible((234,78), 1)",
+    "SetLavaPossible((234,79), 1)",
+    "SetLavaPossible((234,80), 1)",
+    "SetLavaPossible((234,81), 1)",
+    "SetLavaPossible((234,82), 1)",
+    "SetLavaPossible((235,67), 1)",
+    "SetLavaPossible((235,68), 1)",
+    "SetLavaPossible((235,69), 1)",
+    "SetLavaPossible((235,70), 1)",
+    "SetLavaPossible((235,71), 1)",
+    "SetLavaPossible((235,72), 1)",
+    "SetLavaPossible((235,73), 1)",
+    "SetLavaPossible((235,74), 1)",
+    "SetLavaPossible((235,75), 1)",
+    "SetLavaPossible((235,76), 1)",
+    "SetLavaPossible((235,77), 1)",
+    "SetLavaPossible((235,78), 1)",
+    "SetLavaPossible((235,79), 1)",
+    "SetLavaPossible((235,80), 1)",
+    "SetLavaPossible((235,81), 1)",
+    "SetLavaPossible((235,82), 1)",
+    "SetLavaPossible((236,67), 1)",
+    "SetLavaPossible((236,68), 1)",
+    "SetLavaPossible((236,69), 1)",
+    "SetLavaPossible((236,70), 1)",
+    "SetLavaPossible((236,71), 1)",
+    "SetLavaPossible((236,72), 1)",
+    "SetLavaPossible((236,73), 1)",
+    "SetLavaPossible((236,74), 1)",
+    "SetLavaPossible((236,75), 1)",
+    "SetLavaPossible((236,76), 1)",
+    "SetLavaPossible((236,77), 1)",
+    "SetLavaPossible((236,78), 1)",
+    "SetLavaPossible((236,79), 1)",
+    "SetLavaPossible((236,80), 1)",
+    "SetLavaPossible((236,81), 1)",
+    "SetLavaPossible((236,82), 1)",
+    "SetLavaPossible((237,67), 1)",
+    "SetLavaPossible((237,68), 1)",
+    "SetLavaPossible((237,69), 1)",
+    "SetLavaPossible((237,70), 1)",
+    "SetLavaPossible((237,71), 1)",
+    "SetLavaPossible((237,72), 1)",
+    "SetLavaPossible((237,73), 1)",
+    "SetLavaPossible((237,74), 1)",
+    "SetLavaPossible((237,75), 1)",
+    "SetLavaPossible((237,76), 1)",
+    "SetLavaPossible((237,77), 1)",
+    "SetLavaPossible((237,78), 1)",
+    "SetLavaPossible((237,79), 1)",
+    "SetLavaPossible((237,80), 1)",
+    "SetLavaPossible((237,81), 1)",
+    "SetLavaPossible((237,82), 1)",
+    "SetLavaPossible((237,83), 1)",
+    "SetLavaPossible((238,65), 1)",
+    "SetLavaPossible((238,66), 1)",
+    "SetLavaPossible((238,67), 1)",
+    "SetLavaPossible((238,68), 1)",
+    "SetLavaPossible((238,69), 1)",
+    "SetLavaPossible((238,70), 1)",
+    "SetLavaPossible((238,71), 1)",
+    "SetLavaPossible((238,72), 1)",
+    "SetLavaPossible((238,73), 1)",
+    "SetLavaPossible((238,74), 1)",
+    "SetLavaPossible((238,75), 1)",
+    "SetLavaPossible((238,76), 1)",
+    "SetLavaPossible((238,77), 1)",
+    "SetLavaPossible((238,78), 1)",
+    "SetLavaPossible((238,79), 1)",
+    "SetLavaPossible((238,80), 1)",
+    "SetLavaPossible((238,81), 1)",
+    "SetLavaPossible((238,82), 1)",
+    "SetLavaPossible((238,83), 1)",
+    "SetLavaPossible((239,64), 1)",
+    "SetLavaPossible((239,65), 1)",
+    "SetLavaPossible((239,66), 1)",
+    "SetLavaPossible((239,67), 1)",
+    "SetLavaPossible((239,68), 1)",
+    "SetLavaPossible((239,69), 1)",
+    "SetLavaPossible((239,70), 1)",
+    "SetLavaPossible((239,71), 1)",
+    "SetLavaPossible((239,72), 1)",
+    "SetLavaPossible((239,73), 1)",
+    "SetLavaPossible((239,74), 1)",
+    "SetLavaPossible((239,75), 1)",
+    "SetLavaPossible((239,76), 1)",
+    "SetLavaPossible((239,77), 1)",
+    "SetLavaPossible((239,78), 1)",
+    "SetLavaPossible((239,79), 1)",
+    "SetLavaPossible((239,80), 1)",
+    "SetLavaPossible((239,81), 1)",
+    "SetLavaPossible((239,82), 1)",
+    "SetLavaPossible((239,83), 1)",
+    "SetLavaPossible((240,64), 1)",
+    "SetLavaPossible((240,65), 1)",
+    "SetLavaPossible((240,66), 1)",
+    "SetLavaPossible((240,67), 1)",
+    "SetLavaPossible((240,68), 1)",
+    "SetLavaPossible((240,69), 1)",
+    "SetLavaPossible((240,70), 1)",
+    "SetLavaPossible((240,71), 1)",
+    "SetLavaPossible((240,72), 1)",
+    "SetLavaPossible((240,73), 1)",
+    "SetLavaPossible((240,74), 1)",
+    "SetLavaPossible((240,75), 1)",
+    "SetLavaPossible((240,76), 1)",
+    "SetLavaPossible((240,77), 1)",
+    "SetLavaPossible((240,78), 1)",
+    "SetLavaPossible((240,79), 1)",
+    "SetLavaPossible((240,80), 1)",
+    "SetLavaPossible((240,81), 1)",
+    "SetLavaPossible((240,82), 1)",
+    "SetLavaPossible((240,83), 1)",
+    "SetLavaPossible((240,84), 1)",
+    "SetLavaPossible((241,65), 1)",
+    "SetLavaPossible((241,66), 1)",
+    "SetLavaPossible((241,67), 1)",
+    "SetLavaPossible((241,68), 1)",
+    "SetLavaPossible((241,69), 1)",
+    "SetLavaPossible((241,70), 1)",
+    "SetLavaPossible((241,71), 1)",
+    "SetLavaPossible((241,72), 1)",
+    "SetLavaPossible((241,73), 1)",
+    "SetLavaPossible((241,74), 1)",
+    "SetLavaPossible((241,75), 1)",
+    "SetLavaPossible((241,76), 1)",
+    "SetLavaPossible((241,77), 1)",
+    "SetLavaPossible((241,78), 1)",
+    "SetLavaPossible((241,79), 1)",
+    "SetLavaPossible((241,80), 1)",
+    "SetLavaPossible((241,81), 1)",
+    "SetLavaPossible((241,82), 1)",
+    "SetLavaPossible((241,83), 1)",
+    "SetLavaPossible((241,84), 1)",
+    "SetLavaPossible((242,65), 1)",
+    "SetLavaPossible((242,66), 1)",
+    "SetLavaPossible((242,67), 1)",
+    "SetLavaPossible((242,68), 1)",
+    "SetLavaPossible((242,69), 1)",
+    "SetLavaPossible((242,70), 1)",
+    "SetLavaPossible((242,71), 1)",
+    "SetLavaPossible((242,72), 1)",
+    "SetLavaPossible((242,73), 1)",
+    "SetLavaPossible((242,74), 1)",
+    "SetLavaPossible((242,75), 1)",
+    "SetLavaPossible((242,81), 1)",
+    "SetLavaPossible((242,83), 1)",
+    "SetLavaPossible((242,84), 1)",
+    "SetLavaPossible((243,65), 1)",
+    "SetLavaPossible((243,66), 1)",
+    "SetLavaPossible((243,67), 1)",
+    "SetLavaPossible((243,68), 1)",
+    "SetLavaPossible((243,69), 1)",
+    "SetLavaPossible((243,70), 1)",
+    "SetLavaPossible((243,71), 1)",
+    "SetLavaPossible((243,72), 1)",
+    "SetLavaPossible((243,73), 1)",
+    "SetLavaPossible((243,74), 1)",
+    "SetLavaPossible((243,83), 1)",
+    "SetLavaPossible((243,84), 1)",
+    "SetLavaPossible((244,65), 1)",
+    "SetLavaPossible((244,66), 1)",
+    "SetLavaPossible((244,67), 1)",
+    "SetLavaPossible((244,68), 1)",
+    "SetLavaPossible((244,69), 1)",
+    "SetLavaPossible((244,70), 1)",
+    "SetLavaPossible((244,71), 1)",
+    "SetLavaPossible((244,72), 1)",
+    "SetLavaPossible((244,73), 1)",
+    "SetLavaPossible((244,74), 1)",
+    "SetLavaPossible((244,83), 1)",
+    "SetLavaPossible((244,84), 1)",
+    "SetLavaPossible((245,63), 1)",
+    "SetLavaPossible((245,64), 1)",
+    "SetLavaPossible((245,65), 1)",
+    "SetLavaPossible((245,66), 1)",
+    "SetLavaPossible((245,67), 1)",
+    "SetLavaPossible((245,68), 1)",
+    "SetLavaPossible((245,69), 1)",
+    "SetLavaPossible((245,70), 1)",
+    "SetLavaPossible((245,71), 1)",
+    "SetLavaPossible((245,72), 1)",
+    "SetLavaPossible((245,73), 1)",
+    "SetLavaPossible((245,74), 1)",
+    "SetLavaPossible((245,83), 1)",
+    "SetLavaPossible((245,84), 1)",
+    "SetLavaPossible((246,63), 1)",
+    "SetLavaPossible((246,64), 1)",
+    "SetLavaPossible((246,65), 1)",
+    "SetLavaPossible((246,66), 1)",
+    "SetLavaPossible((246,67), 1)",
+    "SetLavaPossible((246,68), 1)",
+    "SetLavaPossible((246,69), 1)",
+    "SetLavaPossible((246,70), 1)",
+    "SetLavaPossible((246,71), 1)",
+    "SetLavaPossible((246,72), 1)",
+    "SetLavaPossible((246,73), 1)",
+    "SetLavaPossible((246,74), 1)",
+    "SetLavaPossible((246,83), 1)",
+    "SetLavaPossible((246,84), 1)",
+    "SetLavaPossible((246,87), 1)",
+    "SetLavaPossible((246,88), 1)",
+    "SetLavaPossible((246,89), 1)",
+    "SetLavaPossible((247,41), 1)",
+    "SetLavaPossible((247,42), 1)",
+    "SetLavaPossible((247,48), 1)",
+    "SetLavaPossible((247,49), 1)",
+    "SetLavaPossible((247,50), 1)",
+    "SetLavaPossible((247,51), 1)",
+    "SetLavaPossible((247,65), 1)",
+    "SetLavaPossible((247,66), 1)",
+    "SetLavaPossible((247,67), 1)",
+    "SetLavaPossible((247,68), 1)",
+    "SetLavaPossible((247,69), 1)",
+    "SetLavaPossible((247,70), 1)",
+    "SetLavaPossible((247,71), 1)",
+    "SetLavaPossible((247,72), 1)",
+    "SetLavaPossible((247,73), 1)",
+    "SetLavaPossible((247,74), 1)",
+    "SetLavaPossible((247,82), 1)",
+    "SetLavaPossible((247,83), 1)",
+    "SetLavaPossible((247,84), 1)",
+    "SetLavaPossible((247,85), 1)",
+    "SetLavaPossible((247,87), 1)",
+    "SetLavaPossible((247,88), 1)",
+    "SetLavaPossible((247,89), 1)",
+    "SetLavaPossible((247,90), 1)",
+    "SetLavaPossible((248,41), 1)",
+    "SetLavaPossible((248,42), 1)",
+    "SetLavaPossible((248,48), 1)",
+    "SetLavaPossible((248,49), 1)",
+    "SetLavaPossible((248,50), 1)",
+    "SetLavaPossible((248,51), 1)",
+    "SetLavaPossible((248,64), 1)",
+    "SetLavaPossible((248,65), 1)",
+    "SetLavaPossible((248,66), 1)",
+    "SetLavaPossible((248,67), 1)",
+    "SetLavaPossible((248,68), 1)",
+    "SetLavaPossible((248,69), 1)",
+    "SetLavaPossible((248,70), 1)",
+    "SetLavaPossible((248,71), 1)",
+    "SetLavaPossible((248,72), 1)",
+    "SetLavaPossible((248,73), 1)",
+    "SetLavaPossible((248,74), 1)",
+    "SetLavaPossible((248,75), 1)",
+    "SetLavaPossible((248,81), 1)",
+    "SetLavaPossible((248,82), 1)",
+    "SetLavaPossible((248,83), 1)",
+    "SetLavaPossible((248,84), 1)",
+    "SetLavaPossible((248,85), 1)",
+    "SetLavaPossible((248,86), 1)",
+    "SetLavaPossible((248,87), 1)",
+    "SetLavaPossible((248,88), 1)",
+    "SetLavaPossible((248,89), 1)",
+    "SetLavaPossible((248,90), 1)",
+    "SetLavaPossible((249,41), 1)",
+    "SetLavaPossible((249,42), 1)",
+    "SetLavaPossible((249,43), 1)",
+    "SetLavaPossible((249,48), 1)",
+    "SetLavaPossible((249,49), 1)",
+    "SetLavaPossible((249,50), 1)",
+    "SetLavaPossible((249,51), 1)",
+    "SetLavaPossible((249,52), 1)",
+    "SetLavaPossible((249,53), 1)",
+    "SetLavaPossible((249,63), 1)",
+    "SetLavaPossible((249,64), 1)",
+    "SetLavaPossible((249,65), 1)",
+    "SetLavaPossible((249,66), 1)",
+    "SetLavaPossible((249,67), 1)",
+    "SetLavaPossible((249,68), 1)",
+    "SetLavaPossible((249,69), 1)",
+    "SetLavaPossible((249,70), 1)",
+    "SetLavaPossible((249,71), 1)",
+    "SetLavaPossible((249,72), 1)",
+    "SetLavaPossible((249,73), 1)",
+    "SetLavaPossible((249,74), 1)",
+    "SetLavaPossible((249,75), 1)",
+    "SetLavaPossible((249,80), 1)",
+    "SetLavaPossible((249,81), 1)",
+    "SetLavaPossible((249,82), 1)",
+    "SetLavaPossible((249,83), 1)",
+    "SetLavaPossible((249,84), 1)",
+    "SetLavaPossible((249,85), 1)",
+    "SetLavaPossible((249,86), 1)",
+    "SetLavaPossible((249,87), 1)",
+    "SetLavaPossible((249,88), 1)",
+    "SetLavaPossible((249,89), 1)",
+    "SetLavaPossible((249,90), 1)",
+    "SetLavaPossible((249,91), 1)",
+    "SetLavaPossible((250,40), 1)",
+    "SetLavaPossible((250,41), 1)",
+    "SetLavaPossible((250,42), 1)",
+    "SetLavaPossible((250,43), 1)",
+    "SetLavaPossible((250,47), 1)",
+    "SetLavaPossible((250,48), 1)",
+    "SetLavaPossible((250,49), 1)",
+    "SetLavaPossible((250,50), 1)",
+    "SetLavaPossible((250,51), 1)",
+    "SetLavaPossible((250,52), 1)",
+    "SetLavaPossible((250,53), 1)",
+    "SetLavaPossible((250,54), 1)",
+    "SetLavaPossible((250,55), 1)",
+    "SetLavaPossible((250,56), 1)",
+    "SetLavaPossible((250,57), 1)",
+    "SetLavaPossible((250,58), 1)",
+    "SetLavaPossible((250,59), 1)",
+    "SetLavaPossible((250,60), 1)",
+    "SetLavaPossible((250,61), 1)",
+    "SetLavaPossible((250,62), 1)",
+    "SetLavaPossible((250,63), 1)",
+    "SetLavaPossible((250,64), 1)",
+    "SetLavaPossible((250,65), 1)",
+    "SetLavaPossible((250,66), 1)",
+    "SetLavaPossible((250,67), 1)",
+    "SetLavaPossible((250,68), 1)",
+    "SetLavaPossible((250,69), 1)",
+    "SetLavaPossible((250,70), 1)",
+    "SetLavaPossible((250,71), 1)",
+    "SetLavaPossible((250,72), 1)",
+    "SetLavaPossible((250,73), 1)",
+    "SetLavaPossible((250,74), 1)",
+    "SetLavaPossible((250,75), 1)",
+    "SetLavaPossible((250,76), 1)",
+    "SetLavaPossible((250,77), 1)",
+    "SetLavaPossible((250,78), 1)",
+    "SetLavaPossible((250,79), 1)",
+    "SetLavaPossible((250,80), 1)",
+    "SetLavaPossible((250,81), 1)",
+    "SetLavaPossible((250,82), 1)",
+    "SetLavaPossible((250,83), 1)",
+    "SetLavaPossible((250,84), 1)",
+    "SetLavaPossible((250,85), 1)",
+    "SetLavaPossible((250,86), 1)",
+    "SetLavaPossible((250,87), 1)",
+    "SetLavaPossible((250,88), 1)",
+    "SetLavaPossible((250,89), 1)",
+    "SetLavaPossible((250,90), 1)",
+    "SetLavaPossible((250,91), 1)",
+    "SetLavaPossible((251,40), 1)",
+    "SetLavaPossible((251,41), 1)",
+    "SetLavaPossible((251,42), 1)",
+    "SetLavaPossible((251,43), 1)",
+    "SetLavaPossible((251,44), 1)",
+    "SetLavaPossible((251,45), 1)",
+    "SetLavaPossible((251,46), 1)",
+    "SetLavaPossible((251,47), 1)",
+    "SetLavaPossible((251,48), 1)",
+    "SetLavaPossible((251,49), 1)",
+    "SetLavaPossible((251,50), 1)",
+    "SetLavaPossible((251,51), 1)",
+    "SetLavaPossible((251,52), 1)",
+    "SetLavaPossible((251,53), 1)",
+    "SetLavaPossible((251,54), 1)",
+    "SetLavaPossible((251,55), 1)",
+    "SetLavaPossible((251,56), 1)",
+    "SetLavaPossible((251,57), 1)",
+    "SetLavaPossible((251,58), 1)",
+    "SetLavaPossible((251,59), 1)",
+    "SetLavaPossible((251,60), 1)",
+    "SetLavaPossible((251,61), 1)",
+    "SetLavaPossible((251,62), 1)",
+    "SetLavaPossible((251,63), 1)",
+    "SetLavaPossible((251,64), 1)",
+    "SetLavaPossible((251,65), 1)",
+    "SetLavaPossible((251,66), 1)",
+    "SetLavaPossible((251,67), 1)",
+    "SetLavaPossible((251,68), 1)",
+    "SetLavaPossible((251,69), 1)",
+    "SetLavaPossible((251,70), 1)",
+    "SetLavaPossible((251,71), 1)",
+    "SetLavaPossible((251,72), 1)",
+    "SetLavaPossible((251,73), 1)",
+    "SetLavaPossible((251,74), 1)",
+    "SetLavaPossible((251,75), 1)",
+    "SetLavaPossible((251,78), 1)",
+    "SetLavaPossible((251,79), 1)",
+    "SetLavaPossible((251,80), 1)",
+    "SetLavaPossible((251,81), 1)",
+    "SetLavaPossible((251,82), 1)",
+    "SetLavaPossible((251,83), 1)",
+    "SetLavaPossible((251,84), 1)",
+    "SetLavaPossible((251,85), 1)",
+    "SetLavaPossible((251,86), 1)",
+    "SetLavaPossible((251,87), 1)",
+    "SetLavaPossible((251,88), 1)",
+    "SetLavaPossible((251,89), 1)",
+    "SetLavaPossible((251,90), 1)",
+    "SetLavaPossible((252,42), 1)",
+    "SetLavaPossible((252,43), 1)",
+    "SetLavaPossible((252,44), 1)",
+    "SetLavaPossible((252,45), 1)",
+    "SetLavaPossible((252,46), 1)",
+    "SetLavaPossible((252,47), 1)",
+    "SetLavaPossible((252,48), 1)",
+    "SetLavaPossible((252,49), 1)",
+    "SetLavaPossible((252,50), 1)",
+    "SetLavaPossible((252,51), 1)",
+    "SetLavaPossible((252,52), 1)",
+    "SetLavaPossible((252,53), 1)",
+    "SetLavaPossible((252,54), 1)",
+    "SetLavaPossible((252,55), 1)",
+    "SetLavaPossible((252,56), 1)",
+    "SetLavaPossible((252,57), 1)",
+    "SetLavaPossible((252,58), 1)",
+    "SetLavaPossible((252,59), 1)",
+    "SetLavaPossible((252,60), 1)",
+    "SetLavaPossible((252,61), 1)",
+    "SetLavaPossible((252,62), 1)",
+    "SetLavaPossible((252,63), 1)",
+    "SetLavaPossible((252,64), 1)",
+    "SetLavaPossible((252,65), 1)",
+    "SetLavaPossible((252,81), 1)",
+    "SetLavaPossible((252,82), 1)",
+    "SetLavaPossible((252,83), 1)",
+    "SetLavaPossible((252,84), 1)",
+    "SetLavaPossible((252,85), 1)",
+    "SetLavaPossible((252,88), 1)",
+    "SetLavaPossible((253,43), 1)",
+    "SetLavaPossible((253,44), 1)",
+    "SetLavaPossible((253,45), 1)",
+    "SetLavaPossible((253,46), 1)",
+    "SetLavaPossible((253,47), 1)",
+    "SetLavaPossible((253,48), 1)",
+    "SetLavaPossible((253,49), 1)",
+    "SetLavaPossible((253,50), 1)",
+    "SetLavaPossible((253,51), 1)",
+    "SetLavaPossible((253,52), 1)",
+    "SetLavaPossible((253,53), 1)",
+    "SetLavaPossible((253,54), 1)",
+    "SetLavaPossible((253,56), 1)",
+    "SetLavaPossible((253,57), 1)",
+    "SetLavaPossible((253,58), 1)",
+    "SetLavaPossible((253,59), 1)",
+    "SetLavaPossible((253,60), 1)",
+    "SetLavaPossible((253,64), 1)",
+    "SetLavaPossible((253,82), 1)",
+    "SetLavaPossible((253,83), 1)",
+    "SetLavaPossible((254,43), 1)",
+    "SetLavaPossible((254,44), 1)",
+    "SetLavaPossible((254,45), 1)",
+    "SetLavaPossible((254,46), 1)",
+    "SetLavaPossible((254,47), 1)",
+    "SetLavaPossible((254,48), 1)",
+    "SetLavaPossible((254,49), 1)",
+    "SetLavaPossible((254,50), 1)",
+    "SetLavaPossible((254,51), 1)",
+    "SetLavaPossible((254,52), 1)",
+    "SetLavaPossible((254,57), 1)",
+    "SetLavaPossible((254,58), 1)",
+    "SetLavaPossible((254,59), 1)",
+    "SetLavaPossible((254,82), 1)",
+    "SetLavaPossible((254,83), 1)",
+    "SetLavaPossible((255,47), 1)",
+    "SetLavaPossible((255,48), 1)",
+    "SetLavaPossible((255,49), 1)",
+    "SetLavaPossible((255,50), 1)",
+    "SetLavaPossible((255,51), 1)",
+    "SetLavaPossible((255,52), 1)",
+    "SetLavaPossible((255,59), 1)",
+    "SetLavaPossible((255,82), 1)",
+    "SetLavaPossible((255,83), 1)",
+    "SetLavaPossible((256,48), 1)",
+    "SetLavaPossible((256,49), 1)",
+    "SetLavaPossible((256,50), 1)",
+    "SetLavaPossible((256,51), 1)",
+    "SetLavaPossible((257,49), 1)",
+    "SetLavaPossible((257,50), 1)",
+    "SetLavaPossible((258,50), 1)",
+    "InitialSetTile((246,79), 1161)",
+    "InitialSetTile((246,80), 1184)",
+    "InitialSetTile((247,79), 1172)",
+    "InitialSetTile((247,80), 1195)"
+  ],
+  "messages": [],
+  "mission": {
+    "level_desc": "4 Player, LastOne, 'Crash Zone' map.",
+    "map_name": "mp4_05.map",
+    "max_tech_level": 12,
+    "mission_type": -8,
+    "num_players": 4,
+    "techtree_name": "MULTITEK.TXT",
+    "unit_mission": false
+  },
+  "note": "recorded from ml4_05.dll InitProc by op2-missionhost",
+  "options": {
+    "ForceMoraleGood": "-1",
+    "SetCheatFastProduction": "0",
+    "SetCheatFastUnits": "0",
+    "SetCheatProduceAll": "0",
+    "SetCheatUnlimitedResources": "0",
+    "SetDaylightEverywhere": "0"
+  },
+  "players": [
+    {
+      "allies": [],
+      "color": 1,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": true,
+      "food": 3000,
+      "human": true,
+      "id": 0,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        203,
+        14
+      ],
+      "workers": 27
+    },
+    {
+      "allies": [],
+      "color": 2,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": true,
+      "food": 3000,
+      "human": true,
+      "id": 1,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        69,
+        110
+      ],
+      "workers": 27
+    },
+    {
+      "allies": [],
+      "color": 3,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": false,
+      "food": 3000,
+      "human": true,
+      "id": 2,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        83,
+        25
+      ],
+      "workers": 27
+    },
+    {
+      "allies": [],
+      "color": 4,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": true,
+      "food": 3000,
+      "human": true,
+      "id": 3,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        248,
+        114
+      ],
+      "workers": 27
+    }
+  ],
+  "seed": 1,
+  "spawn": [
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        174,
+        19
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        175,
+        18
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        177,
+        17
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        170,
+        19
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        170,
+        19
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        170,
+        19
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        166,
+        10
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        167,
+        11
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        168,
+        11
+      ],
+      "type": "WALL_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        40,
+        115
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        41,
+        114
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        43,
+        113
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        36,
+        115
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        36,
+        115
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        36,
+        115
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        32,
+        106
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        33,
+        107
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        34,
+        107
+      ],
+      "type": "WALL_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        54,
+        30
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        55,
+        29
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        57,
+        28
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        50,
+        30
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        50,
+        30
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        50,
+        30
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        46,
+        21
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        47,
+        22
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 2,
+      "tile": [
+        48,
+        22
+      ],
+      "type": "WALL_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        215,
+        119
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        217,
+        119
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        213,
+        118
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        210,
+        119
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        210,
+        119
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        210,
+        119
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        212,
+        110
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        213,
+        109
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 3,
+      "tile": [
+        212,
+        108
+      ],
+      "type": "WALL_TRUCK"
+    }
+  ],
+  "structures": [
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        144,
+        3
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        229,
+        91
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        9,
+        97
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        61,
+        5
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        124,
+        32
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        82,
+        104
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        184,
+        70
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        128,
+        26
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        89,
+        39
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        86,
+        78
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        154,
+        100
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        235,
+        43
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        89,
+        5
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        111,
+        62
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        154,
+        72
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        163,
+        40
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        100,
+        21
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        114,
+        81
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        231,
+        79
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        137,
+        54
+      ],
+      "type": "BEACON"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        144,
+        28
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        210,
+        36
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        171,
+        14
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "extra": {
+        "bay0": 3801088,
+        "bay1": 2293760,
+        "bay2": 2490368,
+        "bay3": 3145728,
+        "bay4": 2031616,
+        "bay5": 1966080
+      },
+      "owner": 0,
+      "tile": [
+        168,
+        17
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        173,
+        17
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        167,
+        14
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        175,
+        14
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        176,
+        8
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        61,
+        70
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        35,
+        65
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        37,
+        110
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "extra": {
+        "bay0": 3801088,
+        "bay1": 2293760,
+        "bay2": 2490368,
+        "bay3": 3145728,
+        "bay4": 2031616,
+        "bay5": 1966080
+      },
+      "owner": 1,
+      "tile": [
+        34,
+        113
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        39,
+        113
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        33,
+        110
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        41,
+        110
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        42,
+        104
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        54,
+        39
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        48,
+        40
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        51,
+        25
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "extra": {
+        "bay0": 3801088,
+        "bay1": 2293760,
+        "bay2": 2490368,
+        "bay3": 3145728,
+        "bay4": 2031616,
+        "bay5": 1966080
+      },
+      "owner": 2,
+      "tile": [
+        48,
+        28
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        53,
+        28
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        47,
+        25
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        55,
+        25
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "owner": 2,
+      "tile": [
+        56,
+        19
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        164,
+        121
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        179,
+        97
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        216,
+        114
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        209,
+        117
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        208,
+        108
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "extra": {
+        "bay0": 3801088,
+        "bay1": 2293760,
+        "bay2": 2490368,
+        "bay3": 3145728,
+        "bay4": 2031616,
+        "bay5": 1966080
+      },
+      "owner": 3,
+      "tile": [
+        216,
+        117
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        212,
+        114
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "owner": 3,
+      "tile": [
+        216,
+        111
+      ],
+      "type": "LAB_STANDARD"
+    }
+  ],
+  "ticks": 100,
+  "triggers": [
+    {
+      "args": [
+        "1",
+        "1",
+        "\"NoResponseToTrigger\""
+      ],
+      "callback": "NoResponseToTrigger",
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 2,
+      "kind": "OnePlayerLeftTrigger",
+      "one_shot": true,
+      "period": 0,
+      "player": null,
+      "spec": "OnePlayerLeft",
+      "units": []
+    },
+    {
+      "args": [
+        "1",
+        "1",
+        "Trigger#2",
+        "\"Eliminate your opponents.\""
+      ],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 3,
+      "kind": "VictoryCondition",
+      "one_shot": true,
+      "period": 0,
+      "player": null,
+      "spec": {
+        "Victory": {
+          "linked": 2,
+          "objective": "Eliminate your opponents."
+        }
+      },
+      "units": [
+        2
+      ]
+    }
+  ],
+  "walls": [
+    {
+      "tile": [
+        212,
+        116
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        212,
+        117
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        213,
+        117
+      ],
+      "type": "TUBE"
+    }
+  ]
+}

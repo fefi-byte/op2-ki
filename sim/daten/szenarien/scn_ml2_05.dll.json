@@ -1,0 +1,887 @@
+{
+  "disasters": [],
+  "groups": [
+    {
+      "args": [],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 0,
+      "kind": "FightGroup",
+      "one_shot": false,
+      "period": 0,
+      "player": 2,
+      "units": []
+    },
+    {
+      "args": [],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 1,
+      "kind": "FightGroup",
+      "one_shot": false,
+      "period": 0,
+      "player": 3,
+      "units": []
+    },
+    {
+      "args": [],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 2,
+      "kind": "FightGroup",
+      "one_shot": false,
+      "period": 0,
+      "player": 4,
+      "units": []
+    },
+    {
+      "args": [],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 3,
+      "kind": "FightGroup",
+      "one_shot": false,
+      "period": 0,
+      "player": 5,
+      "units": []
+    }
+  ],
+  "map": "mp2_05.map",
+  "mapEdits": [
+    "SetLavaPossible((87,18), 1)",
+    "SetLavaPossible((88,17), 1)",
+    "SetLavaPossible((88,18), 1)",
+    "SetLavaPossible((88,19), 1)",
+    "SetLavaPossible((88,22), 1)",
+    "SetLavaPossible((89,14), 1)",
+    "SetLavaPossible((89,15), 1)",
+    "SetLavaPossible((89,16), 1)",
+    "SetLavaPossible((89,17), 1)",
+    "SetLavaPossible((89,18), 1)",
+    "SetLavaPossible((89,19), 1)",
+    "SetLavaPossible((89,20), 1)",
+    "SetLavaPossible((89,22), 1)",
+    "SetLavaPossible((89,23), 1)",
+    "SetLavaPossible((89,24), 1)",
+    "SetLavaPossible((90,14), 1)",
+    "SetLavaPossible((90,15), 1)",
+    "SetLavaPossible((90,16), 1)",
+    "SetLavaPossible((90,17), 1)",
+    "SetLavaPossible((90,18), 1)",
+    "SetLavaPossible((90,19), 1)",
+    "SetLavaPossible((90,20), 1)",
+    "SetLavaPossible((90,21), 1)",
+    "SetLavaPossible((90,22), 1)",
+    "SetLavaPossible((90,23), 1)",
+    "SetLavaPossible((91,8), 1)",
+    "SetLavaPossible((91,9), 1)",
+    "SetLavaPossible((91,10), 1)",
+    "SetLavaPossible((91,11), 1)",
+    "SetLavaPossible((91,14), 1)",
+    "SetLavaPossible((91,15), 1)",
+    "SetLavaPossible((91,16), 1)",
+    "SetLavaPossible((91,17), 1)",
+    "SetLavaPossible((91,18), 1)",
+    "SetLavaPossible((91,19), 1)",
+    "SetLavaPossible((91,20), 1)",
+    "SetLavaPossible((91,21), 1)",
+    "SetLavaPossible((91,22), 1)",
+    "SetLavaPossible((91,23), 1)",
+    "SetLavaPossible((91,24), 1)",
+    "SetLavaPossible((91,25), 1)",
+    "SetLavaPossible((91,26), 1)",
+    "SetLavaPossible((92,9), 1)",
+    "SetLavaPossible((92,10), 1)",
+    "SetLavaPossible((92,11), 1)",
+    "SetLavaPossible((92,12), 1)",
+    "SetLavaPossible((92,13), 1)",
+    "SetLavaPossible((92,14), 1)",
+    "SetLavaPossible((92,15), 1)",
+    "SetLavaPossible((92,16), 1)",
+    "SetLavaPossible((92,17), 1)",
+    "SetLavaPossible((92,18), 1)",
+    "SetLavaPossible((92,19), 1)",
+    "SetLavaPossible((92,20), 1)",
+    "SetLavaPossible((92,21), 1)",
+    "SetLavaPossible((92,22), 1)",
+    "SetLavaPossible((92,23), 1)",
+    "SetLavaPossible((92,24), 1)",
+    "SetLavaPossible((92,25), 1)",
+    "SetLavaPossible((92,26), 1)",
+    "SetLavaPossible((92,27), 1)",
+    "SetLavaPossible((93,9), 1)",
+    "SetLavaPossible((93,10), 1)",
+    "SetLavaPossible((93,11), 1)",
+    "SetLavaPossible((93,12), 1)",
+    "SetLavaPossible((93,13), 1)",
+    "SetLavaPossible((93,14), 1)",
+    "SetLavaPossible((93,15), 1)",
+    "SetLavaPossible((93,16), 1)",
+    "SetLavaPossible((93,17), 1)",
+    "SetLavaPossible((93,18), 1)",
+    "SetLavaPossible((93,19), 1)",
+    "SetLavaPossible((93,20), 1)",
+    "SetLavaPossible((93,21), 1)",
+    "SetLavaPossible((93,22), 1)",
+    "SetLavaPossible((93,23), 1)",
+    "SetLavaPossible((93,26), 1)",
+    "SetLavaPossible((94,8), 1)",
+    "SetLavaPossible((94,9), 1)",
+    "SetLavaPossible((94,10), 1)",
+    "SetLavaPossible((94,11), 1)",
+    "SetLavaPossible((94,12), 1)",
+    "SetLavaPossible((94,13), 1)",
+    "SetLavaPossible((94,14), 1)",
+    "SetLavaPossible((94,15), 1)",
+    "SetLavaPossible((94,16), 1)",
+    "SetLavaPossible((94,17), 1)",
+    "SetLavaPossible((94,18), 1)",
+    "SetLavaPossible((94,19), 1)",
+    "SetLavaPossible((94,20), 1)",
+    "SetLavaPossible((94,21), 1)",
+    "SetLavaPossible((94,22), 1)",
+    "SetLavaPossible((95,7), 1)",
+    "SetLavaPossible((95,8), 1)",
+    "SetLavaPossible((95,11), 1)",
+    "SetLavaPossible((95,12), 1)",
+    "SetLavaPossible((95,13), 1)",
+    "SetLavaPossible((95,14), 1)",
+    "SetLavaPossible((95,15), 1)",
+    "SetLavaPossible((95,16), 1)",
+    "SetLavaPossible((95,17), 1)",
+    "SetLavaPossible((95,18), 1)",
+    "SetLavaPossible((95,19), 1)",
+    "SetLavaPossible((95,20), 1)",
+    "SetLavaPossible((95,21), 1)",
+    "SetLavaPossible((95,22), 1)",
+    "SetLavaPossible((95,23), 1)",
+    "SetLavaPossible((95,27), 1)",
+    "SetLavaPossible((96,11), 1)",
+    "SetLavaPossible((96,12), 1)",
+    "SetLavaPossible((96,13), 1)",
+    "SetLavaPossible((96,14), 1)",
+    "SetLavaPossible((96,15), 1)",
+    "SetLavaPossible((96,16), 1)",
+    "SetLavaPossible((96,17), 1)",
+    "SetLavaPossible((96,18), 1)",
+    "SetLavaPossible((96,19), 1)",
+    "SetLavaPossible((96,20), 1)",
+    "SetLavaPossible((96,21), 1)",
+    "SetLavaPossible((96,23), 1)",
+    "SetLavaPossible((96,24), 1)",
+    "SetLavaPossible((96,26), 1)",
+    "SetLavaPossible((96,27), 1)",
+    "SetLavaPossible((97,12), 1)",
+    "SetLavaPossible((97,13), 1)",
+    "SetLavaPossible((97,14), 1)",
+    "SetLavaPossible((97,15), 1)",
+    "SetLavaPossible((97,16), 1)",
+    "SetLavaPossible((97,17), 1)",
+    "SetLavaPossible((97,18), 1)",
+    "SetLavaPossible((97,19), 1)",
+    "SetLavaPossible((97,24), 1)",
+    "SetLavaPossible((97,25), 1)",
+    "SetLavaPossible((97,26), 1)",
+    "SetLavaPossible((98,12), 1)",
+    "SetLavaPossible((98,13), 1)",
+    "SetLavaPossible((98,14), 1)",
+    "SetLavaPossible((98,15), 1)",
+    "SetLavaPossible((98,16), 1)",
+    "SetLavaPossible((98,17), 1)",
+    "SetLavaPossible((98,18), 1)",
+    "SetLavaPossible((98,19), 1)",
+    "SetLavaPossible((98,25), 1)",
+    "SetLavaPossible((98,26), 1)",
+    "SetLavaPossible((98,27), 1)",
+    "SetLavaPossible((99,13), 1)",
+    "SetLavaPossible((99,18), 1)",
+    "SetLavaPossible((99,27), 1)",
+    "InitialSetTile((34,4), 32)",
+    "InitialSetTile((34,5), 11)",
+    "InitialSetTile((35,4), 11)",
+    "InitialSetTile((35,5), 32)",
+    "InitialSetTile((37,12), 31)",
+    "InitialSetTile((37,13), 11)",
+    "InitialSetTile((37,14), 32)",
+    "InitialSetTile((38,12), 32)",
+    "InitialSetTile((38,13), 31)",
+    "InitialSetTile((38,14), 31)",
+    "SetCellType((39,4), 7)",
+    "InitialSetTile((39,4), 11)",
+    "SetCellType((39,5), 7)",
+    "InitialSetTile((39,5), 31)",
+    "SetCellType((40,4), 7)",
+    "InitialSetTile((40,4), 31)",
+    "SetCellType((40,5), 7)",
+    "InitialSetTile((40,5), 32)",
+    "InitialSetTile((40,12), 11)",
+    "InitialSetTile((40,13), 31)",
+    "InitialSetTile((41,12), 11)",
+    "InitialSetTile((41,13), 32)",
+    "InitialSetTile((43,15), 31)",
+    "InitialSetTile((46,8), 32)",
+    "InitialSetTile((46,9), 31)",
+    "InitialSetTile((46,10), 11)",
+    "InitialSetTile((47,1), 31)",
+    "InitialSetTile((48,1), 31)",
+    "InitialSetTile((84,57), 10)",
+    "InitialSetTile((84,58), 23)",
+    "InitialSetTile((85,57), 23)",
+    "InitialSetTile((85,58), 10)",
+    "InitialSetTile((86,53), 23)",
+    "InitialSetTile((87,53), 10)",
+    "InitialSetTile((89,44), 23)",
+    "InitialSetTile((90,44), 1)",
+    "InitialSetTile((90,45), 23)",
+    "SetCellType((91,49), 7)",
+    "InitialSetTile((91,49), 23)",
+    "SetCellType((91,50), 7)",
+    "InitialSetTile((91,50), 1)",
+    "SetCellType((91,51), 7)",
+    "InitialSetTile((91,51), 23)",
+    "SetCellType((92,49), 7)",
+    "InitialSetTile((92,49), 1)",
+    "SetCellType((92,50), 7)",
+    "InitialSetTile((92,50), 10)",
+    "SetCellType((92,51), 7)",
+    "InitialSetTile((92,51), 10)",
+    "SetCellType((93,49), 7)",
+    "InitialSetTile((93,49), 10)",
+    "SetCellType((93,50), 7)",
+    "InitialSetTile((93,50), 1)",
+    "SetCellType((93,51), 7)",
+    "InitialSetTile((93,51), 23)",
+    "InitialSetTile((96,59), 23)",
+    "InitialSetTile((96,60), 10)",
+    "InitialSetTile((97,59), 10)",
+    "InitialSetTile((97,60), 23)",
+    "InitialSetTile((98,59), 10)",
+    "InitialSetTile((98,60), 1)",
+    "InitialSetTile((99,59), 1)",
+    "InitialSetTile((99,60), 10)"
+  ],
+  "messages": [],
+  "mission": {
+    "level_desc": "2 Player, LastOne, 'Wishbone' map.",
+    "map_name": "mp2_05.map",
+    "max_tech_level": 12,
+    "mission_type": -8,
+    "num_players": 2,
+    "techtree_name": "MULTITEK.TXT",
+    "unit_mission": false
+  },
+  "note": "recorded from ml2_05.dll InitProc by op2-missionhost",
+  "options": {
+    "ForceMoraleGood": "-1",
+    "SetCheatFastProduction": "0",
+    "SetCheatFastUnits": "0",
+    "SetCheatProduceAll": "0",
+    "SetCheatUnlimitedResources": "0",
+    "SetDaylightEverywhere": "0"
+  },
+  "players": [
+    {
+      "allies": [],
+      "color": 1,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": true,
+      "food": 3000,
+      "human": true,
+      "id": 0,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        45,
+        5
+      ],
+      "workers": 27
+    },
+    {
+      "allies": [],
+      "color": 2,
+      "default_group": null,
+      "default_group_set": false,
+      "eden": true,
+      "food": 3000,
+      "human": true,
+      "id": 1,
+      "kids": 22,
+      "morale": 0,
+      "morale_level": 0,
+      "name": null,
+      "ore": 6000,
+      "rare_ore": 0,
+      "scientists": 18,
+      "solar_sats": 0,
+      "tech_level": 0,
+      "techs": [
+        3303,
+        3304,
+        3305,
+        3401
+      ],
+      "view": [
+        95,
+        53
+      ],
+      "workers": 27
+    }
+  ],
+  "seed": 1,
+  "spawn": [
+    {
+      "dir": 0,
+      "owner": 0,
+      "tile": [
+        17,
+        6
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        14,
+        14
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        15,
+        13
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        12,
+        14
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        15,
+        10
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        15,
+        10
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        15,
+        10
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        5,
+        9
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        4,
+        8
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 0,
+      "tile": [
+        6,
+        7
+      ],
+      "type": "WALL_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        62,
+        58
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        64,
+        58
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        60,
+        57
+      ],
+      "type": "BIG_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        57,
+        58
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        57,
+        58
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        57,
+        58
+      ],
+      "type": "CON_TRUCK"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        59,
+        49
+      ],
+      "type": "SURVEYOR"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        60,
+        48
+      ],
+      "type": "MINER"
+    },
+    {
+      "dir": 0,
+      "lights": true,
+      "owner": 1,
+      "tile": [
+        59,
+        47
+      ],
+      "type": "WALL_TRUCK"
+    }
+  ],
+  "structures": [
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        2,
+        23
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 1
+      },
+      "owner": 6,
+      "tile": [
+        76,
+        57
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": 0
+      },
+      "owner": 6,
+      "tile": [
+        60,
+        18
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        42,
+        32
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 1,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        105,
+        36
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        64,
+        2
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        87,
+        49
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        23,
+        29
+      ],
+      "type": "BEACON"
+    },
+    {
+      "extra": {
+        "oreType": 0,
+        "variant": -1,
+        "yield": -1
+      },
+      "owner": 6,
+      "tile": [
+        53,
+        38
+      ],
+      "type": "BEACON"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        29,
+        6
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        13,
+        5
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        13,
+        12
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        4,
+        3
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "extra": {
+        "bay0": 3801088,
+        "bay1": 2293760,
+        "bay2": 2490368,
+        "bay3": 3145728,
+        "bay4": 2031616,
+        "bay5": 1966080
+      },
+      "owner": 0,
+      "tile": [
+        13,
+        8
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        8,
+        13
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "owner": 0,
+      "tile": [
+        8,
+        9
+      ],
+      "type": "LAB_STANDARD"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        64,
+        35
+      ],
+      "type": "TOWER_GUARD"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        63,
+        53
+      ],
+      "type": "COMMAND"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        56,
+        56
+      ],
+      "type": "SMELTER"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        55,
+        47
+      ],
+      "type": "TOKAMAK"
+    },
+    {
+      "extra": {
+        "bay0": 3801088,
+        "bay1": 2293760,
+        "bay2": 2490368,
+        "bay3": 3145728,
+        "bay4": 2031616,
+        "bay5": 1966080
+      },
+      "owner": 1,
+      "tile": [
+        63,
+        56
+      ],
+      "type": "FACT_STRUCTURE"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        59,
+        53
+      ],
+      "type": "AGRIDOME"
+    },
+    {
+      "owner": 1,
+      "tile": [
+        63,
+        50
+      ],
+      "type": "LAB_STANDARD"
+    }
+  ],
+  "ticks": 100,
+  "triggers": [
+    {
+      "args": [
+        "1",
+        "1",
+        "\"NoResponseToTrigger\""
+      ],
+      "callback": "NoResponseToTrigger",
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 4,
+      "kind": "OnePlayerLeftTrigger",
+      "one_shot": true,
+      "period": 0,
+      "player": null,
+      "spec": "OnePlayerLeft",
+      "units": []
+    },
+    {
+      "args": [
+        "1",
+        "1",
+        "Trigger#4",
+        "\"Eliminate your opponents.\""
+      ],
+      "calls": [],
+      "counter": 0,
+      "created_tick": 0,
+      "destroyed": false,
+      "enabled": true,
+      "fired": 0,
+      "fired_mask": 0,
+      "id": 5,
+      "kind": "VictoryCondition",
+      "one_shot": true,
+      "period": 0,
+      "player": null,
+      "spec": {
+        "Victory": {
+          "linked": 4,
+          "objective": "Eliminate your opponents."
+        }
+      },
+      "units": [
+        4
+      ]
+    }
+  ],
+  "walls": [
+    {
+      "tile": [
+        8,
+        11
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        59,
+        55
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        59,
+        56
+      ],
+      "type": "TUBE"
+    },
+    {
+      "tile": [
+        60,
+        56
+      ],
+      "type": "TUBE"
+    }
+  ]
+}

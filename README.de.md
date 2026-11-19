@@ -5,8 +5,9 @@
 Eine KI für **Outpost 2** in Rust. Sie baut eine Kolonie auf, forscht, baut Armeen und greift an – wie ein
 Mitspieler. Sie läuft im Original-Spiel als `op2ki.dll` und wird aus einer Missions-DLL geladen.
 
-Dieses Repository enthält nur das, was zum Spielen und Zuschauen gebraucht wird: die KI, ihre Schnittstelle zum
-Spiel und die Missionen. Simulator, Lern- und Messwerkzeuge gehören nicht dazu.
+Dieses Repository enthält, was zum Spielen und Zuschauen gebraucht wird: die KI, ihre Schnittstelle zum Spiel und die
+Missionen, dazu [`sim/`](sim/), das die KI ohne Spiel auf op2-sim (dem nativen Engine-Nachbau aus op2-rs) gegen sich
+selbst spielen lässt. Lern- und Messwerkzeuge gehören nicht dazu.
 
 ## Spielen
 
@@ -60,11 +61,19 @@ Rust ist jetzt ihre einzige Quelle; die Missionen enthalten keine eigene KI.
 | Forschung | `kern/src/cpp/forschung` | Techbaum-Vorhersage (Nutzen je Kosten), Labore, Ausbildung |
 | Kampf | `kern/src/cpp/kampf`, `paarung.rs` | Armee-Soll, Waffenwahl nach Paarungen, Zermürben, Basisangriff |
 | Gefecht | `gefecht.rs`, `gefecht_netz.rs` | Nahkampf mit einem gelernten Netz (`gefecht_netz.txt`) |
+| Zwei Wege | `parallel.rs`, `gelaende.rs` | Angriff über zwei getrennte Wege, wenn das Gelände sie hat |
+| Zweitbasis | `zweitbasis.rs` | Außenposten mit Kommandozentrale und Schmelze an einem fernen Bakenfeld, sobald die Hauptbasis steht, Erz übrig und Personal frei ist |
+| Mauern | `mauer.rs` | merkt sich aufgezeichnete Mauern, damit dort nichts anderes geplant wird; Wachtürme bekommen eine Röhre zur Kommandozentrale |
 
 Die KI sieht das Spiel nur über den Trait `Welt` (`kern/src/cpp/welt.rs`). In der DLL setzt `dll/src/extern_welt.rs`
 ihn auf eine Rufschnittstelle um, die die Mission übergibt; `missionen/gemeinsam/op2ki_bruecke.hpp` beantwortet die
 Rufe mit der OP2-API. Beide Dateien erzeugt `werkzeug/bruecke.py` aus dem Trait; eine Mission ist nur noch Kartendaten
 plus `op2ki::start` und `op2ki::schritt` (`missionen/gemeinsam/op2ki.hpp`).
+
+## Simulator
+
+[`sim/`](sim/) spielt op2-ki gegen op2-ki auf op2-sim in Sekunden und schreibt dieselbe Spur wie das Spiel. Es ist auch
+die Beispiel-Umsetzung des `Welt`-Traits für eine andere Engine. Einrichten und Schalter in [sim/README.md](sim/README.md).
 
 ## Bauen
 

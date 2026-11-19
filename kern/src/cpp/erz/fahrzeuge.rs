@@ -159,11 +159,24 @@ pub fn weitereFabriken(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     }
 }
 
+/// Fahrzeugfabrik fuer Wirtschaftsfahrzeuge: die des laufenden Auftrags; sonst eine, die laeuft (Strom und Arbeiter),
+/// lieber eine freie; sonst die stillgelegte (zum Wiedereinschalten); sonst die erste. Eine Fabrik ohne Roehrenanschluss
+/// bekam sonst alle Auftraege und baute nie.
+pub(super) fn fabrikWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> Id {
+    if z.fzTyp != 0 && z.fzVf != 0 && welt.IsLive(z.fzVf) { return z.fzVf; }
+    let alle: Vec<Id> = (0..l.vfAnzahl.max(0) as usize).map(|i| l.vfs[i]).filter(|&v| v != 0 && welt.IsLive(v)).collect();
+    let laeuft = |welt: &mut dyn Welt, v: Id| welt.HasPower(v) && welt.HasWorkers(v);
+    if let Some(&v) = alle.iter().find(|&&v| laeuft(welt, v) && !welt.IsBusy(v)) { return v; }
+    if let Some(&v) = alle.iter().find(|&&v| laeuft(welt, v)) { return v; }
+    if z.fabrikStill != 0 && alle.contains(&z.fabrikStill) { return z.fabrikStill; }
+    l.vf
+}
+
 /// C++: void fahrzeuge(Zustand& z, const Lage& l)  (op2_ki.hpp:3846)
 pub fn fahrzeuge(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     if l.vf == 0 { return; }
     weitereFabriken(welt, z, l);
-    let vf: Id = l.vf;
+    let vf: Id = fabrikWahl(welt, z, l);
     let t = welt.Tick();
     let vl = welt.Location(vf);
     let (vx, vy) = exy(welt, z, vl);
@@ -237,6 +250,7 @@ pub fn fahrzeuge(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
         return;
     }
     welt.DoProduce(vf, typ, waffe);
+    z.fzVf = vf;
     if !istKampfFz(welt, typ) { z.wirtVorrang = 0; }
     z.fzTyp = typ; z.fzSeit = t;
     if istKampfFz(welt, typ) { z.letztesKampfFz = t; }

@@ -78,6 +78,37 @@ pub struct Parameter {
     pub vorplanWachstum: f64,
     pub vorplanRadius: f64,
     pub vorplanDicht: f64,
+    /// Bakenfeld mindestens so viele Wegkacheln von der Basis
+    pub zbMinWeg: f64,
+    /// Mehrertrag im Horizont / Kosten, ab dem gebaut wird
+    pub zbNutzen: f64,
+    /// Wachtuerme der Zweitbasis
+    pub zbTuerme: f64,
+    /// Fahrzeugfabrik an der Zweitbasis (0/1)
+    pub zbFabrik: f64,
+    /// Strukturfabrik an der Zweitbasis (0/1)
+    pub zbStruktur: f64,
+    /// Zweitbasis nur, wenn der Feind mindestens so viel weiter weg ist als wir (Faktor)
+    pub zbFeindAbstand: f64,
+    /// Zweitbasis erst, wenn die eigene Armee mindestens diesen Anteil des Solls hat
+    pub zbArmee: f64,
+    /// Zweitbasis: hoechstens so viele, 0..4
+    pub zbAnzahl: f64,
+    /// Zweitbasis bereit: hoechstens so viele offene Bauplaetze daheim, Bedrohung unter zbBedrohung,
+    /// Feindarmee hoechstens zbFeind x eigene, Erz mindestens zbErz x (Kommandozentrale + Schmelze), freie Arbeiter
+    /// mindestens zbArbeiter x Bedarf der Zweitbasis
+    pub zbOffen: f64,
+    pub zbBedrohung: f64,
+    pub zbFeind: f64,
+    pub zbErz: f64,
+    pub zbArbeiter: f64,
+    /// Zweitbasis: Erzueberschuss (Bilanz) verlangen (1) oder nicht (0)
+    pub zbUeberschuss: f64,
+    /// Angriff ueber zwei getrennte Wege: Umweg-Faktor von daheim; Mindestabstand der Aufmarschpunkte
+    pub parallelUmweg: f64,
+    pub parallelAbstand: f64,
+    /// Rust: Reihen, die in einem Gang gleichzeitig in Reichweite kommen (Truppe > Breite x Tiefe -> teilen; 0 = immer)
+    pub parallelTiefe: f64,
 }
 impl Default for Parameter {
     fn default() -> Self {
@@ -120,6 +151,23 @@ impl Default for Parameter {
             vorplanWachstum: 0.5,
             vorplanRadius: 14.0,
             vorplanDicht: 8.0,
+            zbMinWeg: 28.0,
+            zbNutzen: 1.0,
+            zbTuerme: 3.0,
+            zbFabrik: 1.0,
+            zbStruktur: 0.0,
+            zbFeindAbstand: 1.2,
+            zbArmee: 1.0,
+            zbAnzahl: 1.0,
+            zbOffen: 0.0,
+            zbBedrohung: 50.0,
+            zbFeind: 1.0,
+            zbErz: 1.0,
+            zbArbeiter: 1.0,
+            zbUeberschuss: 1.0,
+            parallelUmweg: 1.4,
+            parallelAbstand: 8.0,
+            parallelTiefe: 3.0,
         }
     }
 }
