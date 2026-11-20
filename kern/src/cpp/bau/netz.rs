@@ -201,7 +201,9 @@ pub fn anschluss(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     z.anzahlRoehren = k as i32;
 }
 
-/// Laufende Roehrenauftraege: fertig, sobald die Kachel eine Roehre ist; nach 1500 Ticks Earthworker direkt (Rueckfall)
+/// Laufende Roehrenauftraege: fertig, sobald die Kachel eine Roehre ist. Gebaut wird nur ueber die BuildingGroup (RecordTube):
+/// ein direkter DoBuildWall mit einem 1x1-Rechteck an den Earthworker pfluegte im Original die ganze Spalte bis zum
+/// Kartenrand, und dort hing die Wegsuche des Spiels ~143 s.
 pub(super) fn roehrenPruefen(welt: &mut dyn Welt, z: &mut Zustand, t: i32) -> i32 {
     let mut offen = 0;
     for i in 0..z.anzahlRoehren as usize {
@@ -212,21 +214,10 @@ pub(super) fn roehrenPruefen(welt: &mut dyn Welt, z: &mut Zustand, t: i32) -> i3
             if zelleRoehre(welt, c) {
                 r.zustand = 2;
                 melde(welt, z, "fertig", mapEarthworker, r.x1 as i32, r.y1 as i32,
-                      &format!("Roehre gebaut ({}, nach {} Ticks)", if r.versuche != 0 { "Rueckfall Earthworker" } else { "BuildingGroup" }, t - r.seit));
+                      &format!("Roehre gebaut (BuildingGroup, nach {} Ticks)", t - r.seit));
                 break 'b;
             }
             offen += 1;
-            // Rueckfall: baut die Gruppe die Kachel nicht, bekommt der Earthworker den direkten Befehl.
-            if t - r.seit > 1500 && r.versuche == 0 {
-                for ew in welt.PlayerVehicleEnum(z.spieler) {
-                    if welt.GetType(ew) != mapEarthworker || welt.IsBusy(ew) { continue; }
-                    let rect = Rect::new(engine(welt, z, r.x1 as i32, r.y1 as i32), engine(welt, z, r.x2 as i32, r.y2 as i32));
-                    welt.DoBuildWall(ew, mapTube, rect);
-                    r.versuche = 1; r.seit = t;
-                    melde(welt, z, "fehler", mapEarthworker, r.x1 as i32, r.y1 as i32, &format!("BuildingGroup baut die Roehre nicht -- Earthworker {} direkt (Rueckfall)", ew));
-                    break;
-                }
-            }
         }
         z.roehren[i] = r;
     }
