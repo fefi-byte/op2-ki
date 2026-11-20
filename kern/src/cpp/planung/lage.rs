@@ -153,7 +153,9 @@ pub fn erzWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage, b: &Bilanz) -> ErzWah
     let schmArbeiter = standardVolk(welt, l) || welt.GetWorkersRequired(mapCommonOreSmelter, sp)
         <= l.arbFrei + stilllegbarS + erzGebunden - beansprucht(welt, l, M_ARB as i32, rangS, mapCommonOreSmelter);
     if mn > 0 && schm < 2 * mn && schm < MAX_MINEN as i32 && b.engpassErz > 0 && schmArbeiter && kitMoeglich(welt, z, mapCommonOreSmelter) {
-        let n = (if b.engpassErz < b.routeErz { b.engpassErz } else { b.routeErz }) as f64 / (welt.GetOreCost(mapCommonOreSmelter, sp) + 1) as f64;
+        let mut n = (if b.engpassErz < b.routeErz { b.engpassErz } else { b.routeErz }) as f64 / (welt.GetOreCost(mapCommonOreSmelter, sp) + 1) as f64;
+        // keine zweite Schmelze vor Kindergarten, Universitaet und Eroeffnungslabor: die eine BuildingGroup baut der Reihe nach
+        if schm >= 1 && super::forschung::eroeffnungBautNoch(welt, z, l) { n = 0.0; }
         if n > w.nutzen { w = ErzWahl { typ: mapCommonOreSmelter, nutzen: n }; }
     }
     let sel = l.geb[ix(mapRareOreSmelter)] + geplant(welt, z, mapRareOreSmelter) + l.kitsImSpiel[ix(mapRareOreSmelter)];

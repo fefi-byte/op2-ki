@@ -37,6 +37,18 @@ pub fn eroeffnungOffen(welt: &mut dyn Welt, z: &Zustand) -> Vec<i32> {
     EROEFFNUNG.iter().copied().filter(|&id| techIndex(welt, id) >= 0 && !hatTechId(welt, z, id)).collect()
 }
 
+/// Fehlt noch ein Gebaeude der Eroeffnung (Kindergarten, Universitaet, Labor fuer ihr naechstes Thema)? Auch wenn seine
+/// Technik noch erforscht wird: die eine BuildingGroup baut der Reihe nach, eine Schmelze davor schiebt alles um ~4000 Ticks
+pub fn eroeffnungBautNoch(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> bool {
+    let offen = eroeffnungOffen(welt, z);
+    if offen.is_empty() { return false; }
+    for typ in [mapNursery, mapUniversity] {
+        if hatGeb(welt, z, l, typ) == 0 && l.imBau[typ as usize] == 0 { return true; }
+    }
+    let lab = laborImWeg(welt, z, l, offen[0]);
+    lab != 0 && hatGeb(welt, z, l, lab) == 0 && l.imBau[lab as usize] == 0
+}
+
 /// Bereich der Laborsteuerung (0 Kolonie, 1 Ziel, 2 Kampf, 3 Wirtschaft) aus dem Bereich der Tech-Tabelle
 fn bereichVonTech(id: i32) -> i32 {
     match tb::tech(id).map(|t| t.bereich) { Some(1) => 2, Some(2) => 3, Some(3) => 1, _ => 0 }
