@@ -16,7 +16,9 @@ pub fn rang(welt: &mut dyn Welt, z: &Zustand, l: &Lage, typ: i32) -> i32 {
         mapCommonOreSmelter | mapCommonOreMine => 80,
         mapNursery => 78,
         mapUniversity => 74,
-        mapMedicalCenter => 70,
+        // Das erste Medical Center ueber den Schmelzen -- ohne es sterben die Leute, und Erz-Ansprueche mit Rang 80 hielten es
+        // zehntausende Ticks zurueck (Personal-Engpass frueh)
+        mapMedicalCenter => if l.medKap == 0 && l.menschen >= 40 { 84 } else { 70 },
         // Labore: so wichtig, wie die Forschung sie gerade braucht (laborBedarf)
         mapAdvancedLab => { let r = 30 + z.laborNutzen[3] * 6 / 10; if ziel && r < 66 { 66 } else { r } }
         mapStandardLab => { let r = 30 + z.laborNutzen[2] * 6 / 10; if r < 64 { 64 } else { r } }

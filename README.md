@@ -58,12 +58,12 @@ now its only source; the missions contain no AI of their own.
 | Planning | `kern/src/cpp/planung` | situation picture, urgencies, what to build next |
 | Building | `kern/src/cpp/bau`, `vorplan.rs` | building sites, layout plan, tubes, workers |
 | Ore | `kern/src/cpp/erz` | beacons, mines, truck routes, rare ore, vehicle choice |
-| Research | `kern/src/cpp/forschung` | tech tree forecast (benefit per cost), labs, training |
-| Military | `kern/src/cpp/kampf`, `paarung.rs` | army target, weapon choice by matchups, raids, base attack |
+| Research | `kern/src/cpp/forschung` | fixed opening (nursery, university, path to the Lynx), then tech tree forecast (benefit per cost, military share times ten, armor against the enemy's weapons, speed, prerequisites of buildable units, keeping a line), labs, training |
+| Military | `kern/src/cpp/kampf`, `paarung.rs` | early defense (earliest attack from Lynx research, build time and path to the nearest enemy base), army target, guard area around all base buildings, weapon choice by matchups, raids, base attack |
 | Combat | `gefecht.rs`, `gefecht_netz.rs` | close combat by a learned network (`gefecht_netz.txt`) |
 | Two routes | `parallel.rs`, `gelaende.rs` | attacks over two separate paths when the terrain has them |
 | Second base | `zweitbasis.rs` | an outpost with command center and smelter at a far beacon field, once the main base stands, ore is spare and workers are free |
-| Walls | `mauer.rs` | remembers recorded walls so no building is planned on them; guard towers get a tube to the command center |
+| Walls | `mauer.rs` | remembers recorded walls so no building is planned on them; build order: first connect buildings with staff, then guard towers (tube to the command center), walls last |
 
 The AI sees the game only through the `Welt` ("world") trait in `kern/src/cpp/welt.rs`. In the DLL,
 `dll/src/extern_welt.rs` maps it onto a call interface the mission passes in, and

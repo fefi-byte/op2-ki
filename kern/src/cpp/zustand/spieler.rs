@@ -132,6 +132,9 @@ pub struct Zustand {
     pub aufmarschX: i32,
     pub aufmarschY: i32,
     pub aufmarschSeit: i32,
+    /// Wachgebiet der Basis (Editor-Kacheln x0, y0, x1, y1) und das zuletzt an die Wache gegebene
+    pub wacheGebiet: [i32; 4],
+    pub wacheGebietAlt: [i32; 4],
     /// Aufmarschpunkt der zweiten Angriffsgruppe bei zwei Wegen (0,0 = keiner), schmalste Stelle des ersten Wegs
     pub aufmarsch2X: i32,
     pub aufmarsch2Y: i32,
@@ -291,6 +294,8 @@ pub struct Zustand {
     pub angriffZiel: i32,   // unitID des Feindgebaeudes, das die Angriffstruppe gerade angreift
     pub feindPotenzial: i32,   // was der Feind in der Reaktionszeit aufstellen koennte (Armee + Fabriken)
     pub erzUeberschuss: i32,   // Bilanz ohne Angriffstruppe: Erz reicht im Horizont (1) oder nicht (0)
+    pub eroeffWarteSeit: i32,   // seit wann ein Labor auf ein Thema der Eroeffnung wartet (0 = keines)
+    pub fwAngriff: i32,   // Fruehe Wehr: geschaetzter fruehester Angriff (Tick, 0 = noch nicht berechnet)
     pub aussenGruppe: [Gruppe; 6],
     /// Forschung: je Labor der Bereich des gestarteten Themas (0 Kolonie, 1 Ziel, 2 Kampf, 3 Wirtschaft, -1 Fueller/sonst)
     pub forschLab: [Id; 8],

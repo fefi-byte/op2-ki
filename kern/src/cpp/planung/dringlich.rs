@@ -98,6 +98,12 @@ pub fn dringlichkeit(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> Dringlichkei
         else if z.ziel == 2 { if rest > d.kolonie { d.kolonie = rest; d.kolonieGrund = "Ziel Bevoelkerung"; } }
         else if z.ziel == 3 { if rest > d.kampfForschung { d.kampfForschung = rest; } if rest > d.verteidigung && z.feindGeb != 0 { d.verteidigung = rest / 2; } }
     }
+    // Fruehe Wehr: im Fenster um den fruehesten Angriff (planung/scan.rs fruehWehr) geht die Verteidigung vor, solange die
+    // Mindestabwehr fehlt -- die anderen Bereiche auf ein Zehntel gedaempft. Steht sie, verteilt die KI wieder frei.
+    if super::scan::fwFenster(welt, z) && d.verteidigung > 0 && kampfFehlt(welt, z, l) > 0 {
+        let f = 1.0 - 0.9f64.clamp(0.0, 1.0);
+        d.kolonie = (d.kolonie as f64 * f) as i32; d.ziel = (d.ziel as f64 * f) as i32; d.wirtschaft = (d.wirtschaft as f64 * f) as i32;
+    }
     d
 }
 

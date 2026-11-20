@@ -58,12 +58,12 @@ Rust ist jetzt ihre einzige Quelle; die Missionen enthalten keine eigene KI.
 | Planung | `kern/src/cpp/planung` | Lagebild, Dringlichkeiten, was als Nächstes gebaut wird |
 | Bau | `kern/src/cpp/bau`, `vorplan.rs` | Bauplätze, Bebauungsplan, Röhren, Arbeiter |
 | Erz | `kern/src/cpp/erz` | Baken, Minen, Lastwagen-Routen, Seltenerz, Fahrzeugwahl |
-| Forschung | `kern/src/cpp/forschung` | Techbaum-Vorhersage (Nutzen je Kosten), Labore, Ausbildung |
-| Kampf | `kern/src/cpp/kampf`, `paarung.rs` | Armee-Soll, Waffenwahl nach Paarungen, Zermürben, Basisangriff |
+| Forschung | `kern/src/cpp/forschung` | feste Eröffnung (Kindergarten, Universität, Weg zum Lynx), danach Techbaum-Vorhersage (Nutzen je Kosten, Kampf-Anteil zehnfach, Panzerung gegen die Feindwaffen, Tempo, Voraussetzungen für Baubares, eine Linie halten), Labore, Ausbildung |
+| Kampf | `kern/src/cpp/kampf`, `paarung.rs` | frühe Wehr (frühester Angriff aus Lynx-Forschung, Bauzeit und Weg zur nächsten Feindbasis), Armee-Soll, Wachgebiet um alle Gebäude der Basis, Waffenwahl nach Paarungen, Zermürben, Basisangriff |
 | Gefecht | `gefecht.rs`, `gefecht_netz.rs` | Nahkampf mit einem gelernten Netz (`gefecht_netz.txt`) |
 | Zwei Wege | `parallel.rs`, `gelaende.rs` | Angriff über zwei getrennte Wege, wenn das Gelände sie hat |
 | Zweitbasis | `zweitbasis.rs` | Außenposten mit Kommandozentrale und Schmelze an einem fernen Bakenfeld, sobald die Hauptbasis steht, Erz übrig und Personal frei ist |
-| Mauern | `mauer.rs` | merkt sich aufgezeichnete Mauern, damit dort nichts anderes geplant wird; Wachtürme bekommen eine Röhre zur Kommandozentrale |
+| Mauern | `mauer.rs` | merkt sich aufgezeichnete Mauern, damit dort nichts anderes geplant wird; Bau-Reihenfolge: erst Gebäude mit Personal anschließen, dann Wachtürme (Röhre zur Kommandozentrale), zuletzt Mauern |
 
 Die KI sieht das Spiel nur über den Trait `Welt` (`kern/src/cpp/welt.rs`). In der DLL setzt `dll/src/extern_welt.rs`
 ihn auf eine Rufschnittstelle um, die die Mission übergibt; `missionen/gemeinsam/op2ki_bruecke.hpp` beantwortet die

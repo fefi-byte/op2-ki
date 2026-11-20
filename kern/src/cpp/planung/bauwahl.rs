@@ -380,6 +380,28 @@ pub fn bauWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> Wahl {
     if (reichweite < 3000 || l.nahrung < 300) && l.nahrungNetto <= 0 && agriUnterwegs == 0 {
         notfall(&mut w, mapAgridome, format!("Nahrung {}, netto {:+}", l.nahrung, l.nahrungNetto)); return w;
     }
+    // Eroeffnung der Forschung: das Labor fuer eines ihrer offenen Themen zuerst (der Lynx braucht das Advanced Lab;
+    // es baut sich ~3300 Ticks, bestellt erst nach Universitaet und Wohnraum stand es zu spaet)
+    // ... aber in der Reihenfolge Kindergarten, Universitaet, Labor (Nutzer 2026-11-19): sie sind der Zweck der ersten
+    // Eroeffnungsthemen (3304, 3305). Drueckte das Labor den Kindergarten nach hinten, fehlten spaeter die Arbeiter, ihn zu
+    // besetzen -- die Kolonie starb aus (mp6_31 Seed 1)
+    if !eroeffnungOffen(welt, z).is_empty() {
+        for (typ, text) in [(mapNursery, "Eroeffnung: Kindergarten vor Universitaet und Labor -- ohne ihn keine Geburten"),
+                            (mapUniversity, "Eroeffnung: Universitaet vor dem Labor -- bildet Arbeiter und Wissenschaftler aus")] {
+            if hatGeb(welt, z, l, typ) == 0 && kitMoeglich(welt, z, typ) {
+                if waehle(welt, z, l, typ, B_KOLONIE, false, &mut w, text) { return w; }
+            }
+        }
+    }
+    for id in eroeffnungOffen(welt, z) {
+        let lab = laborImWeg(welt, z, l, id);
+        if lab == 0 { continue; }
+        if hatGeb(welt, z, l, lab) == 0 && kitMoeglich(welt, z, lab) {
+            let nm = name(welt, lab);
+            if waehle(welt, z, l, lab, B_WIRTSCHAFT, false, &mut w, &format!("Eroeffnung: {} fuer Tech {}", nm, id)) { return w; }
+        }
+        break;
+    }
     // Fabrik frueh: sobald ihre Technik da ist und die Waffenforschung begonnen hat, die erste Fahrzeugfabrik bauen
     if fabrikErwartet(welt, z, l) {
         if waehle(welt, z, l, mapVehicleFactory, B_VERTEIDIGUNG, z.bedrohung >= 50, &mut w, "Fabrik frueh: Waffenforschung begonnen, Fahrzeugfabrik soll bereitstehen") { return w; }

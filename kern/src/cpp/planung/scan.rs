@@ -267,4 +267,65 @@ pub(super) fn sollArmee(welt: &mut dyn Welt, z: &mut Zustand, armee: i32, fabrik
     // Reserve nur auf die tatsaechliche Armee und ihr Wachstum
     let echt = ((armee as f64 + z.feindWachstum * par_.reaktion / 1000.0) * z.reserve + 0.5) as i32;
     z.sollArmee = if echt > z.feindPotenzial { echt } else { z.feindPotenzial };
+    fruehWehr(welt, z);
+}
+
+/// Fruehe Wehr (die Kolonie muss sich frueh verteidigen koennen, danach wird die KI selbststaendiger): der frueheste
+/// Angriff aus der Karte -- Lynx-Forschung des Gegners (11600 Ticks, gemessen mit der schnellsten Eroeffnung) + Bauzeit des
+/// Lynx (Spieldaten) + Wegkacheln zur naechsten feindlichen Kommandozentrale x 40 Ticks je Kachel (gemessen). Von 6000 Ticks
+/// davor bis 5000 danach ist das Armee-Soll mindestens 16 und die Bedrohung steigt bis 60; die Wege dahin (Tuerme,
+/// Fahrzeuge, Forschung) waehlt die KI wie sonst.
+pub(super) const FW_AUFRUEST: f64 = 11600.0;
+pub(super) const FW_FAHRT: f64 = 40.0;
+pub(super) const FW_WERT: f64 = 16.0;
+pub(super) const FW_VORLAUF: f64 = 6000.0;
+pub(super) const FW_NACH: f64 = 5000.0;
+pub(super) const FW_BEDROHUNG: f64 = 60.0;
+fn fruehWehr(welt: &mut dyn Welt, z: &mut Zustand) {
+    if z.fwAngriff == 0 && z.feindGeb != 0 {
+        let (b, h) = (z.breite, z.hoehe);
+        let mut zellen = vec![0i32; (b * h).max(0) as usize];
+        for y in 0..h { for x in 0..b { let l = engine(welt, z, x, y); zellen[(y * b + x) as usize] = welt.GetCellType(l); } }
+        let mut best: Option<(i32, i32, (i32, i32))> = None;   // (Weg, Spieler, Ort)
+        for q in 0..welt.NoPlayers() {
+            if q == z.spieler || welt.IsAlliedTo(z.spieler, q) { continue; }
+            for u in welt.PlayerBuildingEnum(q, mapCommandCenter) {
+                if !welt.IsLive(u) { continue; }
+                let lo = welt.Location(u);
+                let ort = (edX(welt, z, lo), edY(welt, z, lo));
+                let g = super::super::gelaende::Gelaende::neu(&zellen, b, h, (z.bx, z.by), ort);
+                let gw = if ort.0 >= 0 && ort.1 >= 0 && ort.0 < b && ort.1 < h { g.d_eigen[(ort.1 * b + ort.0) as usize] } else { -1 };
+                let weg = if gw > 0 { gw } else { ((abstand2(welt, z.bx, z.by, ort.0, ort.1) as f64).sqrt() * 1.3) as i32 };
+                if best.is_none_or(|bb| weg < bb.0) { best = Some((weg, q, ort)); }
+            }
+        }
+        let (weg, q, ort) = best.unwrap_or((((abstand2(welt, z.bx, z.by, z.feindX, z.feindY) as f64).sqrt() * 1.3) as i32, -1, (z.feindX, z.feindY)));
+        let bau = if q >= 0 { welt.GetBuildTime(mapLynx, q) * 4 } else { 0 };
+        z.fwAngriff = (FW_AUFRUEST + bau as f64 + weg as f64 * FW_FAHRT) as i32;
+        melde(welt, z, "kampf", mapLynx, ort.0, ort.1, &format!(
+            "Fruehe Wehr: fruehester Angriff um Tick {} (Lynx-Forschung {:.0} + Bau {} + {} Wegkacheln zur naechsten Feindbasis x {:.0}), Mindestabwehr Wert {:.0} von Tick {} bis {}",
+            z.fwAngriff, FW_AUFRUEST, bau, weg, FW_FAHRT, FW_WERT, z.fwAngriff - FW_VORLAUF as i32, z.fwAngriff + FW_NACH as i32));
+    }
+    let t = welt.Tick();
+    // Frueheres Ende: ist zum geschaetzten Angriff weder eine feindliche Armee noch eine Fahrzeugfabrik zu sehen, ruestet
+    // der Gegner nicht frueh -- die KI verteilt wieder frei (fwAngriff -1 = vorbei)
+    if z.fwAngriff > 0 && t >= z.fwAngriff && z.feindArmee == 0 && z.feindFabriken == 0 {
+        melde(welt, z, "kampf", mapLynx, z.feindX, z.feindY, "Fruehe Wehr vorbei: zum geschaetzten Angriff weder Feindarmee noch Fahrzeugfabrik");
+        z.fwAngriff = -1;
+    }
+    let (von, bis) = (z.fwAngriff - FW_VORLAUF as i32, z.fwAngriff + FW_NACH as i32);
+    if z.fwAngriff > 0 && t >= von && t <= bis {
+        if (z.sollArmee as f64) < FW_WERT { z.sollArmee = FW_WERT as i32; }
+        // erwartete Bedrohung: steigt im Vorlauf bis 60 zum geschaetzten Angriff (Verteidigung und Militaerforschung werden
+        // dringlich, bevor der Feind zu sehen ist)
+        let anteil = ((t - von) as f64 / FW_VORLAUF).clamp(0.0, 1.0);
+        let b = (FW_BEDROHUNG * anteil) as i32;
+        if b > z.bedrohung { z.bedrohung = b.min(100); }
+    }
+}
+
+/// Liegt der Tick im Fenster der fruehen Wehr?
+pub fn fwFenster(welt: &mut dyn Welt, z: &Zustand) -> bool {
+    let t = welt.Tick();
+    z.fwAngriff > 0 && t >= z.fwAngriff - FW_VORLAUF as i32 && t <= z.fwAngriff + FW_NACH as i32
 }

@@ -24,7 +24,23 @@ pub(super) enum Schritt { Weiter, Fertig }
 
 /// Gewaehltes Thema fuer ein Labor samt Kuchenanteilen (fuer die Meldung)
 pub(super) struct ThemenWahl { idx: i32, nm: String, art: String, gewaehlt: i32, zielOffen: bool, ltyp: i32,
-                    anteilKolonie: i32, anteilZiel: i32, anteilMilitaer: i32, anteilWirtschaft: i32 }
+                    anteilKolonie: i32, anteilZiel: i32, anteilMilitaer: i32, anteilWirtschaft: i32, warten: bool }
+
+/// Eroeffnung der Forschung (fest): Kindergarten, Universitaet, dann der Weg zum Lynx -- Cybernetic Teleoperation,
+/// Focused Microwave Projection, Mobile Weapons Platform. Die Kolonie muss den fruehen Ansturm ueberleben.
+pub const EROEFFNUNG: [i32; 5] = [3304, 3305, 3401, 3408, 3851];
+
+/// Die noch nicht erforschten Themen der Eroeffnung in ihrer Reihenfolge. Leer = vorbei, die KI waehlt frei.
+pub fn eroeffnungOffen(welt: &mut dyn Welt, z: &Zustand) -> Vec<i32> {
+    // nur bei fruehem Angriff bis Tick 25000 (geschaetzt aus Bau- und Fahrzeit zur naechsten Feindbasis, planung/scan.rs fruehWehr)
+    if z.fwAngriff > 0 && z.fwAngriff as f64 > 25000.0 { return Vec::new(); }
+    EROEFFNUNG.iter().copied().filter(|&id| techIndex(welt, id) >= 0 && !hatTechId(welt, z, id)).collect()
+}
+
+/// Bereich der Laborsteuerung (0 Kolonie, 1 Ziel, 2 Kampf, 3 Wirtschaft) aus dem Bereich der Tech-Tabelle
+fn bereichVonTech(id: i32) -> i32 {
+    match tb::tech(id).map(|t| t.bereich) { Some(1) => 2, Some(2) => 3, Some(3) => 1, _ => 0 }
+}
 
 /// C++: void forschung(Zustand& z, const Lage& l)  (op2_ki.hpp:5762). Rust 2026-11-18 in Schritte aufgeteilt (Verhalten gleich).
 pub fn forschung(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
@@ -140,8 +156,16 @@ pub(super) fn belegteThemen(welt: &mut dyn Welt, z: &mut Zustand, typen: &[i32; 
 pub(super) fn laborBedienen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, t: i32, typ: i32, lab: Id, typen: &[i32; 3], belegt: &mut [i32; 16], nb: &mut i32) -> Schritt {
     if let Some(s) = lynxVorrang(welt, z, l, t, typ, lab, typen) { return s; }
     if let Some(s) = laborNichtBereit(welt, z, typ, lab) { return s; }
-    let ThemenWahl { mut idx, mut nm, art, gewaehlt, zielOffen, ltyp, anteilKolonie, anteilZiel, anteilMilitaer, anteilWirtschaft } =
+    let ThemenWahl { mut idx, mut nm, art, gewaehlt, zielOffen, ltyp, anteilKolonie, anteilZiel, anteilMilitaer, anteilWirtschaft, warten } =
         themaFuerLabor(welt, z, l, typ, belegt, *nb);
+    if warten {
+        if selten(welt, z, 26, 3000) {
+            let lo = welt.Location(lab);
+            let (x, y) = (edX(welt, z, lo), edY(welt, z, lo));
+            melde(welt, z, "warte", typ, x, y, "Eroeffnung: kein Thema der Eroeffnung passt in dieses Labor -- es bleibt frei");
+        }
+        return Schritt::Weiter;
+    }
     // Bei echter Bevoelkerung keine weiteren Nebenthemen, solange das Ziel offen ist (Wissenschaftler freihalten)
     if idx < 0 && zielOffen && welt.Scientists(z.spieler) < 100 {
         if selten(welt, z, 22, 4000) {
@@ -313,9 +337,27 @@ pub(super) fn themaFuerLabor(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, typ
     let mut idx: i32 = -1;
     let mut art = String::new();
     let ltyp = laborTyp(welt, typ);
-    // Kampf und Wirtschaft aus der Techbaum-Vorhersage (Nutzen pro Wegkosten)
-    let anteilMilitaer = dr.kampfForschung;
+    // Kampf und Wirtschaft aus der Techbaum-Vorhersage (Nutzen pro Wegkosten); der Kampf-Anteil zaehlt zehnfach
+    // (Spiegelpartien: ohne forschte Plymouth nie Panther, Rocket Propulsion und EMP, Eden verlor ohnehin)
+    let anteilMilitaer = (dr.kampfForschung as f64 * 10.0) as i32;
     let anteilWirtschaft = dr.wirtschaft;
+    // Eroeffnung: solange offen, nur ihre Themen (oder deren Voraussetzungen) in ihrer Reihenfolge; passt keines in dieses
+    // Labor, bleibt es frei -- seine Wissenschaftler stehen der Eroeffnung zur Verfuegung
+    let eroeff = eroeffnungOffen(welt, z);
+    if !eroeff.is_empty() {
+        let (mut e_idx, mut e_nm, mut e_art) = (-1, String::new(), String::new());
+        forschungListe(welt, z, &eroeff, eroeff.len() as i32, "Eroeffnung: ", ltyp, belegt, nb, &mut e_nm, &mut e_idx, &mut e_art);
+        // Sicherheitsventil: kommt die Eroeffnung laenger als 3000 Ticks nicht weiter (z.B. ihr Labor ohne Anschluss),
+        // forscht ein freies Labor wieder wie sonst -- sonst stand die ganze Forschung still (mp6_31: die Kolonie starb aus)
+        let t = welt.Tick();
+        if e_idx >= 0 { z.eroeffWarteSeit = 0; }
+        else if z.eroeffWarteSeit == 0 { z.eroeffWarteSeit = t; }
+        if e_idx >= 0 || (t - z.eroeffWarteSeit) < 3000 {
+            let gewaehlt = if e_idx >= 0 { bereichVonTech(eroeff[0]) } else { -1 };
+            return ThemenWahl { idx: e_idx, nm: e_nm, art: e_art, gewaehlt, zielOffen, ltyp, anteilKolonie, anteilZiel,
+                                anteilMilitaer, anteilWirtschaft, warten: e_idx < 0 };
+        }
+    }
     let Listen { kampf: KAMPF_T, nKampf, wirt: WIRT_T, nWirt, kolV: mut KOL_V, mut nKolV, raum: RAUM_T, nRaum } =
         vorhersageListen(welt, z, l, anteilMilitaer, zielOffen);
     // Uni vor (Spieler 2026-11-07): ohne akute Bedrohung kommt sie zuerst -- erst nach dem Kindergarten.
@@ -353,7 +395,7 @@ pub(super) fn themaFuerLabor(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, typ
     if idx < 0 && (!zielOffen || standardVolk(welt, l)) {
         forschungListe(welt, z, &FUELLER_T, 4, "Lueckenfueller Katastrophen: ", ltyp, belegt, nb, &mut nm, &mut idx, &mut art);
     }
-    ThemenWahl { idx, nm, art, gewaehlt, zielOffen, ltyp, anteilKolonie, anteilZiel, anteilMilitaer, anteilWirtschaft }
+    ThemenWahl { idx, nm, art, gewaehlt, zielOffen, ltyp, anteilKolonie, anteilZiel, anteilMilitaer, anteilWirtschaft, warten: false }
 }
 
 pub(super) fn vorhersageListen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, anteilMilitaer: i32, zielOffen: bool) -> Listen {
@@ -387,15 +429,19 @@ pub(super) fn vorhersageListen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, a
         }
         if anteilMilitaer > 0 {
             let n = bereichZiele(welt, z, l, 1, &mut v, 4);
+            if n > 0 { linieSetzen(z.spieler, 1, v[0].id); }
             for i in 0..n as usize { KAMPF_T[nKampf] = v[i].id; nKampf += 1; }
         }
         if empHinten && nKampf < 6 { KAMPF_T[nKampf] = EMP_TECH; nKampf += 1; }
         let mut n2 = bereichZiele(welt, z, l, 2, &mut v, 6);
+        if n2 > 0 { linieSetzen(z.spieler, 2, v[0].id); }
         for i in 0..n2 as usize { WIRT_T[nWirt] = v[i].id; nWirt += 1; }
         n2 = bereichZiele(welt, z, l, 0, &mut v, 6);
+        if n2 > 0 { linieSetzen(z.spieler, 0, v[0].id); }
         for i in 0..n2 as usize { KOL_V[nKolV] = v[i].id; nKolV += 1; }
         if zielOffen {
             n2 = bereichZiele(welt, z, l, 3, &mut v, 6);
+            if n2 > 0 { linieSetzen(z.spieler, 3, v[0].id); }
             for i in 0..n2 as usize { RAUM_T[nRaum] = v[i].id; nRaum += 1; }
         }
     }

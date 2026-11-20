@@ -27,7 +27,15 @@ thread_local! {
 /// PAR(z): Stellschrauben des Spielers.
 pub fn PAR(spieler: i32) -> Parameter { par.with(|p| p.borrow()[(spieler & 7) as usize]) }
 
+thread_local! {
+    /// Forschungslinie: zuletzt bestes Ziel je Spieler und Bereich (0 Kolonie, 1 Kampf, 2 Wirtschaft, 3 Raum)
+    pub static g_linie: std::cell::RefCell<[[i32; 4]; 8]> = const { std::cell::RefCell::new([[0; 4]; 8]) };
+}
+pub fn linieZiel(spieler: i32, bereich: i32) -> i32 { g_linie.with(|l| l.borrow()[(spieler & 7) as usize][(bereich & 3) as usize]) }
+pub fn linieSetzen(spieler: i32, bereich: i32, id: i32) { g_linie.with(|l| l.borrow_mut()[(spieler & 7) as usize][(bereich & 3) as usize] = id) }
+
 pub fn zuruecksetzen() {
+    g_linie.with(|l| *l.borrow_mut() = [[0; 4]; 8]);
     super::ablauf::zuruecksetzen_ablauf();
     super::forschung::zuruecksetzen_forschung();
     super::vorplan::zuruecksetzen_vorplan();

@@ -41,7 +41,24 @@ fn plaetzeBestimmen(welt: &mut dyn Welt, z: &mut Zustand) -> Plaetze {
     feindRichtung(welt, z, z.bx, z.by, &mut eux, &mut euy);
     let (wx, wy) = ((z.bx as f64 + eux * 8.0 + 0.5) as i32, (z.by as f64 + euy * 8.0 + 0.5) as i32);   // Warteplatz der Wache zum Feind hin
     let sx = (z.bx as f64 - eux * 6.0 + 0.5) as i32; let sy = (z.by as f64 - euy * 6.0 + 0.5) as i32;   // Sammelplatz hinter der Kolonie
-    let basis = Rect::new(engine(welt, z, z.bx - 16, z.by - 14), engine(welt, z, z.bx + 16, z.by + 14));
+    // Wachgebiet (Nutzer 2026-11-19: Tuerme der Basis wurden angegriffen, die Fahrzeuge blieben drin): das Rechteck um alle
+    // eigenen Gebaeude bis 30 Kacheln von der Mitte -- Tuerme eingeschlossen -- plus 5 Kacheln Rand, mindestens das alte
+    // feste Rechteck (+-16 x +-14). Ferne Aussenposten bleiben draussen.
+    let (mut x0, mut y0, mut x1, mut y1) = (z.bx - 16, z.by - 14, z.bx + 16, z.by + 14);
+    let (rand, weit) = (5, 30);
+    for &typ in super::GEBAEUDE.iter() {
+        for u in welt.PlayerBuildingEnum(z.spieler, typ) {
+            if !welt.IsLive(u) { continue; }
+            let lo = welt.Location(u);
+            let (x, y) = (edX(welt, z, lo), edY(welt, z, lo));
+            if abstand2(welt, x, y, z.bx, z.by) > weit * weit { continue; }
+            x0 = x0.min(x - rand); y0 = y0.min(y - rand); x1 = x1.max(x + rand); y1 = y1.max(y + rand);
+        }
+    }
+    let (x0, y0) = (x0.max(1), y0.max(1));
+    let (x1, y1) = (x1.min(z.breite - 2), y1.min(z.hoehe - 2));
+    z.wacheGebiet = [x0, y0, x1, y1];
+    let basis = Rect::new(engine(welt, z, x0, y0), engine(welt, z, x1, y1));
     Plaetze { wx, wy, sx, sy, basis }
 }
 
@@ -55,6 +72,11 @@ fn gruppenAnlegen(welt: &mut dyn Welt, z: &mut Zustand, pl: &Plaetze) {
     if welt.Tick() % 2000 < TAKT {
         let mut hx = wx; let mut hy = wy; freierWarteplatz(welt, z, &mut hx, &mut hy, 3, true);
         if hx != platzLesen(sp, 0) || hy != platzLesen(sp, 1) { heim(welt, z, wx, wy, basis, Some("Warteplatz verlegt (alter Platz belegt)")); }
+        else if z.wacheGebiet != z.wacheGebietAlt {
+            let g = z.wacheGebiet;
+            heim(welt, z, wx, wy, basis, Some(&format!("Wachgebiet {},{} bis {},{} (alle Gebaeude der Basis, Tuerme eingeschlossen)", g[0], g[1], g[2], g[3])));
+        }
+        z.wacheGebietAlt = z.wacheGebiet;
         let mut qx = sx; let mut qy = sy; freierWarteplatz(welt, z, &mut qx, &mut qy, 2, false);
         if qx != platzLesen(sp, 2) || qy != platzLesen(sp, 3) {
             sammelPlatz(welt, z, sx, sy, basis);
@@ -149,8 +171,15 @@ fn sollzahlen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) -> Soll {
         if wacheZiel < z.wacheZiel && wacheOhne >= z.wacheZiel { wacheZiel = z.wacheZiel; }
         if sammelZiel < z.sammelZiel && sammelOhne >= z.sammelZiel { sammelZiel = z.sammelZiel; }
         // Seltenerz-Schmelze geht vor neuen Kampffahrzeugen, solange keine akute Bedrohung besteht.
-        let sparen = (l.seltenSpart || l.erzSpart) && z.bedrohung < 50;
+        // Eden spart auch unter Bedrohung fuer die Schmelze (bis 200, Spiegelpartien +7), Plymouth bis 50
+        let sparen = (l.seltenSpart || l.erzSpart) && z.bedrohung < if welt.IsEden(z.spieler) { 200 } else { 50 };
         if sparen { if wacheZiel > nw { wacheZiel = nw; } if sammelZiel > ns { sammelZiel = ns; } }
+        // Fabrik laeuft durch (Nutzer 2026-11-20: Fahrzeuge ununterbrochen, vor allem am Anfang): liegt die mobile Armee
+        // unter ihrem Soll (Tuerme zaehlen nicht), bekommt die Fabrikgruppe immer mindestens ein Fahrzeug Bedarf -- auch an
+        // der Erz-Grenze. Ausnahme: spart die KI fuer eine lohnende Schmelze, wartet die Fabrik -- ausser im Fenster der
+        // fruehen Wehr. Sonst kam die zweite Schmelze nie und mit ihr nicht das Medical Center.
+        let fw = fwFenster(welt, z);
+        if wacheZiel <= nw && sammelZiel <= ns && z.eigeneMobil < mobilSoll(welt, z, true) && (!sparen || fw) { sammelZiel = ns + 1; }
         // Reserve: erst wenn Wache und Sammelgruppe stehen, und nur so viel, wie Vorrat und Zufluss hergeben
         {
             let mut nr = 0; gruppenWert(welt, z.eingreif, &mut nr);

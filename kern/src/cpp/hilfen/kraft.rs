@@ -52,6 +52,52 @@ pub fn gegenwert(welt: &mut dyn Welt, spieler: i32, traeger: i32, waffe: i32, hp
     0.649 * waffenFaktorNeu(waffe) * gestellFaktorNeu(traeger) * (hp * dps).sqrt()
 }
 
+/// Panzerwert der Simulation je Panzerklasse 0..5 (op2-rs rules.rs: Anteil des Erschuetterungsschadens / 256)
+pub const PANZERWERT: [i32; 6] = [256, 180, 130, 90, 60, 40];
+pub fn panzerWert(klasse: i32) -> i32 { PANZERWERT[klasse.clamp(0, 5) as usize] }
+/// Panzer laut Welt als Panzerwert (liefert eine Welt die Klasse 0..5, wird sie umgerechnet)
+pub fn panzerJetzt(welt: &mut dyn Welt, typ: i32, spieler: i32) -> i32 { let a = welt.GetArmor(typ, spieler); if a <= 5 { panzerWert(a) } else { a } }
+
+/// Mittlerer Erschuetterungs- und Durchschlagsschaden je Treffer der Kampfeinheiten und Wachtuerme aller Feinde von `spieler`
+/// (Schaden = Panzerwert x Erschuetterung / 256 + Durchschlag); ohne Einheiten die Grundwaffe der Feind-Fraktion. Je Tick gemerkt.
+pub fn feindMix(welt: &mut dyn Welt, spieler: i32) -> (f64, f64) {
+    thread_local! { static MIX: std::cell::RefCell<[(i32, f64, f64); 8]> = const { std::cell::RefCell::new([(-1, 0.0, 0.0); 8]) }; }
+    let t = welt.Tick();
+    let sp = (spieler.clamp(0, 7)) as usize;
+    if let Some(m) = MIX.with(|c| { let a = c.borrow()[sp]; if a.0 == t { Some((a.1, a.2)) } else { None } }) { return m; }
+    let (mut k, mut pe, mut n) = (0.0f64, 0.0f64, 0);
+    for p in 0..welt.NoPlayers() {
+        if p == spieler || welt.IsAlliedTo(spieler, p) { continue; }
+        let mut dazu = |welt: &mut dyn Welt, wf: i32| {
+            if wf <= 0 || wf >= 128 { return; }
+            k += welt.GetConcussionDamage(wf, p) as f64; pe += welt.GetPenetrationDamage(wf, p) as f64; n += 1;
+        };
+        for u in welt.PlayerVehicleEnum(p) {
+            if !welt.IsLive(u) { continue; }
+            let ty = welt.GetType(u);
+            if ty != mapLynx && ty != mapPanther && ty != mapTiger && ty != mapScorpion { continue; }
+            let wf = welt.GetWeapon(u); dazu(welt, wf);
+        }
+        for u in welt.PlayerBuildingEnum(p, mapGuardPost) { if welt.IsLive(u) { let wf = welt.GetWeapon(u); dazu(welt, wf); } }
+    }
+    if n == 0 {
+        for p in 0..welt.NoPlayers() {
+            if p == spieler || welt.IsAlliedTo(spieler, p) { continue; }
+            let wf = if welt.IsEden(p) { mapLaser } else { mapMicrowave };
+            k += welt.GetConcussionDamage(wf, p) as f64; pe += welt.GetPenetrationDamage(wf, p) as f64; n += 1;
+        }
+    }
+    let m = if n > 0 { (k / n as f64, pe / n as f64) } else { (0.0, 0.0) };
+    MIX.with(|c| c.borrow_mut()[sp] = (t, m.0, m.1));
+    m
+}
+
+/// Schaden je Treffer der Feinde von `spieler` gegen Panzerwert `pw`
+pub fn feindTreffer(welt: &mut dyn Welt, spieler: i32, pw: i32) -> f64 {
+    let (k, p) = feindMix(welt, spieler);
+    pw as f64 * k / 256.0 + p
+}
+
 /// C++: int kampfWert(UnitEx u)  (op2_ki.hpp:1018)
 pub fn kampfWert(welt: &mut dyn Welt, u: Id) -> i32 {
     let t = welt.GetType(u); let w = welt.GetWeapon(u);

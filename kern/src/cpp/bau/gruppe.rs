@@ -61,6 +61,26 @@ pub fn bauGruppe(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
                            t - q.seit, l.erz, l.selten, if l.sf != 0 { "da" } else { "fehlt" }));
         }
     }
+    // Wachhund: ein aufgezeichneter Bau, der nach 8000 Ticks noch nicht steht, sperrt die Gruppe fuer alles andere (mp4_08:
+    // ein Wachturm 33000 Ticks, Medical Center und Schmelze kamen nie). Die Welt kennt kein Loeschen einzelner Auftraege:
+    // Platz sperren, BuildingGroup aufloesen und neu anlegen, die anderen offenen Plaetze freigeben.
+    if offen > 0 {
+        let mut haengt: Option<usize> = None;
+        for i in 0..z.anzahlPlaetze as usize {
+            let q = z.plaetze[i];
+            if (q.zustand == P_FAHRT || q.zustand == P_BAUT) && t - q.seit > 8000 { haengt = Some(i); break; }
+        }
+        if let Some(i) = haengt {
+            let q = z.plaetze[i];
+            for j in 0..z.anzahlPlaetze as usize {
+                if z.plaetze[j].zustand == P_FAHRT || z.plaetze[j].zustand == P_BAUT { z.plaetze[j].zustand = if j == i { P_GESPERRT } else { P_FREI }; }
+            }
+            let g = z.bau; welt.Destroy(g); z.bauAn = 0;
+            melde(welt, z, "diagnose", q.typ as i32, q.x0 as i32, q.y0 as i32,
+                  &format!("Bauauftrag abgebrochen nach {} Ticks ohne Fortschritt -- Platz gesperrt, BuildingGroup neu", t - q.seit));
+            return;
+        }
+    }
     // Bausaetze, die ConVecs schon tragen (Startausruestung), sofort aufzeichnen
     // (Kommandozentrale zuerst: an ihr haengen die Anschlussplaetze aller anderen)
     for j in 0..128i32 {

@@ -191,6 +191,8 @@ pub fn anschluss(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
         return;
     }
     let lo = loseErfassen(welt, z, l);
+    // Bau-Reihenfolge: nichts offen, nichts anzuschliessen -- Luft fuer die wartenden Mauern
+    if lo.nl == 0 { super::super::mauer::freigeben(welt, z); }
     if lo.nl == 0 || lo.nz == 0 { return; }
     for j in anschlussReihe(welt, z, &lo) { anschliessen(welt, z, l, t, &lo, j); }
     // Erledigte Eintraege vorn entfernen, damit die Liste nicht voll laeuft
@@ -242,6 +244,7 @@ pub(super) fn loseErfassen(welt: &mut dyn Welt, z: &mut Zustand, _l: &Lage) -> L
     let mut nl = 0usize;
     // Anschluss aus dem Roehrennetz statt aus HasPower (ein Gebaeude ohne Roehre hat trotzdem Strom).
     let netz = netzKacheln(welt, z);
+    let mut tuerme: Vec<(Id, Rechteck)> = Vec::new();
     for &typ in GEBAEUDE.iter() {
         for u in welt.PlayerBuildingEnum(z.spieler, typ) {
             let lo = welt.Location(u);
@@ -249,9 +252,11 @@ pub(super) fn loseErfassen(welt: &mut dyn Welt, z: &mut Zustand, _l: &Lage) -> L
             let r = rechteckUm(welt, typ, ex, ey);
             // Wachtuerme haben keinen Stutzen, brauchen aber die Roehre zur Kommandozentrale (ohne sie weniger Schaden) --
             // jeder unverbundene fertige Turm wird wie ein loses Gebaeude angeschlossen.
+            // Bau-Reihenfolge: Tuerme erst, wenn kein Gebaeude mit Personal mehr auf seinen Anschluss wartet (unten).
             if typ == mapGuardPost {
-                if nl >= 8 || welt.GetCurAction(u) != moDone || welt.IsBusy(u) || turmAngeschlossen(welt, u) { continue; }
-                lose[nl] = u; loseR[nl] = r; nl += 1; continue;
+                if welt.GetCurAction(u) != moDone || welt.IsBusy(u) || turmAngeschlossen(welt, u) { continue; }
+                if tuerme.len() < 8 { tuerme.push((u, r)); }
+                continue;
             }
             let verbunden = imNetz(z, &netz, &r);
             if typ == mapCommandCenter || (hatStutzen(welt, typ) && verbunden) { if nz < 64 { ziele[nz] = r; nz += 1; } continue; }
@@ -280,6 +285,9 @@ pub(super) fn loseErfassen(welt: &mut dyn Welt, z: &mut Zustand, _l: &Lage) -> L
         } }
         if nachbar { continue; }
         lose[nl] = 0; loseR[nl] = r; nl += 1;
+    }
+    if nl == 0 {
+        for (u, r) in tuerme { if nl >= 8 { break; } lose[nl] = u; loseR[nl] = r; nl += 1; }
     }
     Lose { hin, nh, ziele, nz, lose, loseR, nl }
 }

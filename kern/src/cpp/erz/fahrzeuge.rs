@@ -226,7 +226,9 @@ pub fn fahrzeuge(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     if welt.IsBusy(vf) || t < z.fzPauseBis { return; }
     if typ == mapNone {
         if z.gruppenBedarf != 0 { return; }                          // Fabrikgruppe soll Kampffahrzeuge bauen
-        if !standardVolk(welt, l) && welt.GetCurAction(vf) == moDone && welt.HasWorkers(vf) {
+        // nicht stilllegen, solange die mobile Armee unter ihrem Soll liegt (Nutzer 2026-11-20) -- stillgelegt gab sie ihre
+        // Arbeiter ab und bekam sie lange nicht zurueck
+        if !standardVolk(welt, l) && welt.GetCurAction(vf) == moDone && welt.HasWorkers(vf) && z.eigeneMobil >= mobilSoll(welt, z, true) {
             welt.DoIdle(vf);
             z.fabrikStill = vf;
             melde(welt, z, "arbeit", mapVehicleFactory, vx, vy, "Fahrzeugfabrik stillgelegt -- keine neuen Fahrzeuge noetig");
