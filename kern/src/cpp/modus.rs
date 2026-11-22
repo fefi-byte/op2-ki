@@ -159,6 +159,16 @@ pub fn setzeAngriffe(welt: &mut dyn Welt, z: &mut Zustand, an: bool) {
     melde(welt, z, "modus", mapNone, z.bx, z.by, &format!("Mission: eigene Angriffe {}", if an { "an" } else { "aus" }));
 }
 
+/// Befehl der Mission (befehl.rs): eine Stellschraube waehrend des Spiels aendern -- im geladenen Satz (vor Stufe und
+/// Rolle), dann neu anwenden. false = Name unbekannt.
+pub fn parameterAendern(welt: &mut dyn Welt, z: &mut Zustand, name: &str, wert: f64) -> bool {
+    let i = sp(z);
+    let mut q = basis(z);
+    let ok = match crate::cpp::ablauf::feld(&mut q, name) { Some(f) => { *f = wert; true } None => false };
+    if ok { BASIS.with(|b| b.borrow_mut()[i] = Some(q)); anwenden(welt, z); }
+    ok
+}
+
 thread_local! {
     /// Befehl der Mission: Kindergarten-Schwellen (aus ueber, wieder an unter -- freie Arbeiter)
     static KIGA: RefCell<[Option<(i32, i32)>; 8]> = RefCell::new(Default::default());

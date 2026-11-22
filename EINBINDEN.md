@@ -65,9 +65,45 @@ Mitte mit Festung (`raumhafen`), Spinnen für die Reparatur (`spinnen`, Plymouth
 Waffe aus der Paarungs-Arena (`aufstieg`), MHD-Generator mit Seltenerz (`mhd`), Solarsatellit und Solarkraftwerk
 (`solar`).
 
+## Befehle während des Spiels
+
+Die Mission kann der KI jederzeit sagen, was sie tun soll (z. B. aus einem Trigger):
+
+```cpp
+op2ki::befehl(1, "phase=1\nbauen=Tokamak:1,Agridome:2,GuardPost:2@150,140,6\nforschen=3401\n");
+if (op2ki::status(1, 101) >= 1) { /* Phase 1 fertig */ }
+```
+
+Text ist `name=wert` je Zeile (`;` trennt auch). Gebäude, Fahrgestelle und Waffen heißen wie im Spiel ohne `map`
+(`Tokamak`, `Lynx/Microwave`), Forschungen mit ihrer Nummer.
+
+| Befehl | Wirkung |
+|---|---|
+| `phase=N` mit `bauen=Typ:n[@x,y,umkreis],…`, `forschen=id,…`, `fahrzeuge=Fahrgestell/Waffe:n,…` | **Drehbuch**: die KI baut, forscht und produziert nur das. Ohne Ort wählt sie den Platz selbst, mit Ort nur dort (kein Platz frei = sie wartet). Die Phase ist fertig, wenn alles steht. |
+| `grundversorgung=1` (Standard) | im Drehbuch trotzdem Notfälle (Strom, Nahrung), Wohnraum bei Enge, Kindergarten, Uni, Krankenhaus und die Kolonie-Forschung dazu – sonst stirbt die Bevölkerung. `0`: wirklich nur die Liste. |
+| `reihenfolge=1` | Bauliste der Reihe nach statt alles Baubare gleichzeitig |
+| `drehbuch=0` | Drehbuch aus, die KI entscheidet wieder selbst |
+| `angriff=1` mit `ziel=basis\|basis:P\|punkt:x,y\|schwaechste`, `art=basis\|ziel\|ueberfall\|halten` | Angriff jetzt. `ziel`: Gegnerbasis, Basis von Spieler P, Punkt oder schwächstes Ziel. `art`: Basis angreifen, Ziel zerstören und heim, Überfall (rein, zuschlagen, raus), Ort besetzen und halten. |
+| `einheiten=Lynx/Microwave:6,…` \| `beste:8` \| `vorhanden` | mit welchen Einheiten (fehlende baut die KI, auch im Drehbuch) |
+| `parallel=1`, `emp=1/0`, `rueckzug=%`, `frist=Ticks` | auf zwei Wegen gleichzeitig; EMP-Rakete erzwingen/verbieten; Abbruch bei so viel Prozent Verlust; nach der Frist mit dem losschlagen, was da ist |
+| `verteidigung=1` mit `wache=n` \| `einheiten=…`, `bereich=x1,y1,x2,y2`, `turm=ESG`, `patrouille=1/0` | Wache: Größe oder genaue Einheiten, wo sie steht, Waffe neuer Türme, Patrouille |
+| `rolle=`, `stufe=`, `eigeneAngriffe=`, `aussenposten=x,y,groesse[,bakeX,bakeY]`, jede Stellschraube | Einstellungen im laufenden Spiel ändern |
+
+`op2ki::status(spieler, code)` meldet zurück: 1 zuletzt fertige Phase, 2 laufende Phase, 3 Angriff (0 keiner, 1 Truppe
+wird gebaut, 2 unterwegs, 3 gewonnen, 4 abgebrochen), 4 Zahl beendeter Angriffe, 5 Tick des letzten Angriffs auf die
+Basis, 6 Satelliten, 7 Gebäude, 8 Kampffahrzeuge, 9 Kampfwert der Armee, 10 selbstständige zweite Basen, 100+N Phase N
+fertig (1/0).
+
+**Speichern/Laden:** OP2 speichert die DLL-Daten der KI nicht. `op2ki.hpp` merkt sich Start und Befehle in
+`op2ki::Speicher`; die Mission legt das in ihre `SaveRegions`-Struktur, ruft in InitProc `op2ki::speicher(&save.op2ki)`
+und in AIProc vor `schritt` `op2ki::fortsetzen()` (startet die KI nach dem Laden neu und spielt die Befehle nach).
+
 ## English summary
 
 To build a mission that uses op2-ki you only need `op2ki.hpp`, `op2ki_bruecke.hpp` and `op2_log.hpp` from
 `missionen/gemeinsam/`. Call `op2ki::laden()`, set `op2ki::parameterText[player]`, call `op2ki::start(...)` once in
 InitProc and `op2ki::schritt(player)` every AIProc. Ship `op2ki.dll` next to the mission DLL. `missionsModus=1` turns
 the AI into a mission player (roles, outposts, second base, difficulty from the game); see the table above.
+`op2ki::befehl(player, text)` gives orders during the game (script phases with build/research/vehicle lists,
+attack and defence orders, settings), `op2ki::status(player, code)` reports back; `op2ki::Speicher` keeps both across
+save/load.

@@ -10,7 +10,10 @@ pub fn empRaketeBauen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     if !empMoeglich(welt, z) || t % 200 >= TAKT { return; }
     // Missionsmodus ohne eigene Angriffe: die Rakete startet nur mit einem Angriff -- nicht bauen (Nutzer 2026-11-22: "Rakete
     // wurde gebaut, aber nicht gestartet"; sie kostete 3000 Erz und 1500 Seltenerz)
-    if super::super::modus::mission(z) && !super::super::modus::eigeneAngriffe(z, t) && super::super::modus::noetig(z) == 0 { return; }
+    let empBefehl = super::super::befehl::emp(z);
+    if empBefehl == Some(false) { return; }
+    if super::super::modus::mission(z) && !super::super::modus::eigeneAngriffe(z, t) && super::super::modus::noetig(z) == 0 && empBefehl.is_none() { return; }
+    if super::super::befehl::drehbuch(z) && empBefehl.is_none() { return; }
     let mut sp: Id = 0;
     for u in welt.PlayerBuildingEnum(z.spieler, mapSpaceport) { if welt.IsLive(u) && welt.GetCurAction(u) != moObjWait { sp = u; break; } }
     if sp == 0 { z.empRakete = 0; z.empAuftrag = 0; return; }   // kein (fertiger) Raumhafen: auch keine Rakete
@@ -27,7 +30,7 @@ pub fn empRaketeBauen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     if welt.IsBusy(sp) || welt.GetCurAction(sp) != moDone { return; }
     if l.erz < welt.GetOreCost(mapEMPMissile, z.spieler) || l.selten < welt.GetRareOreCost(mapEMPMissile, z.spieler) { return; }
     let mut wert = 0;
-    if !empLohnt(welt, z, Some(&mut wert)) { return; }
+    if !empLohnt(welt, z, Some(&mut wert)) && empBefehl != Some(true) { return; }
     welt.DoProduce(sp, mapEMPMissile, mapNone);
     z.empAuftrag = 1; z.empAuftragSeit = t;
     let sl = welt.Location(sp); let (ex, ey) = (edX(welt, z, sl), edY(welt, z, sl));

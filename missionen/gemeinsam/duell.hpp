@@ -11,7 +11,12 @@ inline int a = -1, b = -1;
 inline void paar(int n, const int* X, const int* Y) {
   if (a >= 0) return;
   int s = 0; char e[32];
-  if (GetEnvironmentVariableA("OP2H_SEED", e, sizeof e)) s = std::atoi(e); else s = TethysGame::GetRand(1000) + 1;
+  if (GetEnvironmentVariableA("OP2H_SEED", e, sizeof e)) s = std::atoi(e);
+#ifdef OP2KI_FEST_SEED
+  else s = OP2KI_FEST_SEED;   // Mission mit festem Startplatz-Paar (wie --seed im Simulator)
+#else
+  else s = TethysGame::GetRand(1000) + 1;
+#endif
   const int k = ((s - 1) % (n * (n - 1)) + n * (n - 1)) % (n * (n - 1));
   a = k / (n - 1); b = k % (n - 1); if (b >= a) b++;
   op2::log::linef("Startwahl: Seed %d -> Spieler 1 an Platz %d (%d,%d), Spieler 2 an Platz %d (%d,%d) von %d", s, a, X[a], Y[a], b, X[b], Y[b], n);

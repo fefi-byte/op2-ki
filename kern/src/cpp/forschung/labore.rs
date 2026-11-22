@@ -378,6 +378,19 @@ pub(super) struct Listen { kampf: [i32; 7], nKampf: usize, wirt: [i32; 6], nWirt
 /// (Die C++-Liste KOLONIE_T wurde berechnet, aber nie benutzt -- entfaellt, sie war ohne Nebenwirkung.)
 pub(super) fn themaFuerLabor(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, typ: i32, belegt: &[i32; 16], nb: i32) -> ThemenWahl {
     let mut nm = String::new();
+    // Drehbuch der Mission: nur die Forschungsliste der Phase (Voraussetzungen forscht forschungListe mit)
+    if let Some(liste) = super::super::befehl::forschung(welt, z) {
+        let ltyp = laborTyp(welt, typ);
+        let (mut idx, mut art) = (-1, String::new());
+        forschungListe(welt, z, &liste, liste.len() as i32, "Drehbuch: ", ltyp, belegt, nb, &mut nm, &mut idx, &mut art);
+        // mit Grundversorgung: ist aus der Liste nichts moeglich, die Kolonie-Themen selbst (weiter unten, ohne Kampf/Wirtschaft)
+        if idx >= 0 || !super::super::befehl::grundversorgung(z) {
+            return ThemenWahl { idx, nm, art, gewaehlt: 0, zielOffen: false, ltyp, anteilKolonie: 0, anteilZiel: 0, anteilMilitaer: 0,
+                                anteilWirtschaft: 0, warten: idx < 0 };
+        }
+        nm.clear();
+    }
+    let nurKolonie = super::super::befehl::drehbuch(z);
     const FUELLER_T: [i32; 4] = [3201, 3202, 5302, 5303];
     let zielOffen = z.ziel == 1 && z.zielErreicht == 0;
     // Moral nicht "Great" und Kolonie klein: Kolonie-Forschung vor dem Ziel (Spieler)
@@ -397,17 +410,17 @@ pub(super) fn themaFuerLabor(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, typ
         [3306, 5108, wohn, raum, spinne, mhd, sulv, solar].into_iter().filter(|&t| !hatTechId(welt, z, t) && tb::tech(t).is_some_and(|tt| eigeneKostenT(welt, z, tt) >= 0)).collect()
     } else { Vec::new() };
     let anteilKolonie = if koloniePlus.is_empty() { dr.kolonie } else { dr.kolonie.max(30) };
-    let anteilZiel = if zielOffen { dr.ziel } else { 0 }; // bekommt, was uebrig bleibt
+    let anteilZiel = if zielOffen && !nurKolonie { dr.ziel } else { 0 }; // bekommt, was uebrig bleibt
     let mut idx: i32 = -1;
     let mut art = String::new();
     let ltyp = laborTyp(welt, typ);
     // Kampf und Wirtschaft aus der Techbaum-Vorhersage (Nutzen pro Wegkosten); PAR forschKampf gewichtet den Kampf-Anteil
     // (Nutzer 2026-11-19: mehr Fokus auf Kampf -- Standard 1)
-    let anteilMilitaer = (dr.kampfForschung as f64 * PAR(z.spieler).forschKampf) as i32;
-    let anteilWirtschaft = dr.wirtschaft;
+    let anteilMilitaer = if nurKolonie { 0 } else { (dr.kampfForschung as f64 * PAR(z.spieler).forschKampf) as i32 };
+    let anteilWirtschaft = if nurKolonie { 0 } else { dr.wirtschaft };
     // Eroeffnung: solange offen, nur ihre Themen (oder deren Voraussetzungen) in ihrer Reihenfolge; passt keines in dieses
     // Labor, bleibt es frei -- seine Wissenschaftler stehen der Eroeffnung zur Verfuegung
-    let eroeff = eroeffnungOffen(welt, z);
+    let eroeff = if nurKolonie { Vec::new() } else { eroeffnungOffen(welt, z) };
     if !eroeff.is_empty() {
         let (mut e_idx, mut e_nm, mut e_art) = (-1, String::new(), String::new());
         forschungListe(welt, z, &eroeff, eroeff.len() as i32, "Eroeffnung: ", ltyp, belegt, nb, &mut e_nm, &mut e_idx, &mut e_art);

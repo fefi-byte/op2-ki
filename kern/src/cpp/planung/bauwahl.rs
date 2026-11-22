@@ -221,7 +221,7 @@ pub(super) fn wahlKolonie(welt: &mut dyn Welt, z: &Zustand, l: &Lage, b: i32, w:
     let forumGeht = match forumTech { None => true, Some(t) => eigeneKostenT(welt, z, t) >= 0 };
     if forumGeht && frm < 100 && bew > 60 && l.imBau[ix(mapForum)] == 0 { k[nk] = K { typ: mapForum, wert: (100 - frm) / 2, text: "Forum" }; nk += 1; }
     // Missionsmodus (PAR raumhafen, Nutzer 2026-11-22): ein Raumhafen in der Mitte der Basis, ohne Satelliten-Ziel
-    if PAR(z.spieler).raumhafen >= 0.5 && super::super::modus::mission(z) && hatGeb(welt, z, l, mapSpaceport) == 0 && l.imBau[ix(mapSpaceport)] == 0
+    if PAR(z.spieler).raumhafen >= 0.5 && super::super::modus::mission(z) && !super::super::befehl::drehbuch(z) && hatGeb(welt, z, l, mapSpaceport) == 0 && l.imBau[ix(mapSpaceport)] == 0
         && geplant(welt, z, mapSpaceport) == 0 && kitMoeglich(welt, z, mapSpaceport) && bew > 60 {
         k[nk] = K { typ: mapSpaceport, wert: 80, text: "Raumhafen der Mission" }; nk += 1;
     }
@@ -229,18 +229,18 @@ pub(super) fn wahlKolonie(welt: &mut dyn Welt, z: &Zustand, l: &Lage, b: i32, w:
     // baut Spinnen (Spielregel); die Spinnen reparieren je Basis
     // (die Spinnenfabrik einer zweiten Basis zaehlt nicht -- sonst bekam die Hauptbasis nie Spinnen)
     let afHaupt = welt.PlayerBuildingEnum(z.spieler, mapArachnidFactory).into_iter().filter(|&u| !super::super::zweitbasis::amPosten(welt, z, u)).count();
-    if PAR(z.spieler).spinnen >= 0.5 && super::super::modus::mission(z) && !welt.IsEden(z.spieler) && afHaupt == 0
+    if PAR(z.spieler).spinnen >= 0.5 && super::super::modus::mission(z) && !super::super::befehl::drehbuch(z) && !welt.IsEden(z.spieler) && afHaupt == 0
         && l.imBau[ix(mapArachnidFactory)] == 0 && geplant(welt, z, mapArachnidFactory) == 0 && kitMoeglich(welt, z, mapArachnidFactory) && bew > 60 {
         k[nk] = K { typ: mapArachnidFactory, wert: 55, text: "Spinnenfabrik der Mission" }; nk += 1;
     }
     // Missionsmodus (PAR mhd, Nutzer 2026-11-22: "wenn Seltenerz verfuegbar ist, soll ein MHD-Generator gebaut werden")
-    if PAR(z.spieler).mhd >= 0.5 && super::super::modus::mission(z) && hatGeb(welt, z, l, mapMHDGenerator) == 0 && l.imBau[ix(mapMHDGenerator)] == 0
+    if PAR(z.spieler).mhd >= 0.5 && super::super::modus::mission(z) && !super::super::befehl::drehbuch(z) && hatGeb(welt, z, l, mapMHDGenerator) == 0 && l.imBau[ix(mapMHDGenerator)] == 0
         && geplant(welt, z, mapMHDGenerator) == 0 && kitMoeglich(welt, z, mapMHDGenerator)
         && (hatGeb(welt, z, l, mapRareOreMine) > 0 || l.selten >= welt.GetRareOreCost(mapMHDGenerator, z.spieler)) {
         k[nk] = K { typ: mapMHDGenerator, wert: 60, text: "MHD-Generator der Mission (Seltenerz da)" }; nk += 1;
     }
     // Missionsmodus (PAR solar): Solarkraftwerk, sobald ein Solarsatellit im All ist (forschung/raumfahrt.rs startet ihn)
-    if PAR(z.spieler).solar >= 0.5 && super::super::modus::mission(z) && welt.GetSatelliteCount(z.spieler, mapSolarSatellite) > 0
+    if PAR(z.spieler).solar >= 0.5 && super::super::modus::mission(z) && !super::super::befehl::drehbuch(z) && welt.GetSatelliteCount(z.spieler, mapSolarSatellite) > 0
         && hatGeb(welt, z, l, mapSolarPowerArray) == 0 && l.imBau[ix(mapSolarPowerArray)] == 0 && geplant(welt, z, mapSolarPowerArray) == 0
         && kitMoeglich(welt, z, mapSolarPowerArray) {
         k[nk] = K { typ: mapSolarPowerArray, wert: 60, text: "Solarkraftwerk der Mission (Satellit im All)" }; nk += 1;
@@ -406,6 +406,10 @@ pub fn bauWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> Wahl {
     let tick = welt.Tick();
     g_nVorhaben.with(|v| v.borrow_mut()[sp7] = 0);
     g_vorhabenTick.with(|v| v.borrow_mut()[sp7] = tick); // die Vorhaben dieser Wahl ersetzen die alten
+    // Drehbuch der Mission (befehl.rs): ohne Grundversorgung nur die Liste der Phase
+    if super::super::befehl::drehbuch(z) && !super::super::befehl::grundversorgung(z) {
+        if let Some(w) = super::super::befehl::bauWahl(welt, z, l) { return w; }
+    }
     // 1. Notfaelle
     if hatGeb(welt, z, l, mapCommandCenter) == 0 { notfall(&mut w, mapCommandCenter, "keine Kommandozentrale".to_string()); return w; }
     if hatGeb(welt, z, l, mapStructureFactory) == 0 { notfall(&mut w, mapStructureFactory, "keine Strukturfabrik".to_string()); return w; }
@@ -420,6 +424,24 @@ pub fn bauWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> Wahl {
     let reichweite = nahrungsReichweite(welt, l);
     if (reichweite < 3000 || l.nahrung < 300) && l.nahrungNetto <= 0 && agriUnterwegs == 0 {
         notfall(&mut w, mapAgridome, format!("Nahrung {}, netto {:+}", l.nahrung, l.nahrungNetto)); return w;
+    }
+    // Drehbuch mit Grundversorgung: nach den Notfaellen Wohnraum, wenn ueberbelegt, sonst die Liste der Phase
+    if super::super::befehl::drehbuch(z) {
+        if !standardVolk(welt, l) && l.menschen > l.wohnraum && geplant(welt, z, mapResidence) + l.kitsImSpiel[ix(mapResidence)] + l.imBau[ix(mapResidence)] == 0 {
+            let wt = wohnTyp(welt, z, l);
+            if waehle(welt, z, l, wt, B_KOLONIE, false, &mut w, &format!("Drehbuch, Grundversorgung: Wohnraum ({} Bewohner auf {} Plaetzen)", l.menschen, l.wohnraum)) { return w; }
+        }
+        // Bevoelkerung: die Kolonie-Bauten (Wohnen, Kindergarten, Universitaet, Medizin, Freizeit, DIRT, Nahrung) entscheidet
+        // die KI weiter selbst -- nur mit der Bauliste starb die Kolonie aus (Sim cm03: 5 Arbeiter, 0 Kinder bei 120 000)
+        if !standardVolk(welt, l) {
+            // Kindergarten, Universitaet und Medizinzentrum baut sonst die Eroeffnung -- im Drehbuch hier
+            for (typ, txt) in [(mapNursery, "Kindergarten (sonst keine Geburten)"), (mapUniversity, "Universitaet (Ausbildung)"), (mapMedicalCenter, "Medizinzentrum")] {
+                if hatGeb(welt, z, l, typ) == 0 && kitMoeglich(welt, z, typ)
+                    && waehle(welt, z, l, typ, B_KOLONIE, false, &mut w, &format!("Drehbuch, Grundversorgung: {}", txt)) { return w; }
+            }
+            if wahlKolonie(welt, z, l, B_KOLONIE, &mut w) { return w; }
+        }
+        if let Some(w2) = super::super::befehl::bauWahl(welt, z, l) { return w2; }
     }
     // PAR wohnVorrang (2026-11-20, Personal-Engpass frueh): ueberbelegt (mehr Bewohner als Wohnraum) und kein Wohnhaus
     // unterwegs -> Wohnhaus vor der Eroeffnung. Gemessen: 54 Bewohner auf 50 Plaetzen bis Tick ~12700, die Moralstufe

@@ -12,6 +12,7 @@ pub fn start(welt: &mut dyn Welt, z: &mut Zustand, spieler: i32, ursprung: Loc, 
     z.roehren = [Roehre::default(); 48];
     z.aktiv = 1; z.spieler = spieler;
     super::super::modus::zuruecksetzen(z);
+    super::super::befehl::zuruecksetzen(z);
     parameterLaden(welt, z);                             // Stellschrauben (Standard oder KI-Parameter-P<n>.txt)
     super::super::modus::anwenden(welt, z);              // Missionsmodus: Stufe und Rolle auf den Parametersatz
     z.ux = ursprung.x; z.uy = ursprung.y;
@@ -177,12 +178,13 @@ pub fn schritt(welt: &mut dyn Welt, z: &mut Zustand) {
     hinweis(welt, z, "ki::erz"); erz(welt, z, &l);
     super::zweitbasis::schritt(welt, z, &l);   // Erweiterung (Rust), nur mit PAR.zweitbasis
     super::erweiterung::passMauern(welt, z);
-    super::mauer::zugangSchritt(welt, z);   // Rust, nur mit PAR.zugangMauer   // Erweiterung (Rust), nur mit PAR.gelaende
+    if !super::befehl::drehbuch(z) { super::mauer::zugangSchritt(welt, z); }   // Rust, nur mit PAR.zugangMauer   // Erweiterung (Rust), nur mit PAR.gelaende
     hinweis(welt, z, "ki::vorplan"); super::vorplan::planen(welt, z, &l);   // Bebauungsplan (Rust)
     hinweis(welt, z, "ki::anschluss"); anschluss(welt, z, &l);         // Roehren ueber die BuildingGroup
     super::bezirke::roehrenSchritt(welt, z);   // Missionsmodus (PAR bezirke): Roehrenachsen zu den Bezirken
-    super::bezirke::festungSchritt(welt, z);   // Missionsmodus: Tuerme der Raumhafen-Festung
-    super::zweitbasis::spinnenSchritt(welt, z);   // Missionsmodus, Plymouth: Spinnen je Basis
+    if !super::befehl::drehbuch(z) { super::bezirke::festungSchritt(welt, z); }   // Missionsmodus: Tuerme der Raumhafen-Festung
+    if !super::befehl::drehbuch(z) { super::zweitbasis::spinnenSchritt(welt, z); }   // Missionsmodus, Plymouth: Spinnen je Basis
+    super::befehl::schritt(welt, z, &l);   // Befehle der Mission: Fahrzeuge der Phase, Phase fertig, Angriffsstand
     hinweis(welt, z, "ki::vorhersageMelden"); vorhersageMelden(welt, z, &l);   // Techbaum-Vorhersage in die Spur (alle 10000 Ticks)
     hinweis(welt, z, "ki::laborBedarf"); laborBedarf(welt, z, &l);        // fehlt der Forschung ein Labor? (alle 1000 Ticks)
     hinweis(welt, z, "ki::selbstpruefung"); selbstpruefung(welt, z, &l);   // Widersprueche erkennen (alle 2000 Ticks)

@@ -282,6 +282,11 @@ pub fn staerkeAusVorrat(welt: &mut dyn Welt, z: &Zustand, traeger: i32, waffe: i
 pub fn waffeWahl(welt: &mut dyn Welt, z: &Zustand, traeger: i32, seltenDa: i32) -> i32 {
     const KANDIDATEN: [i32; 8] = [mapLaser, mapMicrowave, mapRailGun, mapRPG, mapAcidCloud, mapESG, mapThorsHammer, mapEnergyCannon];
     let mut beste = if welt.IsEden(z.spieler) { mapLaser } else { mapMicrowave };
+    // Befehl der Mission: Waffe der Tuerme
+    if traeger == mapGuardPost {
+        let tw = super::super::befehl::turmWaffe(z);
+        if tw != 0 && einheitErforscht(welt, z, tw) && welt.GetRareOreCost(tw, z.spieler) <= seltenDa { return tw; }
+    }
     // Missionsmodus (aufstieg, Nutzer 2026-11-22: "Tiger mit den richtigen Waffen aus den Arena-Tests"): die erforschte Waffe
     // mit der besten gemessenen Bilanz der Paarungs-Arena gegen die gesehene Feindmischung, Seltenerz muss reichen
     if traeger != mapGuardPost && PAR(z.spieler).aufstieg >= 0.5 && super::super::modus::mission(z) {

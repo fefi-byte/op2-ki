@@ -27,6 +27,7 @@ pub mod truppplan;
 pub mod routen;
 pub mod missionen;
 pub mod modus;
+pub mod befehl;
 pub mod ablauf;
 
 // Alle Module sehen einander (wie ein C++-Namensraum).

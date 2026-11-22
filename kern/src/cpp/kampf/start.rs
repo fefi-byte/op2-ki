@@ -72,7 +72,7 @@ pub(super) fn losschlagen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, t: i32
     z.angriffZiel = 0; z.angriffWunsch = wunsch; z.angriffArt = art;
     // Mit EMP-Rakete: erst Aufmarsch knapp ausserhalb des EMP-Radius (Modus 3), dann Start (Modus 4).
     let mut mitEmp = false;
-    if !empBereit(welt, z) { aufmarschOhneEmp(welt, z, t, fz, art, wunsch, *ns); mitEmp = true; }
+    if !empBereit(welt, z) || super::super::befehl::emp(z) == Some(false) { aufmarschOhneEmp(welt, z, t, fz, art, wunsch, *ns); mitEmp = true; }
     else if empBereit(welt, z) { aufmarschMitEmp(welt, z, t); mitEmp = true; }
     else { angriffZielSetzen(welt, z, z.bx, z.by); }
     z.angriffStart = *sw; z.kampfModus = if mitEmp { 3 } else { 2 }; z.kampfModusSeit = t; z.letzterAngriffStart = t;
@@ -198,7 +198,7 @@ pub(super) fn aufmarschOhneEmp(welt: &mut dyn Welt, z: &mut Zustand, t: i32, fz:
     // Rust (PAR parallel): zweite Haelfte ueber einen getrennten Weg, eigener Aufmarschpunkt
     z.aufmarsch2X = 0; z.aufmarsch2Y = 0;
     let mut zweiter: Option<(i32, i32)> = None;
-    if kampfModellNeu() && PAR(z.spieler).parallel >= 0.5 && z.angriff2An != 0 && ns >= 4 {
+    if kampfModellNeu() && (PAR(z.spieler).parallel >= 0.5 || super::super::befehl::parallel(z)) && z.angriff2An != 0 && ns >= 4 {
         let mut breite = 0;
         zweiter = super::parallel::zweiterAufmarsch(welt, z, (zx, zy), (z.aufmarschX, z.aufmarschY), ns, &mut breite);
         if zweiter.is_none() {

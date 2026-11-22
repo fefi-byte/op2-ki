@@ -9,6 +9,49 @@ pub fn wissenPfad(welt: &mut dyn Welt, out: &mut String, n: i32, datei: &str) {
     *out = datei.to_string();
 }
 
+/// Stellschraube nach Namen (fuer parameterLaden und Befehle der Mission, befehl.rs)
+pub fn feld<'a>(q: &'a mut Parameter, name: &str) -> Option<&'a mut f64> {
+    Some(match name {
+        "reaktion" => &mut q.reaktion, "horizont" => &mut q.horizont, "ueberlegenheit" => &mut q.ueberlegenheit,
+        "fabrikGewinn" => &mut q.fabrikGewinn, "reserveStart" => &mut q.reserveStart, "reserveLernrate" => &mut q.reserveLernrate,
+        "reserveRueckgang" => &mut q.reserveRueckgang, "reserveMax" => &mut q.reserveMax, "turmAnteil" => &mut q.turmAnteil,
+        "zermuerbAbstand" => &mut q.zermuerbAbstand, "schmelzeNutzen" => &mut q.schmelzeNutzen, "wohnraumGrenze" => &mut q.wohnraumGrenze,
+        "freischaltWert" => &mut q.freischaltWert,
+        "nahRadius" => &mut q.nahRadius, "heimHalten" => &mut q.heimHalten, "steigerung" => &mut q.steigerung, "vorsorge" => &mut q.vorsorge,
+        "seltenGewinn" => &mut q.seltenGewinn, "schmelzenJeMine" => &mut q.schmelzenJeMine, "empSchwelle" => &mut q.empSchwelle,
+        "risikoAnteil" => &mut q.risikoAnteil, "angriffMarge" => &mut q.angriffMarge, "rueckzugAb" => &mut q.rueckzugAb,
+        "lernen" => &mut q.lernen,
+        "gelaende" => &mut q.gelaende,
+        "engMin" => &mut q.engMin,
+        "engMax" => &mut q.engMax,
+        "engBreite" => &mut q.engBreite,
+        "engTuerme" => &mut q.engTuerme,
+        "engHinter" => &mut q.engHinter,
+        "zweitbasis" => &mut q.zweitbasis,
+        "zbMinWeg" => &mut q.zbMinWeg,
+        "zbNutzen" => &mut q.zbNutzen,
+        "zbTuerme" => &mut q.zbTuerme,
+        "zbFabrik" => &mut q.zbFabrik,
+        "zbStruktur" => &mut q.zbStruktur,
+        "zbFeindAbstand" => &mut q.zbFeindAbstand,
+        "engDringlichkeit" => &mut q.engDringlichkeit,
+        "engTurmFaktor" => &mut q.engTurmFaktor,
+        "engMauerBreite" => &mut q.engMauerBreite,
+        "zbArmee" => &mut q.zbArmee, "zbAnzahl" => &mut q.zbAnzahl, "zbOffen" => &mut q.zbOffen, "zbBedrohung" => &mut q.zbBedrohung, "zbFeind" => &mut q.zbFeind, "zbErz" => &mut q.zbErz, "zbArbeiter" => &mut q.zbArbeiter, "zbUeberschuss" => &mut q.zbUeberschuss,
+        "platzFern" => &mut q.platzFern,
+        "roehreKachel" => &mut q.roehreKachel,
+        "vorplan" => &mut q.vorplan, "moralStill" => &mut q.moralStill, "wehrlos" => &mut q.wehrlos, "welle" => &mut q.welle, "paarung" => &mut q.paarung, "turmNetz" => &mut q.turmNetz, "turmOhneNetz" => &mut q.turmOhneNetz, "wissArbeit" => &mut q.wissArbeit, "wissAusbau" => &mut q.wissAusbau, "forschungVorrang" => &mut q.forschungVorrang, "fabrikWirtschaft" => &mut q.fabrikWirtschaft, "seltenNutzen" => &mut q.seltenNutzen, "fabrikLaeuft" => &mut q.fabrikLaeuft, "abwehrRueckkehr" => &mut q.abwehrRueckkehr, "lueckeKlug" => &mut q.lueckeKlug, "turmRoehre" => &mut q.turmRoehre, "mauerLinie" => &mut q.mauerLinie, "mauerLaenge" => &mut q.mauerLaenge, "torBreite" => &mut q.torBreite, "torAbstand" => &mut q.torAbstand, "bauReihe" => &mut q.bauReihe, "mauerSchub" => &mut q.mauerSchub, "zugangMauer" => &mut q.zugangMauer, "zmAbstand" => &mut q.zmAbstand, "zmKlein" => &mut q.zmKlein, "zmMax" => &mut q.zmMax, "zmHinter" => &mut q.zmHinter, "zmSchild" => &mut q.zmSchild, "fwAufruest" => &mut q.fwAufruest, "fwFahrt" => &mut q.fwFahrt, "fwWert" => &mut q.fwWert, "fwVorlauf" => &mut q.fwVorlauf, "fwNach" => &mut q.fwNach, "fwBedrohung" => &mut q.fwBedrohung, "fwVorrang" => &mut q.fwVorrang, "eroeffLabor" => &mut q.eroeffLabor, "eroeffAus" => &mut q.eroeffAus, "eroeffBis" => &mut q.eroeffBis, "eroeffWarten" => &mut q.eroeffWarten, "bauGleichzeitig" => &mut q.bauGleichzeitig, "wacheRand" => &mut q.wacheRand, "wacheMax" => &mut q.wacheMax, "forschKampf" => &mut q.forschKampf, "seltenOhne" => &mut q.seltenOhne, "tempoWert" => &mut q.tempoWert, "geleit" => &mut q.geleit, "panzerFrueh" => &mut q.panzerFrueh, "panzerKlasse" => &mut q.panzerKlasse, "panzerModell" => &mut q.panzerModell, "zielTreue" => &mut q.zielTreue, "vorausBau" => &mut q.vorausBau, "schmelzeSpaet" => &mut q.schmelzeSpaet, "schmelzeEroeff" => &mut q.schmelzeEroeff, "marschHeil" => &mut q.marschHeil, "aufmarschFeind" => &mut q.aufmarschFeind, "marschSammeln" => &mut q.marschSammeln, "moralBau" => &mut q.moralBau, "bauStau" => &mut q.bauStau, "platzErreichbar" => &mut q.platzErreichbar, "schmelzeRisiko" => &mut q.schmelzeRisiko, "lkwWechsel" => &mut q.lkwWechsel, "sparFrist" => &mut q.sparFrist, "startBaken" => &mut q.startBaken, "startSchmelze" => &mut q.startSchmelze, "mineSeite" => &mut q.mineSeite, "kigaNachLynx" => &mut q.kigaNachLynx, "eroeffFolge" => &mut q.eroeffFolge, "moralFest" => &mut q.moralFest, "moralHalten" => &mut q.moralHalten, "missionsModus" => &mut q.missionsModus, "stufe" => &mut q.stufe, "rolle" => &mut q.rolle, "eigeneAngriffe" => &mut q.eigeneAngriffe, "schonfrist" => &mut q.schonfrist, "ueberlegMin" => &mut q.ueberlegMin, "testAngriff" => &mut q.testAngriff, "testStaerke" => &mut q.testStaerke, "testPosten" => &mut q.testPosten, "testPostenX" => &mut q.testPostenX, "testPostenY" => &mut q.testPostenY, "testPostenGroesse" => &mut q.testPostenGroesse, "testBakeX" => &mut q.testBakeX, "testBakeY" => &mut q.testBakeY, "minenUmkreis" => &mut q.minenUmkreis, "minenJeSorte" => &mut q.minenJeSorte, "wacheVorBasis" => &mut q.wacheVorBasis, "wachePatrouille" => &mut q.wachePatrouille, "wachePatrouilleTakt" => &mut q.wachePatrouilleTakt, "bezirke" => &mut q.bezirke, "gebietAuto" => &mut q.gebietAuto, "kernLuft" => &mut q.kernLuft, "roehrenVorrang" => &mut q.roehrenVorrang, "roehreAnNetz" => &mut q.roehreAnNetz, "kigaBremse" => &mut q.kigaBremse, "kigaAus" => &mut q.kigaAus, "kigaAn" => &mut q.kigaAn, "missionZiel" => &mut q.missionZiel, "raumhafen" => &mut q.raumhafen, "spinnen" => &mut q.spinnen, "aufstieg" => &mut q.aufstieg, "mhd" => &mut q.mhd, "solar" => &mut q.solar, "zbWache" => &mut q.zbWache, "zbWacheDruck" => &mut q.zbWacheDruck, "zbVorrang" => &mut q.zbVorrang, "marschEtappe" => &mut q.marschEtappe, "marschRadius" => &mut q.marschRadius, "marschAnteil" => &mut q.marschAnteil, "sparBedrohung" => &mut q.sparBedrohung, "medVorrang" => &mut q.medVorrang, "bauAbbruch" => &mut q.bauAbbruch, "wohnVorrang" => &mut q.wohnVorrang, "faktorNeu" => &mut q.faktorNeu, "laserTuerme" => &mut q.laserTuerme, "laserTurmAnteil" => &mut q.laserTurmAnteil, "laserKeinAngriff" => &mut q.laserKeinAngriff, "panzerBis" => &mut q.panzerBis, "geleitRadius" => &mut q.geleitRadius, "geleitMax" => &mut q.geleitMax, "geleitUeber" => &mut q.geleitUeber, "fabrikErz" => &mut q.fabrikErz, "fabrikAuslastung" => &mut q.fabrikAuslastung, "schwachstelle" => &mut q.schwachstelle, "schwachAussen" => &mut q.schwachAussen, "zugang" => &mut q.zugang, "zugangGruppen" => &mut q.zugangGruppen, "truppPlan" => &mut q.truppPlan, "truppRisiko" => &mut q.truppRisiko, "truppMin" => &mut q.truppMin, "truppAbwehr" => &mut q.truppAbwehr, "versuch" => &mut q.versuch, "versuchWert" => &mut q.versuchWert, "wertungTick" => &mut q.wertungTick, "missionen" => &mut q.missionen, "missionHorizont" => &mut q.missionHorizont, "missionMax" => &mut q.missionMax, "missionRueck" => &mut q.missionRueck, "missionUeberleg" => &mut q.missionUeberleg, "missionSieg" => &mut q.missionSieg, "missionLernen" => &mut q.missionLernen, "missionKorrUeberfall" => &mut q.missionKorrUeberfall, "missionKorrHalten" => &mut q.missionKorrHalten, "missionKorrEntscheidung" => &mut q.missionKorrEntscheidung, "missionKorrAbwehr" => &mut q.missionKorrAbwehr, "parallel" => &mut q.parallel, "parallelUmweg" => &mut q.parallelUmweg, "parallelAbstand" => &mut q.parallelAbstand, "parallelTiefe" => &mut q.parallelTiefe, "moralWert" => &mut q.moralWert, "erzAusbau" => &mut q.erzAusbau,
+        "turmVorne" => &mut q.turmVorne, "turmAbstand" => &mut q.turmAbstand, "turmFront" => &mut q.turmFront, "turmUeberMauer" => &mut q.turmUeberMauer,
+        "gefecht" => &mut q.gefecht, "gefechtRadius" => &mut q.gefechtRadius, "gefechtSpiel" => &mut q.gefechtSpiel, "schaumAnteil" => &mut q.schaumAnteil, "gefechtStellung" => &mut q.gefechtStellung, "gefechtSperre" => &mut q.gefechtSperre, "gefechtAbstand" => &mut q.gefechtAbstand, "gefechtAbstandSperre" => &mut q.gefechtAbstandSperre,
+        "gefechtReichweitePlus" => &mut q.gefechtReichweitePlus, "gefechtBedrohungWert" => &mut q.gefechtBedrohungWert, "gefechtTurmGewicht" => &mut q.gefechtTurmGewicht, "gefechtAusweich" => &mut q.gefechtAusweich, "gefechtBesser" => &mut q.gefechtBesser, "gefechtRueckzugSchaden" => &mut q.gefechtRueckzugSchaden, "gefechtZielStrafe" => &mut q.gefechtZielStrafe, "gefechtStuetzeStrafe" => &mut q.gefechtStuetzeStrafe, "gefechtWeg" => &mut q.gefechtWeg, "vorplanWachstum" => &mut q.vorplanWachstum,
+        "vorplanRadius" => &mut q.vorplanRadius, "vorplanDicht" => &mut q.vorplanDicht,
+        "kampfModell" => &mut q.kampfModell,
+        "sonde" => &mut q.sonde,
+
+        _ => return None,
+    })
+}
+
 /// C++: void parameterLaden(Zustand& z)  (op2_ki.hpp:6772)
 // Parameter aus logs/KI-Parameter-P<n>.txt (name=wert je Zeile, # = Kommentar). Unbekannte Namen werden gemeldet.
 /// Spielstand der oeffentlichen Fassung: "name=wert" je Zeile, "eden:"/"ply:" nur fuer die Fraktion
@@ -29,47 +72,6 @@ pub fn parameterLaden(welt: &mut dyn Welt, z: &mut Zustand) {
     let text = parameterText.with(|t| t.borrow()[sp].clone());
     let text = Some(format!("{}{}", SPIELSTAND, text.unwrap_or_default()));
     if f.is_none() && text.is_none() { return; }
-    fn feld<'a>(q: &'a mut Parameter, name: &str) -> Option<&'a mut f64> {
-        Some(match name {
-            "reaktion" => &mut q.reaktion, "horizont" => &mut q.horizont, "ueberlegenheit" => &mut q.ueberlegenheit,
-            "fabrikGewinn" => &mut q.fabrikGewinn, "reserveStart" => &mut q.reserveStart, "reserveLernrate" => &mut q.reserveLernrate,
-            "reserveRueckgang" => &mut q.reserveRueckgang, "reserveMax" => &mut q.reserveMax, "turmAnteil" => &mut q.turmAnteil,
-            "zermuerbAbstand" => &mut q.zermuerbAbstand, "schmelzeNutzen" => &mut q.schmelzeNutzen, "wohnraumGrenze" => &mut q.wohnraumGrenze,
-            "freischaltWert" => &mut q.freischaltWert,
-            "nahRadius" => &mut q.nahRadius, "heimHalten" => &mut q.heimHalten, "steigerung" => &mut q.steigerung, "vorsorge" => &mut q.vorsorge,
-            "seltenGewinn" => &mut q.seltenGewinn, "schmelzenJeMine" => &mut q.schmelzenJeMine, "empSchwelle" => &mut q.empSchwelle,
-            "risikoAnteil" => &mut q.risikoAnteil, "angriffMarge" => &mut q.angriffMarge, "rueckzugAb" => &mut q.rueckzugAb,
-            "lernen" => &mut q.lernen,
-            "gelaende" => &mut q.gelaende,
-            "engMin" => &mut q.engMin,
-            "engMax" => &mut q.engMax,
-            "engBreite" => &mut q.engBreite,
-            "engTuerme" => &mut q.engTuerme,
-            "engHinter" => &mut q.engHinter,
-            "zweitbasis" => &mut q.zweitbasis,
-            "zbMinWeg" => &mut q.zbMinWeg,
-            "zbNutzen" => &mut q.zbNutzen,
-            "zbTuerme" => &mut q.zbTuerme,
-            "zbFabrik" => &mut q.zbFabrik,
-            "zbStruktur" => &mut q.zbStruktur,
-            "zbFeindAbstand" => &mut q.zbFeindAbstand,
-            "engDringlichkeit" => &mut q.engDringlichkeit,
-            "engTurmFaktor" => &mut q.engTurmFaktor,
-            "engMauerBreite" => &mut q.engMauerBreite,
-            "zbArmee" => &mut q.zbArmee, "zbAnzahl" => &mut q.zbAnzahl, "zbOffen" => &mut q.zbOffen, "zbBedrohung" => &mut q.zbBedrohung, "zbFeind" => &mut q.zbFeind, "zbErz" => &mut q.zbErz, "zbArbeiter" => &mut q.zbArbeiter, "zbUeberschuss" => &mut q.zbUeberschuss,
-            "platzFern" => &mut q.platzFern,
-            "roehreKachel" => &mut q.roehreKachel,
-            "vorplan" => &mut q.vorplan, "moralStill" => &mut q.moralStill, "wehrlos" => &mut q.wehrlos, "welle" => &mut q.welle, "paarung" => &mut q.paarung, "turmNetz" => &mut q.turmNetz, "turmOhneNetz" => &mut q.turmOhneNetz, "wissArbeit" => &mut q.wissArbeit, "wissAusbau" => &mut q.wissAusbau, "forschungVorrang" => &mut q.forschungVorrang, "fabrikWirtschaft" => &mut q.fabrikWirtschaft, "seltenNutzen" => &mut q.seltenNutzen, "fabrikLaeuft" => &mut q.fabrikLaeuft, "abwehrRueckkehr" => &mut q.abwehrRueckkehr, "lueckeKlug" => &mut q.lueckeKlug, "turmRoehre" => &mut q.turmRoehre, "mauerLinie" => &mut q.mauerLinie, "mauerLaenge" => &mut q.mauerLaenge, "torBreite" => &mut q.torBreite, "torAbstand" => &mut q.torAbstand, "bauReihe" => &mut q.bauReihe, "mauerSchub" => &mut q.mauerSchub, "zugangMauer" => &mut q.zugangMauer, "zmAbstand" => &mut q.zmAbstand, "zmKlein" => &mut q.zmKlein, "zmMax" => &mut q.zmMax, "zmHinter" => &mut q.zmHinter, "zmSchild" => &mut q.zmSchild, "fwAufruest" => &mut q.fwAufruest, "fwFahrt" => &mut q.fwFahrt, "fwWert" => &mut q.fwWert, "fwVorlauf" => &mut q.fwVorlauf, "fwNach" => &mut q.fwNach, "fwBedrohung" => &mut q.fwBedrohung, "fwVorrang" => &mut q.fwVorrang, "eroeffLabor" => &mut q.eroeffLabor, "eroeffAus" => &mut q.eroeffAus, "eroeffBis" => &mut q.eroeffBis, "eroeffWarten" => &mut q.eroeffWarten, "bauGleichzeitig" => &mut q.bauGleichzeitig, "wacheRand" => &mut q.wacheRand, "wacheMax" => &mut q.wacheMax, "forschKampf" => &mut q.forschKampf, "seltenOhne" => &mut q.seltenOhne, "tempoWert" => &mut q.tempoWert, "geleit" => &mut q.geleit, "panzerFrueh" => &mut q.panzerFrueh, "panzerKlasse" => &mut q.panzerKlasse, "panzerModell" => &mut q.panzerModell, "zielTreue" => &mut q.zielTreue, "vorausBau" => &mut q.vorausBau, "schmelzeSpaet" => &mut q.schmelzeSpaet, "schmelzeEroeff" => &mut q.schmelzeEroeff, "marschHeil" => &mut q.marschHeil, "aufmarschFeind" => &mut q.aufmarschFeind, "marschSammeln" => &mut q.marschSammeln, "moralBau" => &mut q.moralBau, "bauStau" => &mut q.bauStau, "platzErreichbar" => &mut q.platzErreichbar, "schmelzeRisiko" => &mut q.schmelzeRisiko, "lkwWechsel" => &mut q.lkwWechsel, "sparFrist" => &mut q.sparFrist, "startBaken" => &mut q.startBaken, "startSchmelze" => &mut q.startSchmelze, "mineSeite" => &mut q.mineSeite, "kigaNachLynx" => &mut q.kigaNachLynx, "eroeffFolge" => &mut q.eroeffFolge, "moralFest" => &mut q.moralFest, "moralHalten" => &mut q.moralHalten, "missionsModus" => &mut q.missionsModus, "stufe" => &mut q.stufe, "rolle" => &mut q.rolle, "eigeneAngriffe" => &mut q.eigeneAngriffe, "schonfrist" => &mut q.schonfrist, "ueberlegMin" => &mut q.ueberlegMin, "testAngriff" => &mut q.testAngriff, "testStaerke" => &mut q.testStaerke, "testPosten" => &mut q.testPosten, "testPostenX" => &mut q.testPostenX, "testPostenY" => &mut q.testPostenY, "testPostenGroesse" => &mut q.testPostenGroesse, "testBakeX" => &mut q.testBakeX, "testBakeY" => &mut q.testBakeY, "minenUmkreis" => &mut q.minenUmkreis, "minenJeSorte" => &mut q.minenJeSorte, "wacheVorBasis" => &mut q.wacheVorBasis, "wachePatrouille" => &mut q.wachePatrouille, "wachePatrouilleTakt" => &mut q.wachePatrouilleTakt, "bezirke" => &mut q.bezirke, "gebietAuto" => &mut q.gebietAuto, "kernLuft" => &mut q.kernLuft, "roehrenVorrang" => &mut q.roehrenVorrang, "roehreAnNetz" => &mut q.roehreAnNetz, "kigaBremse" => &mut q.kigaBremse, "kigaAus" => &mut q.kigaAus, "kigaAn" => &mut q.kigaAn, "missionZiel" => &mut q.missionZiel, "raumhafen" => &mut q.raumhafen, "spinnen" => &mut q.spinnen, "aufstieg" => &mut q.aufstieg, "mhd" => &mut q.mhd, "solar" => &mut q.solar, "zbWache" => &mut q.zbWache, "zbWacheDruck" => &mut q.zbWacheDruck, "zbVorrang" => &mut q.zbVorrang, "marschEtappe" => &mut q.marschEtappe, "marschRadius" => &mut q.marschRadius, "marschAnteil" => &mut q.marschAnteil, "sparBedrohung" => &mut q.sparBedrohung, "medVorrang" => &mut q.medVorrang, "bauAbbruch" => &mut q.bauAbbruch, "wohnVorrang" => &mut q.wohnVorrang, "faktorNeu" => &mut q.faktorNeu, "laserTuerme" => &mut q.laserTuerme, "laserTurmAnteil" => &mut q.laserTurmAnteil, "laserKeinAngriff" => &mut q.laserKeinAngriff, "panzerBis" => &mut q.panzerBis, "geleitRadius" => &mut q.geleitRadius, "geleitMax" => &mut q.geleitMax, "geleitUeber" => &mut q.geleitUeber, "fabrikErz" => &mut q.fabrikErz, "fabrikAuslastung" => &mut q.fabrikAuslastung, "schwachstelle" => &mut q.schwachstelle, "schwachAussen" => &mut q.schwachAussen, "zugang" => &mut q.zugang, "zugangGruppen" => &mut q.zugangGruppen, "truppPlan" => &mut q.truppPlan, "truppRisiko" => &mut q.truppRisiko, "truppMin" => &mut q.truppMin, "truppAbwehr" => &mut q.truppAbwehr, "versuch" => &mut q.versuch, "versuchWert" => &mut q.versuchWert, "wertungTick" => &mut q.wertungTick, "missionen" => &mut q.missionen, "missionHorizont" => &mut q.missionHorizont, "missionMax" => &mut q.missionMax, "missionRueck" => &mut q.missionRueck, "missionUeberleg" => &mut q.missionUeberleg, "missionSieg" => &mut q.missionSieg, "missionLernen" => &mut q.missionLernen, "missionKorrUeberfall" => &mut q.missionKorrUeberfall, "missionKorrHalten" => &mut q.missionKorrHalten, "missionKorrEntscheidung" => &mut q.missionKorrEntscheidung, "missionKorrAbwehr" => &mut q.missionKorrAbwehr, "parallel" => &mut q.parallel, "parallelUmweg" => &mut q.parallelUmweg, "parallelAbstand" => &mut q.parallelAbstand, "parallelTiefe" => &mut q.parallelTiefe, "moralWert" => &mut q.moralWert, "erzAusbau" => &mut q.erzAusbau,
-            "turmVorne" => &mut q.turmVorne, "turmAbstand" => &mut q.turmAbstand, "turmFront" => &mut q.turmFront, "turmUeberMauer" => &mut q.turmUeberMauer,
-            "gefecht" => &mut q.gefecht, "gefechtRadius" => &mut q.gefechtRadius, "gefechtSpiel" => &mut q.gefechtSpiel, "schaumAnteil" => &mut q.schaumAnteil, "gefechtStellung" => &mut q.gefechtStellung, "gefechtSperre" => &mut q.gefechtSperre, "gefechtAbstand" => &mut q.gefechtAbstand, "gefechtAbstandSperre" => &mut q.gefechtAbstandSperre,
-            "gefechtReichweitePlus" => &mut q.gefechtReichweitePlus, "gefechtBedrohungWert" => &mut q.gefechtBedrohungWert, "gefechtTurmGewicht" => &mut q.gefechtTurmGewicht, "gefechtAusweich" => &mut q.gefechtAusweich, "gefechtBesser" => &mut q.gefechtBesser, "gefechtRueckzugSchaden" => &mut q.gefechtRueckzugSchaden, "gefechtZielStrafe" => &mut q.gefechtZielStrafe, "gefechtStuetzeStrafe" => &mut q.gefechtStuetzeStrafe, "gefechtWeg" => &mut q.gefechtWeg, "vorplanWachstum" => &mut q.vorplanWachstum,
-            "vorplanRadius" => &mut q.vorplanRadius, "vorplanDicht" => &mut q.vorplanDicht,
-            "kampfModell" => &mut q.kampfModell,
-            "sonde" => &mut q.sonde,
-
-            _ => return None,
-        })
-    }
     // naechste Zeile aus der Datei (fgets, 200) oder aus dem eingebauten Text
     // (Rust: erst der eingebaute Text, dann die Datei -- die Datei ueberschreibt einzelne Werte, statt den Satz zu ersetzen)
     let mut zeilen: Vec<String> = {

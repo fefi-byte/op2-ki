@@ -209,10 +209,13 @@ pub fn fahrzeuge(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     if istKampfFz(welt, typ) { typ = mapNone; }
     // Missionsmodus: die zweite Basis wartet auf ConVecs (zweitbasis::kitLaden bestellt sie selbst) -- Fabrik nicht stilllegen
     let zbWartet = super::super::modus::mission(z) && super::super::zweitbasis::wartetAufFahrzeug(z);
+    // Drehbuch: die Phase verlangt noch Fahrzeuge (befehl::schritt gibt sie in Auftrag) -- Fabrik wach halten
+    let befohlen = super::super::befehl::fahrzeugeOffen(welt, z);
     // Keine neuen Fahrzeuge noetig: Fabrik stilllegen (gibt 3 Arbeiter frei), bei Bedarf wieder einschalten.
     if z.fabrikStill == vf {
-        if typ == mapNone && z.gruppenBedarf == 0 && !zbWartet { return; }
+        if typ == mapNone && z.gruppenBedarf == 0 && !zbWartet && !befohlen { return; }
         if typ == mapNone && zbWartet { typ = mapConVec; warum = "ConVecs fuer die zweite Basis"; }   // nur zum Wecken
+        if typ == mapNone && befohlen && z.gruppenBedarf == 0 { typ = mapLynx; warum = "Drehbuch: befohlene Fahrzeuge"; }   // nur zum Wecken
         if typ == mapNone { typ = mapLynx; warum = "Kampfgruppen brauchen Fahrzeuge (Fabrikgruppe)"; }   // nur zum Wecken
         if !welt.IsBusy(vf) { z.fabrikStill = 0; return; }           // laeuft wieder -- naechster Schritt produziert
         let braucht = welt.GetWorkersRequired(mapVehicleFactory, z.spieler);
@@ -252,7 +255,7 @@ pub fn fahrzeuge(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     if PAR(z.spieler).fabrikWirtschaft >= 0.5 { wirtschaftVorrang(welt, z, vf, typ, warum, t); }
     if welt.IsBusy(vf) || t < z.fzPauseBis { return; }
     if typ == mapNone {
-        if z.gruppenBedarf != 0 || zbWartet { return; }              // Fabrikgruppe soll Kampffahrzeuge bauen / zweite Basis
+        if z.gruppenBedarf != 0 || zbWartet || befohlen { return; }              // Fabrikgruppe soll Kampffahrzeuge bauen / zweite Basis
         // Nutzer 2026-11-20: nicht stilllegen, solange die mobile Armee unter ihrem Soll liegt -- auch bevor ein
         // Kampffahrzeug erforscht ist: stillgelegt gab sie ihre Arbeiter ab und bekam sie lange nicht zurueck
         if !standardVolk(welt, l) && welt.GetCurAction(vf) == moDone && welt.HasWorkers(vf) && z.eigeneMobil >= mobilSoll(welt, z, true)

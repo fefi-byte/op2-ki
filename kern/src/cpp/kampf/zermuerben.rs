@@ -64,7 +64,11 @@ pub(super) fn neuerAngriff(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, t: i3
 /// die Sollzahlen bauen die Truppe (modus::noetig), losgeschlagen wird, sobald sie steht -- spaetestens nach 12 000 Ticks.
 #[allow(clippy::too_many_arguments)]
 fn auftragAngriff(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, t: i32, soll: &Soll, b: &mut Bestand, feindWTBasis: i32, a: super::super::modus::Auftrag) {
-    if z.feindGeb == 0 { super::super::modus::auftragErledigt(z); return; }
+    // Ohne bekanntes Feindgebaeude gibt es kein Ziel -- ausser beim Befehl "halten" (Original cm03: der Befehl verschwand still)
+    if z.feindGeb == 0 && !super::super::befehl::istHalten(z) {
+        super::super::befehl::keinZiel(welt, z);
+        super::super::modus::auftragErledigt(z); return;
+    }
     let (mut sw, ueber, gesamt) = truppeBemessen(welt, z);
     let feindAbwehrArmee = if PAR(z.spieler).abwehrRueckkehr >= 0.5 { z.feindArmeeZurueck } else { z.feindArmeeHeim };
     // Ziel: Feindbasis oder das Feindgebaeude naechst dem Ort
@@ -88,10 +92,32 @@ fn auftragAngriff(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, t: i32, soll: 
     super::super::modus::setzeNoetig(z, noetig);
     let mut ns = b.ns;
     let faellig = t - a.seit > 12000;
-    if (gesamt >= noetig || faellig) && ns + if ueber > 0 { 2 } else { 0 } >= 2 {
+    // Befehl der Mission (befehl.rs): Truppe nach Liste/Anzahl/"vorhanden", Frist; nur die Sammelgruppe oder alle
+    let bereitBefehl = super::super::befehl::bereit(welt, z, t, a.seit);
+    let ueber = if super::super::befehl::nurSammel(z) { 0 } else if super::super::befehl::alleMit(z) { let mut d = 0; gruppenWert(welt, z.wache, &mut d) } else { ueber };
+    let los = match bereitBefehl { Some(b) => b && ns + if ueber > 0 { 1 } else { 0 } >= 1, None => (gesamt >= noetig || faellig) && ns + if ueber > 0 { 2 } else { 0 } >= 2 };
+    // Befehl "halten": die Truppe faehrt zum Punkt und bewacht ihn (kein Ziel im Feindlager)
+    if los && super::super::befehl::istHalten(z) && a.ort.is_some() {
+        let (ax, aa2, aw, sm) = (z.angriff, z.angriff2, z.wache, z.sammel);
+        if sicherAlle(welt, z, ax, sm) > 0 { sicherAlle(welt, z, aa2, sm); }
+        if super::super::befehl::alleMit(z) { if sicherAlle(welt, z, ax, aw) > 0 { sicherAlle(welt, z, aa2, aw); } }
+        let (hx, hy) = a.ort.unwrap_or((z.bx, z.by));
+        let mut na = 0; let wert = angriffWert(welt, z, &mut na);
+        z.angriffStart = wert; z.kampfModus = 2; z.kampfModusSeit = t; z.letzterAngriffStart = t; z.angriffWunsch = 0; z.angriffArt = 2;
+        z.angriffZerstoertStart = z.zerstoertWert; z.angriffVerlorenStart = z.verlorenWert;
+        let warte = Rect::new(engine(welt, z, hx - 2, hy - 2), engine(welt, z, hx + 2, hy + 2));
+        let schutz = Rect::new(engine(welt, z, hx - 6, hy - 6), engine(welt, z, hx + 6, hy + 6));
+        for g in [z.angriff, z.angriff2] { if g != 0 { wachen(welt, g, warte, &[schutz], 1); } }
+        super::super::befehl::losgeschlagen(z, a.ort);
+        super::super::modus::auftragErledigt(z);
+        melde(welt, z, "kampf", mapLynx, hx, hy, &format!("Befehl: {} Fahrzeuge (Wert {}) halten den Bereich um {},{}", na, wert, hx, hy));
+        return;
+    }
+    if los {
         let text = text160(format!("Mission: befohlener Angriff {} mit Kraft {} (noetig {}{})",
             if wunsch != 0 { "auf das Ziel am Ort" } else { "auf die Feindbasis" }, gesamt, noetig, if faellig && gesamt < noetig { ", Frist abgelaufen" } else { "" }));
         losschlagen(welt, z, l, t, soll.fz, ueber, &mut sw, &mut ns, if wunsch != 0 { 2 } else { 0 }, wunsch, &text);
+        super::super::befehl::losgeschlagen(z, a.ort);
         super::super::modus::auftragErledigt(z);
     }
 }

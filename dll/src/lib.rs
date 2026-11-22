@@ -59,3 +59,31 @@ pub unsafe extern "C" fn ki2_schritt(h: *mut Ki2, spieler: i32) {
         op2ki::cpp::welt::Welt::logZeile(welt, &format!("Rust-KI 2: Absturz in schritt (Spieler {spieler}): {m}"));
     }
 }
+
+/// Befehl der Mission waehrend des Spiels (op2ki::befehl, Text "name=wert" je Zeile): Drehbuch-Phase, Angriff,
+/// Verteidigung, Rolle, Stellschrauben -- siehe kern/src/cpp/befehl.rs.
+/// # Safety
+/// `h` stammt aus `ki2_neu`; `text` hat `n` Bytes.
+#[no_mangle]
+pub unsafe extern "C" fn ki2_befehl(h: *mut Ki2, spieler: i32, text: *const u8, n: i32) {
+    let Some(k) = h.as_mut() else { return };
+    if text.is_null() || n < 0 { return; }
+    let t = String::from_utf8_lossy(std::slice::from_raw_parts(text, n as usize)).into_owned();
+    let Ki2 { welt, z } = k;
+    let Some((_, zs)) = z.iter_mut().find(|(p, _)| *p == spieler) else { return };
+    cpp::globale::g_kraftSpieler.with(|g| g.set(spieler));
+    let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| cpp::befehl::befehl(welt, zs, &t)));
+    if r.is_err() { op2ki::cpp::welt::Welt::logZeile(welt, &format!("Rust-KI 2: Absturz in befehl (Spieler {spieler})")); }
+}
+
+/// Rueckmeldung an die Mission (op2ki::status): Phase fertig, Angriffsstand, Angriff auf die Basis ... (befehl::status)
+/// # Safety
+/// `h` stammt aus `ki2_neu`.
+#[no_mangle]
+pub unsafe extern "C" fn ki2_status(h: *mut Ki2, spieler: i32, code: i32) -> i32 {
+    let Some(k) = h.as_mut() else { return 0 };
+    let Ki2 { welt, z } = k;
+    let Some((_, zs)) = z.iter_mut().find(|(p, _)| *p == spieler) else { return 0 };
+    cpp::globale::g_kraftSpieler.with(|g| g.set(spieler));
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| cpp::befehl::status(welt, zs, code))).unwrap_or(0)
+}

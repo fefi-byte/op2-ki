@@ -65,6 +65,7 @@ now its only source; the missions contain no AI of their own.
 | Second base | `zweitbasis.rs` | an outpost with command center and smelter at a far beacon field, once the main base stands, ore is spare and workers are free; in mission mode an independent base with its own factories, colony and guard |
 | Terrain | `erweiterung.rs`, `kampf/marsch.rs` | guard behind the pass and towers at narrow passes; the attack force gathers on the march |
 | Mission mode | `modus.rs`, `bezirke.rs` | difficulty, roles, outposts on command; districts, tubes first, spaceport fortress |
+| Mission commands | `befehl.rs` | script phases (build/research/vehicle lists), attack and defence orders, settings during the game; status reports back to the mission |
 | Walls | `mauer.rs` | remembers recorded walls so no building is planned on them; build order: first connect buildings with staff, then guard towers (tube to the command center), walls last |
 
 The AI sees the game only through the `Welt` ("world") trait in `kern/src/cpp/welt.rs`. In the DLL,
@@ -78,6 +79,9 @@ by `werkzeug/bruecke.py`; a mission itself is only map data plus a call to `op2k
 With `missionsModus=1` the AI plays a mission instead of a multiplayer game: difficulty from the game, roles
 (aggressive, defensive, colony), an outpost or an independent second base on command, districts and walls from the
 terrain, an army that patrols in front of the base, spiders, upgrades to Panther and Tiger, MHD and solar power.
+During the game the mission can give orders (`op2ki::befehl`): script phases where the AI builds and researches only
+what it is told (basic supply keeps the colony alive), attacks with a chosen target, kind and units, defence orders;
+`op2ki::status` reports back, and the orders survive save/load.
 To use the AI in your own mission (or from a mission editor) you only need three headers and `op2ki.dll`; see
 [EINBINDEN.md](EINBINDEN.md) (German, with an English summary).
 

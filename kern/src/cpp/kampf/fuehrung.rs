@@ -22,7 +22,11 @@ pub(super) fn kampfFuehrungInnen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage,
     // Missionen (Nutzer 2026-11-18): keine Wache, keine Reserve -- alles, was gebaut wird, kommt an die Front
     let missionen = super::super::missionen::an(z);
     if missionen { soll.sammelZiel = (soll.sammelZiel + soll.wacheZiel).max(4).min(GRUPPE_MAX); soll.wacheZiel = 0; }
-    beimischungSetzen(welt, z, l, &soll);
+    // Befehle der Mission (befehl.rs): Wache und Sammelgruppe nach Liste; im Drehbuch ohne Befehl keine neuen Kampffahrzeuge
+    if let Some((wl, sl)) = super::super::befehl::armee(welt, z, soll.fz, soll.waffe, soll.wacheZiel, soll.sammelZiel) {
+        super::super::befehl::listenSetzen(welt, z, &wl, &sl);
+        soll.wacheZiel = wl.iter().map(|e| e.n).sum(); soll.sammelZiel = sl.iter().map(|e| e.n).sum();
+    } else { beimischungSetzen(welt, z, l, &soll); }
     if missionen {
         if z.reserveZiel != 0 { let g = z.eingreif; welt.ClearTargCount(g); z.reserveZiel = 0; }
         let _ = streunerAufnehmen(welt, z, t, &pl, &soll);
@@ -170,7 +174,13 @@ fn plaetzeBestimmen(welt: &mut dyn Welt, z: &mut Zustand) -> Plaetze {
     let (x0, y0) = (x0.max(1), y0.max(1));
     let (x1, y1) = (x1.min(z.breite - 2), y1.min(z.hoehe - 2));
     z.wacheGebiet = [x0, y0, x1, y1];
-    let basis = Rect::new(engine(welt, z, x0, y0), engine(welt, z, x1, y1));
+    let mut basis = Rect::new(engine(welt, z, x0, y0), engine(welt, z, x1, y1));
+    // Befehl der Mission: die Wache bewacht einen vorgegebenen Bereich
+    if let Some((bx0, by0, bx1, by1)) = super::super::befehl::wacheBereich(z) {
+        wx = (bx0 + bx1) / 2; wy = (by0 + by1) / 2;
+        z.wacheGebiet = [bx0, by0, bx1, by1];
+        basis = Rect::new(engine(welt, z, bx0, by0), engine(welt, z, bx1, by1));
+    }
     Plaetze { wx, wy, sx, sy, basis }
 }
 
@@ -628,6 +638,16 @@ fn angriffLaeuft(welt: &mut dyn Welt, z: &mut Zustand, pl: &Plaetze, b: &mut Bes
     let abbruch = abbruchGrund(welt, z, na, &mut nw);
     if let Some(abbruch) = abbruch { angriffBeenden(welt, z, na, pl, abbruch); return; }
     if kampfModellNeu() && PAR(z.spieler).welle >= 1.0 { let w = PAR(z.spieler).welle as i32; welleNachschub(welt, z, w); }
+    // Befehl "halten": die Truppe steht am Punkt und bewacht den Bereich (Warte- und Schutzrechteck wie beim Aufmarsch),
+    // statt weiterzuziehen; alle 2000 Ticks neu gesetzt
+    if let Some((hx, hy)) = super::super::befehl::halten(z) {
+        if welt.Tick() % 2000 < TAKT {
+            let warte = Rect::new(engine(welt, z, hx - 2, hy - 2), engine(welt, z, hx + 2, hy + 2));
+            let schutz = Rect::new(engine(welt, z, hx - 6, hy - 6), engine(welt, z, hx + 6, hy + 6));
+            for g in [z.angriff, z.angriff2] { if g != 0 { wachen(welt, g, warte, &[schutz], 1); } }
+        }
+        return;
+    }
     if routeFolgen(welt, z) { return; }
     let (mut mx, mut my, mut k) = (0, 0, 0);
     for v in AngriffEnum(welt, z) { if welt.IsLive(v) { let lo = welt.Location(v); mx += edX(welt, z, lo); my += edY(welt, z, lo); k += 1; } }
@@ -638,12 +658,16 @@ fn angriffLaeuft(welt: &mut dyn Welt, z: &mut Zustand, pl: &Plaetze, b: &mut Bes
 /// Grund, den laufenden Angriff abzubrechen (Feindbasis weg, Gruppe aufgerieben, Kolonie in Not, Truppplan-Schwelle)
 fn abbruchGrund(welt: &mut dyn Welt, z: &mut Zustand, na: i32, nw: &mut i32) -> Option<&'static str> {
     let mut abbruch: Option<&'static str> = None;
-    if z.feindGeb == 0 { abbruch = Some("Feindbasis vernichtet"); }
+    // Befehl "halten": der Punkt bleibt besetzt, auch ohne Feindbasis (Original cm03: die Truppe kehrte sofort um)
+    let haelt = super::super::befehl::halten(z).is_some();
+    if z.feindGeb == 0 && !haelt { abbruch = Some("Feindbasis vernichtet"); }
     else if na == 0 { abbruch = Some("Angriffsgruppe aufgerieben"); }
     else {
         let a = gruppenWert(welt, z.wache, nw); let b = gruppenWert(welt, z.eingreif, nw);
         if z.feindDrohung > z.eigeneWTWert + a + b { abbruch = Some("Kolonie wird angegriffen, Wache und Tuerme zu schwach"); }
     }
+    // Befehl der Mission: Rueckzug ab Verlustanteil, Ueberfall/Ziel -> nach dem Ziel heim
+    if abbruch.is_none() { let mut n = 0; let jetzt = angriffWert(welt, z, &mut n); abbruch = super::super::befehl::abbruch(welt, z, jetzt); }
     // Rust (Truppnetz): der gewaehlte Plan -- Rueckzug unter der Verlustschwelle, nach dem Ziel heim (wenn nicht weiter)
     if abbruch.is_none() && z.planAn != 0 && z.angriffArt == 2 {
         let mut jetzt = 0;

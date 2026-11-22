@@ -287,7 +287,8 @@ pub fn mauerNeben(welt: &mut dyn Welt, z: &mut Zustand, tx: i32, ty: i32) {
 
 /// C++: bool bauAufzeichnen(Zustand& z, int typ, const char* warum)  (op2_ki.hpp:2818)
 pub fn bauAufzeichnen(welt: &mut dyn Welt, z: &mut Zustand, typ: i32, warum: &str) -> bool {
-    let i = if typ == mapGuardPost { wachtPlatz(welt, z) } else { platzWaehlen(welt, z, typ) };
+    let i = if let Some(i) = super::super::befehl::platzWunsch(welt, z, typ) { i }
+            else if typ == mapGuardPost { wachtPlatz(welt, z) } else { platzWaehlen(welt, z, typ) };
     if i < 0 { return false; }
     let iu = i as usize;
     let g = grundflaeche(welt, typ);

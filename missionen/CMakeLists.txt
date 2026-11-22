@@ -60,3 +60,7 @@ foreach(karte mp2_05 mp2_08 mp2_11 mp4_05 mp4_08 mp4_12 on4_03 on6_01 on6_03)
   string(REPLACE "_" "" kurz "${karte}")
   ki_mission(cKIKRR${kurz} zuschauen/${karte}.cpp)
 endforeach()
+
+# Zuschauen mit festem Seed (Startplaetze wie im Simulator --seed): eine Partie, die man nachspielen will
+ki_mission(cKIKRRmp211s1 zuschauen/mp2_11.cpp)
+target_compile_definitions(cKIKRRmp211s1 PRIVATE OP2KI_FEST_SEED=1)

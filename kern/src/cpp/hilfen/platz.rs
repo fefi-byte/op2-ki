@@ -261,6 +261,8 @@ thread_local! { static OHNE_PLAN: std::cell::Cell<bool> = std::cell::Cell::new(f
 pub fn ohnePlan(an: bool) { OHNE_PLAN.with(|c| c.set(an)); }
 
 pub fn platzWaehlen(welt: &mut dyn Welt, z: &mut Zustand, typ: i32) -> i32 {
+    // Drehbuch der Mission: Gebaeude mit befohlenem Ort
+    if let Some(i) = super::super::befehl::platzWunsch(welt, z, typ) { return i; }
     let planErlaubt = !OHNE_PLAN.with(|c| c.get());
     // Missionsmodus (PAR bezirke): die Hauptbasis waechst in Bezirken (bezirke.rs); Kern, Tuerme und Minen wie bisher
     if PAR(z.spieler).bezirke >= 0.5 && typ != mapGuardPost && typ != mapCommonOreMine && typ != mapRareOreMine {
