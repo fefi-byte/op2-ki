@@ -1,6 +1,8 @@
 //! Zustand eines KI-Spielers (alles, was zwischen den Schritten bleibt), Platz, Roehre, Anspruch.
 use super::*;
+use super::super::*;
 
+/// Bauplatz (C++ struct Platz).
 #[derive(Clone, Copy, Debug, Default)]
 #[repr(C)]
 pub struct Platz {
@@ -14,6 +16,7 @@ pub struct Platz {
     pub raster: i16,   // frei (frueher Rasterplatz), immer -1
 }
 
+/// Gerades Roehrenstueck (C++ struct Roehre).
 #[derive(Clone, Copy, Debug, Default)]
 #[repr(C)]
 pub struct Roehre {
@@ -26,9 +29,11 @@ pub struct Roehre {
     pub seit: i32,
 }
 
+/// Anspruch auf knappe Mittel (C++ struct Anspruch).
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Anspruch { pub typ: i32, pub rang: i32, pub menge: [i32; 4], pub vorhaben: bool }
 
+/// Zustand einer KI (C++ struct Zustand), wird mit Nullen angelegt wie g_save im Original.
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub struct Zustand {
@@ -45,11 +50,14 @@ pub struct Zustand {
     pub naechsterAnschluss: i32,
     pub forschungModus: i32,   // 0: DoResearch mit techID, 1: mit Tabellenindex (kalibriert sich selbst)
     pub forschungLab: i32,   // unitID des Labors, dessen Start geprueft wird
+    pub forschungWert: i32,   // angefragtes Thema
     pub forschungSeit: i32,
+    pub kitTyp: i32,   // Bausatz, der gerade in der Fabrik entsteht (0 = keiner)
+    pub kitSeit: i32,
     pub kitGesperrtTyp: [i32; 8],   // Bausaetze, die die Fabrik (noch) nicht herstellt
     pub kitGesperrtBis: [i32; 8],
+    pub kitPauseBis: i32,   // Fabrik hat den letzten Auftrag nicht angenommen -> kurz warten
     pub fzTyp: i32,   // Fahrzeug, das gerade in der Fahrzeugfabrik entsteht
-    pub fzVf: Id,   // Fabrik dieses Auftrags
     pub fzSeit: i32,
     pub fzPauseBis: i32,
     pub meldungenSeit: [i32; 32],   // Entprellung wiederkehrender Meldungen
@@ -64,7 +72,8 @@ pub struct Zustand {
     pub bakeMiner: i32,   // unitID des Miners, der gerade eine Mine baut
     pub bakeSeit: i32,   // seit wann diese Bake das Ziel ist
     pub minerSeit: i32,   // wann der Miner den Auftrag bekam
-    pub minerVor: i32,   // Robo-Miner, der schon zur Bake faehrt, waehrend sie vermessen wird
+    /// Robo-Miner, der schon zur Bake faehrt, waehrend sie vermessen wird; Bake, zu der Lastwagen vorgefahren sind
+    pub minerVor: i32,
     pub lkwVorBake: i32,   // Bake, zu der schon Lastwagen vorgefahren sind
     pub lkwVor: [i32; 2],   // die zur Mine vorgefahrenen Lastwagen (bis zur Zuteilung)
     pub bakenX: [i32; 4],   // selbst angelegte Baken (Editor-Kacheln)
@@ -80,6 +89,8 @@ pub struct Zustand {
     pub minenGesehen: i32,   // so viele Minen standen beim letzten Schritt
     pub minenBauAn: i32,
     pub minenBau: Gruppe,   // Weg 2: die Spiel-KI setzt den Miner ein
+    pub ladeConvec: i32,   // ConVec, der gerade an der Strukturfabrik laedt
+    pub ladeSeit: i32,   // ConVec, der gerade an der Strukturfabrik laedt
     pub ziel: i32,   // 0 = nur Kolonie, 1 = Satellit starten
     pub zielErreicht: i32,   // Tick, an dem der Satellit im All war (0 = noch nicht)
     pub raumSchritt: i32,   // Ablauf am Spaceport, siehe raumfahrt()
@@ -122,6 +133,8 @@ pub struct Zustand {
     pub feindFabriken: i32,
     pub feindWT: i32,
     pub feindBestWert: i32,   // staerkstes gesehenes Feindfahrzeug (Qualitaet)
+    pub feindBestTyp: i32,   // staerkstes gesehenes Feindfahrzeug (Qualitaet)
+    pub feindBestWaffe: i32,   // staerkstes gesehenes Feindfahrzeug (Qualitaet)
     pub forschGestartet: [i32; 4],   // gestartete Themen je Bereich (Kolonie, Ziel, Kampf, Wirtschaft) -- Kuchen anteilig
     pub empRakete: i32,
     pub empAuftrag: i32,
@@ -135,7 +148,12 @@ pub struct Zustand {
     /// Wachgebiet der Basis (Editor-Kacheln x0, y0, x1, y1) und das zuletzt an die Wache gegebene
     pub wacheGebiet: [i32; 4],
     pub wacheGebietAlt: [i32; 4],
-    /// Aufmarschpunkt der zweiten Angriffsgruppe bei zwei Wegen (0,0 = keiner), schmalste Stelle des ersten Wegs
+    /// Geleitschutz (PAR geleit): Einsatzort der Wache und seit wann dort kein Feind mehr ist (geleitSeit 0 = daheim)
+    pub geleitX: i32,
+    pub geleitY: i32,
+    pub geleitSeit: i32,
+    pub geleitRuhe: i32,
+    /// Rust (PAR parallel): Aufmarschpunkt der zweiten Angriffsgruppe (0,0 = keiner)
     pub aufmarsch2X: i32,
     pub aufmarsch2Y: i32,
     pub parallelBreite: i32,
@@ -154,9 +172,12 @@ pub struct Zustand {
     pub feindPosX: [i32; 16],
     pub feindPosY: [i32; 16],
     pub feindMinD2: i32,
+    pub feindNX: i32,
+    pub feindNY: i32,
     pub eigeneMobil: i32,
     pub eigeneWTWert: i32,
     pub kampfModus: i32,   // 0 Wache, 1 Abfangen, 2 Angriff auf die Feindbasis
+    pub kampfModusSeit: i32,   // 0 Wache, 1 Abfangen, 2 Angriff auf die Feindbasis
     pub angriffStart: i32,   // 0 Wache, 1 Abfangen, 2 Angriff auf die Feindbasis
     pub aussenId: [i32; 6],
     pub aussenX: [i32; 6],
@@ -173,6 +194,7 @@ pub struct Zustand {
     pub wellen: [i32; 8],
     pub anzWellen: i32,
     pub welleSpitze: i32,
+    pub welleStart: i32,   // Beginn der letzten Welle, gemessener Abstand zwischen zwei Wellen (0 = unbekannt)
     pub wellenAbstand: i32,   // Beginn der letzten Welle, gemessener Abstand zwischen zwei Wellen (0 = unbekannt)
     pub feindUnterwegs: i32,   // Kampfwert feindlicher Fahrzeuge ausserhalb ihrer Basis
     pub feindWachstum: f64,   // gemessener Zuwachs der Feindarmee je 1000 Ticks (gleitend)
@@ -185,8 +207,12 @@ pub struct Zustand {
     pub laufNr: i32,
     pub naechstesSpeichern: i32,
     pub erzJeRouteGelernt: f64,
+    pub verlustSumme: i32,
     pub maxBew: i32,
+    pub ueberstanden: i32,
     pub feindVernichtet: i32,
+    pub moralSumme: f64,
+    pub moralN: i32,
     pub feindPos: [i32; 192],   // Verluste nach Ort: nah an der eigenen Basis oder nicht
     pub eigenPos: [i32; 192],   // Verluste nach Ort: nah an der eigenen Basis oder nicht
     pub zerstoertHeim: i32,   // Verluste nach Ort: nah an der eigenen Basis oder nicht
@@ -199,19 +225,24 @@ pub struct Zustand {
     pub garDranSeit: i32,   // Garage: wer steht in welcher Bucht, wer faehrt hin
     pub garRaus: i32,   // Garage: wer steht in welcher Bucht, wer faehrt hin
     pub garRausSeit: i32,   // Garage: wer steht in welcher Bucht, wer faehrt hin
+    pub garZaehl: i32,   // Garage: wer steht in welcher Bucht, wer faehrt hin
     pub zielEmp: i32,   // EMP-Anteil der Sammelgruppe; Spinnen: wer uebernimmt wen
-    pub zielEmpFz: i32,   // Fahrgestell der EMP-Beimischung
-    pub feindArmeeZurueck: i32,   // Kampfwert feindlicher Fahrzeuge, die vor unserer Truppe wieder daheim sein koennen (voll bis 15 Kacheln um ihre Basis, weiter weg abnehmend)
-    pub unterwegsN: i32,   // Abstaende feindlicher Kampffahrzeuge zur eigenen Basis beim letzten Scan
+    pub zielEmpFz: i32,   // Rust (kampfModell): Fahrgestell der EMP-Beimischung
+    pub feindArmeeHeim: i32,
+    pub feindArmeeZurueck: i32,   // PAR abwehrRueckkehr: Feindarmee, die vor unserer Truppe wieder daheim sein kann   // Rust (kampfModell): Kampfwert feindlicher Fahrzeuge innerhalb von 15 Kacheln um ihre Basis
+    pub unterwegsN: i32,   // Rust (kampfModell): Abstaende feindlicher Kampffahrzeuge zur eigenen Basis beim letzten Scan
     pub unterwegsId: [i32; 128],
     pub unterwegsD: [i32; 128],
-    pub feindDrohung: i32,   // Kampfwert im Nahradius, der naeher kommt oder auf unserer Seite steht
+    pub zielSchaum: i32,   // Rust: Stickyfoam-Lynx in der Sammelgruppe
+    pub feindDrohung: i32,   // Rust (kampfModell): Kampfwert im Nahradius, der naeher kommt oder auf unserer Seite steht
     pub bilUeber: i32,   // EMP-Anteil der Sammelgruppe; Spinnen: wer uebernimmt wen
     pub spinneZiel: [i32; 8],   // EMP-Anteil der Sammelgruppe; Spinnen: wer uebernimmt wen
+    pub spinneId: [i32; 8],   // EMP-Anteil der Sammelgruppe; Spinnen: wer uebernimmt wen
     pub spinneTakt: i32,   // EMP-Anteil der Sammelgruppe; Spinnen: wer uebernimmt wen
     pub bilRueck: i32,   // Rueckzug je Angriff; Verfolgung: gejagte Einheit
     pub bilRueckErz: i32,   // Rueckzug je Angriff; Verfolgung: gejagte Einheit
     pub jagdZiel: i32,   // Rueckzug je Angriff; Verfolgung: gejagte Einheit
+    pub jagdSeit: i32,   // Rueckzug je Angriff; Verfolgung: gejagte Einheit
     pub jagdTakt: i32,   // Rueckzug je Angriff; Verfolgung: gejagte Einheit
     pub bilK: [i32; 6],   // erster Feindkontakt der Truppe: dt, Modus, nah, alle, E nah, D nah; 300 Ticks spaeter: nah, E, D
     pub bilK2: [i32; 3],   // erster Feindkontakt der Truppe: dt, Modus, nah, alle, E nah, D nah; 300 Ticks spaeter: nah, E, D
@@ -292,18 +323,67 @@ pub struct Zustand {
     pub angriffQuote: [f64; 3],   // gelernt: zerstoert / verloren je Angriffsart (gleitend)
     pub zermuerbAbstand: i32,   // gelernt: Ticks zwischen zwei Zermuerbungsangriffen                 // je Labortyp (1 Basic, 2 Standard, 3 Advanced): wie dringend die Forschung ihn braucht
     pub angriffZiel: i32,   // unitID des Feindgebaeudes, das die Angriffstruppe gerade angreift
-    pub feindPotenzial: i32,   // was der Feind in der Reaktionszeit aufstellen koennte (Armee + Fabriken)
-    pub erzUeberschuss: i32,   // Bilanz ohne Angriffstruppe: Erz reicht im Horizont (1) oder nicht (0)
     pub eroeffWarteSeit: i32,   // seit wann ein Labor auf ein Thema der Eroeffnung wartet (0 = keines)
     pub fwAngriff: i32,   // Fruehe Wehr: geschaetzter fruehester Angriff (Tick, 0 = noch nicht berechnet)
+    pub feindPotenzial: i32,   // was der Feind in der Reaktionszeit aufstellen koennte (Armee + Fabriken)
+    pub erzUeberschuss: i32,   // Bilanz ohne Angriffstruppe: Erz reicht im Horizont (1) oder nicht (0)          // Bitmaske der 8 Himmelsrichtungen, aus denen Feinde an die Kolonie kamen
     pub aussenGruppe: [Gruppe; 6],
-    /// Forschung: je Labor der Bereich des gestarteten Themas (0 Kolonie, 1 Ziel, 2 Kampf, 3 Wirtschaft, -1 Fueller/sonst)
+    /// Rust (PAR zugang): Wachgruppen an den weiteren Zugaengen (Index 0 = Hauptwache, hier 1..3), Passmitte, Rueckzug bis Tick
+    pub zugGruppe: [Gruppe; 4],
+    pub zugAn: [i32; 4],
+    pub zugX: [i32; 4],
+    pub zugY: [i32; 4],
+    pub zugZurueck: [i32; 4],
+    /// Rust (Truppnetz): laufender Plan -- an, Ziel, Rueckzug unter planRueck x Startwert (Promille), weiter nach dem Ziel, Startwert
+    pub planAn: i32,
+    pub planZiel: Id,
+    pub planRueck: i32,
+    pub planWeiter: i32,
+    pub planStart: i32,
+    /// Route: Aufmarschpunkt auf der Route (planAufX = 0: wie bisher) und die Wegpunkte danach bis vors Ziel
+    pub planAufX: i32,
+    pub planAufY: i32,
+    pub planWpN: i32,
+    pub planWpI: i32,
+    pub planWpX: [i32; 16],
+    pub planWpY: [i32; 16],
+    /// Missionen (PAR missionen): je Platz Art (0 frei), Ort (Kacheln), Ziel, Gruppe, Phase, Beginn, Erzwert der Truppe beim
+    /// Start, verlangte Kampfkraft, Wertung (x1000), letzter Befehl; gesperrte Orte (erfolglos) bis Tick; naechste Wahl
+    pub missArt: [i32; 8],
+    pub missX: [i32; 8],
+    pub missY: [i32; 8],
+    pub missZiel: [Id; 8],
+    pub missGruppe: [Gruppe; 8],
+    pub missGruppeAn: [i32; 8],
+    pub missPhase: [i32; 8],
+    pub missSeit: [i32; 8],
+    pub missStart: [i32; 8],
+    pub missSoll: [i32; 8],
+    pub missWert: [i32; 8],
+    pub missBefehl: [i32; 8],
+    pub missSperrX: [i32; 16],
+    pub missSperrY: [i32; 16],
+    pub missSperrBis: [i32; 16],
+    pub missNaechste: i32,
+    pub missPool: Gruppe,
+    pub missPoolAn: i32,
+    /// Lernen (PAR missionLernen): je Platz geschaetzte Abwehr beim Start und geschickte Kampfkraft (waechst mit Verstaerkung);
+    /// je Missionsart Summe gemessener (aus dem Verlust zurueckgerechneter) und geschaetzter Abwehr
+    pub missDd: [f64; 8],
+    /// Forschung (PAR forschungVorrang): je Labor der Bereich des gestarteten Themas (0 Kolonie, 1 Ziel, 2 Kampf,
+    /// 3 Wirtschaft, -1 Fueller/sonst)
     pub forschLab: [Id; 8],
-    pub forschLabBereich: [i32; 8],
-    /// Fabrik: seit wann die Kampf-Sollzahlen fuer ein dringenderes Wirtschaftsfahrzeug ruhen (0 nein)
+    /// Fabrik (PAR fabrikWirtschaft): seit wann die Kampf-Sollzahlen fuer ein dringenderes Wirtschaftsfahrzeug ruhen (0 nein)
     pub wirtVorrang: i32,
+    /// Fabrik des laufenden Wirtschaftsfahrzeug-Auftrags (PAR fabrikLaeuft)
+    pub fzVf: Id,
+    pub forschLabBereich: [i32; 8],
+    pub missKwStart: [i32; 8],
+    pub missLernIst: [f64; 8],
+    pub missLernErw: [f64; 8],
 }
 impl Zustand {
+    /// Alles 0 (wie die statische Speicherung in der Mission).
     pub fn null() -> Box<Zustand> {
         // Sicher: alle Felder sind Zahlen bzw. Felder/Strukturen aus Zahlen.
         unsafe { Box::new(std::mem::zeroed()) }

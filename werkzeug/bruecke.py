@@ -38,6 +38,7 @@ CODES = [
     'CreateMiningGroup', 'Destroy', 'TakeUnit', 'RemoveUnit', 'TakeAllUnits', 'TotalUnitCount', 'SetRect', 'DoGuardRect',
     'AddGuardedRect', 'SetTargCount', 'ClearTargCount', 'RecordBuilding', 'RecordTube', 'RecordWall',
     'RecordVehReinforceGroup', 'Setup', 'kiRaw', 'logZeile', 'dateiLesen', 'dateiSchreiben', 'zeitEMP', 'zeitSchaum',
+    'MoralStabil', 'Schwierigkeit',
 ]
 
 # Methoden ohne Ruf: Text (Log, KI-Spur) und Dateien gehen ueber eigene Funktionszeiger
@@ -45,6 +46,10 @@ TEXT = {'kiRaw', 'logZeile', 'dateiLesen', 'dateiSchreiben'}
 
 # C++-Rumpf je Methode im switch der Rufschnittstelle: a[i] = Argumente, U = UnitEx aus a[0], o/no = Ausgabefeld
 CPP = {
+    # 141 (2026-11-22): stabile Moral aus dem Mehrspieler-Menue -- 2 = stabil, 1 = freie Moral
+    'MoralStabil': 'return TethysGame::UsesMorale() ? 0 : 1;',
+    # 142 (2026-11-22): Schwierigkeit des Spielers (0 leicht, 1 mittel, 2 schwer) fuer den Missionsmodus
+    'Schwierigkeit': 'return Player[a[0]].Difficulty() + 1;',
     'Tick': 'return TethysGame::Tick();',
     'NoPlayers': 'return TethysGame::NoPlayers();',
     'LocalPlayer': 'return TethysGame::LocalPlayer();',
@@ -146,6 +151,43 @@ CPP = {
     'Setup': '{ ScGroup* g = gruppe(a[0]); if (g && art[a[0]] == 3) { LOCATION m(a[1], a[2]), s(a[3], a[4]); MAP_RECT r(LOCATION(a[5], a[6]), LOCATION(a[7], a[8])); ((MiningGroup*)g)->Setup(m, s, r); } return 0; }',
     'zeitEMP': '{ const int v = U.GetTimeEMPed(); return v > 0 ? v : 0; }',
     'zeitSchaum': '{ const int v = U.GetTimeStickyfoamed(); return v > 0 ? v : 0; }',
+    # aus der Entwicklungs-Bruecke nachgetragen (2026-11-22)
+    'GetHitPoints': '{ UnitInfo i((map_id)a[0]); return i.GetHitPoints(a[1]); }',
+    'GetArmor': '{ UnitInfo i((map_id)a[0]); return i.GetArmor(a[1]); }',
+    'GetOreCost': '{ UnitInfo i((map_id)a[0]); return i.GetOreCost(a[1]); }',
+    'GetRareOreCost': '{ UnitInfo i((map_id)a[0]); return i.GetRareOreCost(a[1]); }',
+    'GetWorkersRequired': '{ UnitInfo i((map_id)a[0]); return i.GetWorkersRequired(a[1]); }',
+    'GetScientistsRequired': '{ UnitInfo i((map_id)a[0]); return i.GetScientistsRequired(a[1]); }',
+    'GetPowerRequired': '{ UnitInfo i((map_id)a[0]); return i.GetPowerRequired(a[1]); }',
+    'GetWeaponRange': '{ UnitInfo i((map_id)a[0]); return i.GetWeaponRange(a[1]); }',
+    'GetProductionCapacity': '{ UnitInfo i((map_id)a[0]); return i.GetProductionCapacity(a[1]); }',
+    'GetReloadTime': '{ UnitInfo i((map_id)a[0]); return i.GetReloadTime(a[1]); }',
+    'GetPenetrationDamage': '{ UnitInfo i((map_id)a[0]); return i.GetPenetrationDamage(a[1]); }',
+    'GetConcussionDamage': '{ UnitInfo i((map_id)a[0]); return i.GetConcussionDamage(a[1]); }',
+    'GetBuildTime': '{ UnitInfo i((map_id)a[0]); return i.GetBuildTime(a[1]); }',
+    'GetMaxOre': 'return ExtPlayer[a[0]].GetMaxOre();',
+    'GetMaxRareOre': 'return ExtPlayer[a[0]].GetMaxRareOre();',
+    'GetNumAvailableWorkers': 'return ExtPlayer[a[0]].GetNumAvailableWorkers();',
+    'GetNumAvailableScientists': 'return ExtPlayer[a[0]].GetNumAvailableScientists();',
+    'GetAmountPowerGenerated': 'return ExtPlayer[a[0]].GetAmountPowerGenerated();',
+    'GetAmountPowerConsumed': 'return ExtPlayer[a[0]].GetAmountPowerConsumed();',
+    'GetAmountPowerAvailable': 'return ExtPlayer[a[0]].GetAmountPowerAvailable();',
+    'GetNumIdleBuildings': 'return ExtPlayer[a[0]].GetNumIdleBuildings();',
+    'GetNumActiveBuildings': 'return ExtPlayer[a[0]].GetNumActiveBuildings();',
+    'GetNumUnpoweredStructures': 'return ExtPlayer[a[0]].GetNumUnpoweredStructures();',
+    'GetNumWorkersRequired': 'return ExtPlayer[a[0]].GetNumWorkersRequired();',
+    'GetNumScientistsRequired': 'return ExtPlayer[a[0]].GetNumScientistsRequired();',
+    'GetNumScientistsAssignedToResearch': 'return ExtPlayer[a[0]].GetNumScientistsAssignedToResearch();',
+    'GetNetFoodProduction': 'return ExtPlayer[a[0]].GetNetFoodProduction();',
+    'GetTotalResidenceCapacity': 'return ExtPlayer[a[0]].GetTotalResidenceCapacity();',
+    'GetTotalMedCenterCapacity': 'return ExtPlayer[a[0]].GetTotalMedCenterCapacity();',
+    'GetTotalRecreationFacilityCapacity': 'return ExtPlayer[a[0]].GetTotalRecreationFacilityCapacity();',
+    'GetTotalForumCapacity': 'return ExtPlayer[a[0]].GetTotalForumCapacity();',
+    'GetRand': 'return TethysGame::GetRand(a[0]);',
+    'GetConVecCargoTurret': 'return U.GetConVecCargoTurret();',
+    'GetFactoryCargoWeapon': 'return U.GetFactoryCargoWeapon(a[1]);',
+    'DoSelfDestruct': 'U.DoSelfDestruct(); return 0;',
+    'DoPoof': 'U.DoPoof(); return 0;',
 }
 for n in ['GetMaxOre', 'GetMaxRareOre', 'GetNumAvailableWorkers', 'GetNumAvailableScientists', 'GetAmountPowerGenerated',
           'GetAmountPowerConsumed', 'GetAmountPowerAvailable', 'GetNumIdleBuildings', 'GetNumActiveBuildings',
@@ -219,6 +261,11 @@ def flach(n, t):
     return {'Loc': f'{n}.x, {n}.y', 'Rect': f'{n}.x1, {n}.y1, {n}.x2, {n}.y2', 'bool': f'{n} as i32'}.get(t, n)
 
 
+UNITINFO = {'GetHitPoints', 'GetArmor', 'GetOreCost', 'GetRareOreCost', 'GetWorkersRequired', 'GetScientistsRequired',
+            'GetPowerRequired', 'GetWeaponRange', 'GetProductionCapacity', 'GetReloadTime', 'GetPenetrationDamage',
+            'GetConcussionDamage', 'GetBuildTime'}
+
+
 def rust(ms):
     z = ['//! ERZEUGT von werkzeug/bruecke.py aus dem Trait Welt: `Welt` ueber die Rufschnittstelle der Missions-DLL.',
          '//! Nicht von Hand aendern.',
@@ -262,6 +309,13 @@ def rust(ms):
                     'max_scientists: v[6], required: Voraus::aus(&v[8..(8 + v[7].max(0) as usize).min(v.len())]) }')
         elif rueck == '':
             body = f'self.r({i}, &[{args}]);'
+        elif name == 'Schwierigkeit':
+            # Mission antwortet Difficulty() + 1; aeltere Missionen kennen 142 nicht und liefern 0 -> -1 (unbekannt)
+            body = f'self.r({i}, &[{args}]) - 1'
+        elif name in UNITINFO:
+            # HFL UnitInfo(typ) hat fuer Typ 0 und unbekannte Typen keinen Zeiger -- im Original ein Absturz (cm03: GetWeapon
+            # einer Spinne ist 0, GetWeaponRange(0) liess die Missions-DLL abstuerzen)
+            body = f'if typ < 1 || typ >= 0x72 || p < 0 || p > 6 {{ 0 }} else {{ self.r({i}, &[{args}]) }}'
         elif name in ('zeitEMP', 'zeitSchaum'):
             body = f'self.r({i}, &[{args}]).max(0)'
         else:

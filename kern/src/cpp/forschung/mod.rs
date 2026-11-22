@@ -1,5 +1,5 @@
 //! Forschung: Labore (Themenwahl), Techbaum-Vorhersage, Ausbildung, Garage und Reparatur, Raumfahrt, Selbstpruefung.
-//! C++-KI op2_ki.hpp Zeilen 4990-6329, nach Rust uebertragen.
+//! C++-KI op2_ki.hpp Zeilen 4990-6329, uebertragen nach Rust (siehe UEBERSETZUNG.md).
 use super::*;
 
 mod garage;
@@ -79,7 +79,8 @@ pub fn techInfo(welt: &mut dyn Welt, i: i32) -> TechInfo {
 }
 /// HasTechnology, je Tick einmal gefragt (Technik-Stand aendert sich nur im Spieltakt).
 pub fn hatTechnologie(welt: &mut dyn Welt, p: i32, id: i32) -> bool {
-    if !(0..8).contains(&p) || !(0..65536).contains(&id) { return welt.HasTechnology(p, id); }
+    thread_local! { static AUS: bool = std::env::var("OP2KI_OHNE_CACHE").is_ok_and(|v| v == "1"); }
+    if AUS.with(|a| *a) || !(0..8).contains(&p) || !(0..65536).contains(&id) { return welt.HasTechnology(p, id); }
     let t = welt.Tick();
     let alt = HAT_TECH.with(|c| {
         let mut c = c.borrow_mut();
@@ -97,7 +98,7 @@ pub fn hatTechnologie(welt: &mut dyn Welt, p: i32, id: i32) -> bool {
 // Forschung / research: freie Labore suchen sich ein Thema
 
 /// C++: int laborTyp(int unitTyp)  (op2_ki.hpp:5161)
-pub fn laborTyp(_welt: &mut dyn Welt, unitTyp: i32) -> i32 {
+pub fn laborTyp(welt: &mut dyn Welt, unitTyp: i32) -> i32 {
     if unitTyp == mapBasicLab { ltBasic } else if unitTyp == mapStandardLab { ltStandard } else if unitTyp == mapAdvancedLab { ltAdvanced } else { 0 }
 }
 
@@ -152,7 +153,8 @@ pub fn themaWaehlen(welt: &mut dyn Welt, z: &Zustand, lab: i32, name: &mut Strin
         if welt.GetPlayerHasTech(i, z.spieler) { continue; }
         if ti.lab != lab { continue; }
         if techVerteuert(welt, z, ti.id) { continue; } // wartet auf die Seltenerz-Mine (Lueckenfueller nahm 5317)
-        { let id = ti.id; if id == 3301 || id == 3302 || id == 3306 || id == 3406 { continue; } } // Moraltest: kostet Moral
+        { let id = ti.id; let frei = crate::cpp::modus::mission(z) && (id == 3306 || id == 3406);   // Missionsmodus: Freizeit erlaubt (Nutzer 2026-11-22)
+          if !frei && (id == 3301 || id == 3302 || id == 3306 || id == 3406) { continue; } } // Moraltest: kostet Moral
         let kosten = if welt.IsEden(z.spieler) { ti.eden_cost } else { ti.plymouth_cost };
         if kosten <= 0 { continue; } // 0 = frei, -1 = nicht erforschbar
         let mut voraussetzungen = true;
@@ -237,7 +239,8 @@ pub fn zielThema(welt: &mut dyn Welt, z: &Zustand, zielTech: i32, lab: i32, bele
         if kosten <= 0 { continue; } // frei: kommt mit den Voraussetzungen
         if techVerteuert(welt, z, ti.id) { continue; } // wartet auf die Seltenerz-Mine
         // GORF-Forschung raus (Spieler)
-        { let id = ti.id; if id == 3301 || id == 3302 || id == 3306 || id == 3406 { continue; } } // Moraltest: kostet Moral
+        { let id = ti.id; let frei = crate::cpp::modus::mission(z) && (id == 3306 || id == 3406);   // Missionsmodus: Freizeit erlaubt (Nutzer 2026-11-22)
+          if !frei && (id == 3301 || id == 3302 || id == 3306 || id == 3406) { continue; } } // Moraltest: kostet Moral
         if ti.lab != lab { continue; }
         let mut laeuft = false;
         for k in 0..nb as usize { if belegt[k] == ti.id || belegt[k] == i { laeuft = true; } }
@@ -253,7 +256,7 @@ pub fn zielThema(welt: &mut dyn Welt, z: &Zustand, zielTech: i32, lab: i32, bele
 
 /// C++: int themaGruppe(int techID)  (op2_ki.hpp:5286)
 // Vorrang eines Forschungsthemas: 2 Ziel, 1 Kolonie, 0 Lueckenfueller/sonstiges
-pub fn themaGruppe(_welt: &mut dyn Welt, techID: i32) -> i32 {
+pub fn themaGruppe(welt: &mut dyn Welt, techID: i32) -> i32 {
     match techID {
         3305 | 3401 | 3402 | 3405 | 5110 | 5405 | 3502 | 5104 => 2,
         3407 | 3851 | 5051 => 2, // Militaer (Laser/Wachturm, Lynx)
@@ -307,7 +310,7 @@ pub fn wegKosten(welt: &mut dyn Welt, z: &Zustand, id: i32) -> i32 {
     summe
 }
 
-/// Nimmt das Labor einen Auftrag an? Die Engine verlangt Arbeiter und Schaden unter 3/4 der Trefferpunkte
+/// Neues Modell: nimmt das Labor einen Auftrag an? Die Engine verlangt Arbeiter und Schaden unter 3/4 der Trefferpunkte
 /// (IsEnabled 0x483710) -- ein Gebaeude im Aufbau oder ohne Roehre steht so lange still.
 /// Im Aufbau (Aktion ObjWait/Develop) nimmt es nichts an, und ein DoStop bricht den Aufbau ab: das Gebaeude steht dann mit
 /// dem erreichten Rest-HP als "fertig" da, der ConVec haengt im Baubefehl (Sim on6_03 s1: Grosslabor 80 HP, Reparatur danach).

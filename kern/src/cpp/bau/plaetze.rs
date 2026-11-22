@@ -1,6 +1,7 @@
 //! Bauplaetze: Kolonie-, Aussen-, Schmelzen- und Turmplaetze, Mauern, Bau aufzeichnen, freier Warteplatz.
 use super::*;
-use super::GEBAEUDE;
+use super::super::*;
+use super::{GEBAEUDE, TECH_RAUMFAHRT, B_ZIEL};
 
 // ---------------------------------------------------------------------------------------------------
 // Bauen ueber eine BuildingGroup der Spiel-KI / building via the game's own BuildingGroup
@@ -33,13 +34,15 @@ pub fn inGruppe(welt: &mut dyn Welt, g: Gruppe, id: i32) -> bool {
 // Wachtuerme verteidigen die Kolonie als Ganzes. Davor muss das Schussfeld frei sein (Laser schiesst nicht ueber Mauern/Gebaeude).
 /// C++: bool schussfeldFrei(const Rechteck* hin, int nh, int x, int y, double ux, double uy)  (op2_ki.hpp:2611)
 pub fn schussfeldFrei(welt: &mut dyn Welt, z: &Zustand, hin: &[Rechteck], nh: i32, x: i32, y: i32, ux: f64, uy: f64) -> bool {
-    // Laenge = Reichweite der Turmwaffe des Spielers (mit Erforschtem); Waffen, die ueber Mauern und Gebaeude schiessen
-    // (Saeure, Thor, EMP, Schaum, ESG, RPG), brauchen keine freie Bahn.
+    // Rust (kampfModell): Laenge = Reichweite der Turmwaffe des Spielers (mit Erforschtem); Waffen, die ueber Mauern und
+    // Gebaeude schiessen (Saeure, Thor, EMP, Schaum, ESG, RPG), brauchen keine freie Bahn.
     let mut laenge = SCHUSSFELD;
-    let w = eigeneWaffe(welt, z);
-    if matches!(w, mapAcidCloud | mapThorsHammer | mapEMP | mapStickyfoam | mapESG | mapRPG) { return true; }
-    let r = welt.GetWeaponRange(w, z.spieler);
-    if r > 0 { laenge = r; }
+    if kampfModellNeu() {
+        let w = eigeneWaffe(welt, z);
+        if matches!(w, mapAcidCloud | mapThorsHammer | mapEMP | mapStickyfoam | mapESG | mapRPG) { return true; }
+        let r = welt.GetWeaponRange(w, z.spieler);
+        if r > 0 { laenge = r; }
+    }
     for d in 1..=laenge {
         let fx = (x as f64 + ux * d as f64 + 0.5) as i32;
         let fy = (y as f64 + uy * d as f64 + 0.5) as i32;
@@ -68,12 +71,15 @@ pub(super) fn ausdehnung(welt: &mut dyn Welt, z: &Zustand, hin: &[Rechteck], nh:
 
 /// C++: int koloniePlatz(Zustand& z)  (op2_ki.hpp:2620)
 pub fn koloniePlatz(welt: &mut dyn Welt, z: &mut Zustand) -> i32 {
+    // Erweiterung Gelaende (Rust): erst die Paesse der Engstelle besetzen
+    if PAR(z.spieler).gelaende > 0.0 { let i = super::erweiterung::passTurm(welt, z); if i >= 0 { return i; } }
     // Front statt Ring: Tuerme in einer Linie quer zur Feindrichtung, 3 Kacheln vor dem aeussersten Gebaeude, je 2 auseinander.
     // Ist die Linie voll, kommt eine zweite Reihe. Weitere Seiten erst, wenn von dort schon Feinde kamen (angriffSektoren).
     let mut hin = [Rechteck::default(); 160];
     let nh = hindernisse(welt, z, &mut hin, 160);
     let (mut eux, mut euy) = (0.0f64, 0.0f64);
     feindRichtung(welt, z, z.bx, z.by, &mut eux, &mut euy);
+    if PAR(z.spieler).mauerLinie >= 0.5 { (eux, euy) = super::super::mauer::achse(eux, euy); }
     #[derive(Clone, Copy, Default)]
     struct R { ux: f64, uy: f64, gewicht: f64 }
     let mut rt = [R::default(); 9];
@@ -109,6 +115,7 @@ pub fn koloniePlatz(welt: &mut dyn Welt, z: &mut Zustand) -> i32 {
                 let y = (z.by as f64 + d.uy * r + d.ux * VERSATZ[k] as f64 * pt.turmAbstand + 0.5) as i32;
                 let mut g: &'static str = "";
                 if !platzFrei(welt, z, x, y, 1, 1, &hin, nh, &mut g) || !schussfeldFrei(welt, z, &hin, nh, x, y, d.ux, d.uy) { continue; }
+                super::super::mauer::merkeRichtung(z, x, y, d.ux, d.uy);
                 let idx = platzEintrag(welt, z, mapGuardPost, x, y);
                 if idx >= 0 {
                     melde(welt, z, "kampf", mapGuardPost, x, y, &format!("Wachturm {} (Richtung {} Grad, Reihe {}, Platz {} der Linie)",
@@ -130,6 +137,7 @@ pub fn aussenPlatz(welt: &mut dyn Welt, z: &mut Zustand, a: i32) -> i32 {
     let nh = hindernisse(welt, z, &mut hin, 160);
     let (mut ux, mut uy) = (0.0f64, 0.0f64);
     feindRichtung(welt, z, z.aussenX[a], z.aussenY[a], &mut ux, &mut uy);
+    if PAR(z.spieler).mauerLinie >= 0.5 { (ux, uy) = super::super::mauer::achse(ux, uy); }
     for ring in 0..4 {
         for s2 in 0..5 {
             let seite = (if s2 % 2 != 0 { 1 } else { -1 }) * ((s2 + 1) / 2);
@@ -138,6 +146,7 @@ pub fn aussenPlatz(welt: &mut dyn Welt, z: &mut Zustand, a: i32) -> i32 {
             let y = (z.aussenY[a] as f64 + uy * r + ux * seite as f64 * 1.5 + 0.5) as i32;
             let mut g: &'static str = "";
             if !platzFrei(welt, z, x, y, 1, 1, &hin, nh, &mut g) || !schussfeldFrei(welt, z, &hin, nh, x, y, ux, uy) { continue; }
+            super::super::mauer::merkeRichtung(z, x, y, ux, uy);
             let idx = platzEintrag(welt, z, mapGuardPost, x, y);
             if idx >= 0 {
                 melde(welt, z, "kampf", mapGuardPost, x, y, &format!("Wachturm fuer den Aussenposten bei {},{}", z.aussenX[a], z.aussenY[a]));
@@ -164,6 +173,7 @@ pub fn schmelzPlatz(welt: &mut dyn Welt, z: &mut Zustand) -> i32 {
             let nh = hindernisse(welt, z, &mut hin, 160);
             let (mut ux, mut uy) = (0.0f64, 0.0f64);
             feindRichtung(welt, z, sx, sy, &mut ux, &mut uy);
+            if PAR(z.spieler).mauerLinie >= 0.5 { (ux, uy) = super::super::mauer::achse(ux, uy); }
             for ring in 0..4 {
                 for s2 in 0..5 {
                     let seite = (if s2 % 2 != 0 { 1 } else { -1 }) * ((s2 + 1) / 2);
@@ -172,6 +182,7 @@ pub fn schmelzPlatz(welt: &mut dyn Welt, z: &mut Zustand) -> i32 {
                     let y = (sy as f64 + uy * r + ux * seite as f64 * 1.5 + 0.5) as i32;
                     let mut g: &'static str = "";
                     if !platzFrei(welt, z, x, y, 1, 1, &hin, nh, &mut g) || !schussfeldFrei(welt, z, &hin, nh, x, y, ux, uy) { continue; }
+                    super::super::mauer::merkeRichtung(z, x, y, ux, uy);
                     let idx = platzEintrag(welt, z, mapGuardPost, x, y);
                     if idx >= 0 {
                         melde(welt, z, "kampf", mapGuardPost, x, y, &format!("Wachturm fuer {} bei {},{}", if st != 0 { "das Kraftwerk" } else { "die Schmelze" }, sx, sy));
@@ -186,6 +197,7 @@ pub fn schmelzPlatz(welt: &mut dyn Welt, z: &mut Zustand) -> i32 {
 
 /// C++: int wachtPlatz(Zustand& z)  (op2_ki.hpp:2739)
 pub fn wachtPlatz(welt: &mut dyn Welt, z: &mut Zustand) -> i32 {
+    { let i = super::super::mauer::zugangTurm(welt, z); if i >= 0 { return i; } }
     let a = aussenTurmFehlt(welt, z);
     if a >= 0 { return aussenPlatz(welt, z, a); }
     { let i = schmelzPlatz(welt, z); if i >= 0 { return i; } }
@@ -201,6 +213,7 @@ pub fn mauerVor(welt: &mut dyn Welt, z: &mut Zustand, x0: i32, y0: i32, w: i32, 
     let cy = y0 as f64 + h as f64 / 2.0;
     let (mut ux, mut uy) = (0.0f64, 0.0f64);
     feindRichtung(welt, z, cx as i32, cy as i32, &mut ux, &mut uy);
+    if PAR(z.spieler).mauerLinie >= 0.5 { (ux, uy) = super::super::mauer::achse(ux, uy); }
     let vorn = (ux.abs() * w as f64 + uy.abs() * h as f64) / 2.0 + 2.0;
     let halb = ((uy.abs() * w as f64 + ux.abs() * h as f64) / 2.0) as i32 + 1;
     let mut n = 0;
@@ -208,7 +221,7 @@ pub fn mauerVor(welt: &mut dyn Welt, z: &mut Zustand, x0: i32, y0: i32, w: i32, 
         let x = (cx + ux * vorn - uy * q as f64 + 0.5) as i32;
         let y = (cy + uy * vorn + ux * q as f64 + 0.5) as i32;
         let mut g: &'static str = "";
-        if !platzFreiOhneMauer(welt, z, x, y, 1, 1, &hin, nh, &mut g) { continue; }
+        if !platzFreiOhneMauer(welt, z, x, y, 1, 1, &hin, nh, &mut g) || super::super::mauer::torIn(z, x, y, 1, 1) { continue; }
         super::super::mauer::vormerken(welt, z, x, y);
         n += 1;
     }
@@ -223,13 +236,18 @@ pub fn mauerNeben(welt: &mut dyn Welt, z: &mut Zustand, tx: i32, ty: i32) {
     let (mut ux, mut uy) = (0.0f64, 0.0f64);
     feindRichtung(welt, z, tx, ty, &mut ux, &mut uy);
     let mut gesetzt = 0;
+    let linie = PAR(z.spieler).mauerLinie >= 0.5;
+    if linie {
+        (ux, uy) = super::super::mauer::richtungFuer(z, tx, ty).unwrap_or_else(|| super::super::mauer::achse(ux, uy));
+        super::super::mauer::linie(welt, z, tx, ty, ux, uy);
+    }
     const SEITE: [i32; 6] = [-2, -3, 2, 3, -4, 4];
-    for si in 0..6 {
+    for si in 0..(if linie { 0 } else { 6 }) {
         let seite = SEITE[si];
         let x = (tx as f64 - uy * seite as f64 + 0.5) as i32;
         let y = (ty as f64 + ux * seite as f64 + 0.5) as i32;
         let mut g: &'static str = "";
-        if !platzFreiOhneMauer(welt, z, x, y, 1, 1, &hin, nh, &mut g) { continue; }
+        if !platzFreiOhneMauer(welt, z, x, y, 1, 1, &hin, nh, &mut g) || super::super::mauer::torIn(z, x, y, 1, 1) { continue; }
         super::super::mauer::vormerken(welt, z, x, y);
         gesetzt += 1;
     }
@@ -254,7 +272,7 @@ pub fn mauerNeben(welt: &mut dyn Welt, z: &mut Zustand, tx: i32, ty: i32) {
                 let x = (tx as f64 + ux * 2.0 - uy * q as f64 + 0.5) as i32;
                 let y = (ty as f64 + uy * 2.0 + ux * q as f64 + 0.5) as i32;
                 let mut g: &'static str = "";
-                if !platzFreiOhneMauer(welt, z, x, y, 1, 1, &hin, nh, &mut g) { continue; }
+                if !platzFreiOhneMauer(welt, z, x, y, 1, 1, &hin, nh, &mut g) || super::super::mauer::torIn(z, x, y, 1, 1) { continue; }
                 super::super::mauer::vormerken(welt, z, x, y);
                 vorn += 1;
             }
@@ -276,8 +294,9 @@ pub fn bauAufzeichnen(welt: &mut dyn Welt, z: &mut Zustand, typ: i32, warum: &st
     let (px0, py0) = (z.plaetze[iu].x0 as i32, z.plaetze[iu].y0 as i32);
     let ort = engine(welt, z, px0 + g.w / 2, py0 + g.h / 2);
     let waffe = if typ == mapGuardPost { eigeneWaffe(welt, z) } else { mapNone };
-    welt.RecordBuilding(z.bau, ort, typ, waffe);
-    if typ == mapGuardPost { mauerNeben(welt, z, px0, py0); }
+    welt.RecordBuilding(super::super::zweitbasis::gruppeAm(z, px0, py0), ort, typ, waffe);
+    // Missionsmodus: keine Mauerstuecke an jedem Turm, die Mauern stehen an den Zugaengen aus dem Gelaende (mauer.rs)
+    if typ == mapGuardPost && !super::super::mauer::istZugangTurm(z, px0, py0) && !super::super::modus::mission(z) { mauerNeben(welt, z, px0, py0); }
     if z.feindGemeldet != 0 && (typ == mapTokamak || typ == mapCommonOreSmelter || typ == mapCommandCenter || typ == mapVehicleFactory) {
         let gg = grundflaeche(welt, typ);
         mauerVor(welt, z, px0, py0, gg.w, gg.h);

@@ -49,7 +49,12 @@ pub trait Welt {
     fn Tick(&self) -> i32;
     fn NoPlayers(&self) -> i32;
     fn LocalPlayer(&self) -> i32 { 0 }
+    fn GetRand(&mut self, range: i32) -> i32;
     fn FreeMoraleLevel(&mut self, p: i32);
+    /// Mehrspieler-Option "Moral stabil" (TethysGame::UsesMorale() == false). Rust 2026-11-21; Standard: nein
+    fn MoralStabil(&self) -> bool { false }
+    /// Schwierigkeit des Spielers wie OP2 (0 leicht, 1 mittel, 2 schwer); -1 = unbekannt. Rust 2026-11-22
+    fn Schwierigkeit(&self, _p: i32) -> i32 { -1 }
     fn GetCellType(&self, l: Loc) -> i32;
     /// TethysGame::CreateUnit(u, typ, loc, spieler, ladung/waffe, richtung): neue Einheitennummer (0 = misslungen).
     fn CreateUnit(&mut self, typ: i32, l: Loc, spieler: i32, cargo: i32, rotation: i32) -> Id;
@@ -74,6 +79,7 @@ pub trait Welt {
     fn GetWeapon(&self, u: Id) -> i32;
     /// ConVec: geladener Bausatz (map_id).
     fn GetCargo(&self, u: Id) -> i32;
+    fn GetConVecCargoTurret(&self, u: Id) -> i32;
     fn GetCurAction(&self, u: Id) -> i32;
     fn GetLastCommand(&self, u: Id) -> i32;
     fn HasPower(&self, u: Id) -> bool;
@@ -82,6 +88,7 @@ pub trait Welt {
     fn GetLabCurrentTopic(&self, u: Id) -> i32;
     fn GetLabScientistCount(&self, u: Id) -> i32;
     fn GetFactoryCargo(&self, u: Id, bay: i32) -> i32;
+    fn GetFactoryCargoWeapon(&self, u: Id, bay: i32) -> i32;
     fn GetDockLocation(&self, u: Id) -> Loc;
     fn GetCargoAmount(&self, u: Id) -> i32;
     fn GetCargoType(&self, u: Id) -> i32;
@@ -114,6 +121,8 @@ pub trait Welt {
     fn DoUnIdle(&mut self, u: Id);
     fn DoStop(&mut self, u: Id);
     fn DoLaunch(&mut self, u: Id, px: i32, py: i32, force: bool);
+    fn DoSelfDestruct(&mut self, u: Id);
+    fn DoPoof(&mut self, u: Id);
 
     // ---------------------------------------------------------------- Aufzaehler (Enumeratoren)
     /// PlayerBuildingEnum(p, typ); typ = mapNone (0) liefert alle Gebaeude.

@@ -19,7 +19,10 @@ impl Welt for ExternWelt {
     fn Tick(&self) -> i32 { self.r(0, &[]) }
     fn NoPlayers(&self) -> i32 { self.r(1, &[]) }
     fn LocalPlayer(&self) -> i32 { self.r(2, &[]) }
+    fn GetRand(&mut self, range: i32) -> i32 { self.r(3, &[range]) }
     fn FreeMoraleLevel(&mut self, p: i32) { self.r(4, &[p]); }
+    fn MoralStabil(&self) -> bool { self.r(141, &[]) != 0 }
+    fn Schwierigkeit(&self, p: i32) -> i32 { self.r(142, &[p]) - 1 }
     fn GetCellType(&self, l: Loc) -> i32 { self.r(5, &[l.x, l.y]) }
     fn CreateUnit(&mut self, typ: i32, l: Loc, spieler: i32, cargo: i32, rotation: i32) -> Id { self.r(6, &[typ, l.x, l.y, spieler, cargo, rotation]) }
     fn CreateBeacon(&mut self, typ: i32, x: i32, y: i32, ore_type: i32, bar: i32, variant: i32) -> Id { self.r(7, &[typ, x, y, ore_type, bar, variant]) }
@@ -37,6 +40,7 @@ impl Welt for ExternWelt {
     fn GetDamage(&self, u: Id) -> i32 { self.r(17, &[u]) }
     fn GetWeapon(&self, u: Id) -> i32 { self.r(18, &[u]) }
     fn GetCargo(&self, u: Id) -> i32 { self.r(19, &[u]) }
+    fn GetConVecCargoTurret(&self, u: Id) -> i32 { self.r(20, &[u]) }
     fn GetCurAction(&self, u: Id) -> i32 { self.r(21, &[u]) }
     fn GetLastCommand(&self, u: Id) -> i32 { self.r(22, &[u]) }
     fn HasPower(&self, u: Id) -> bool { self.r(23, &[u]) != 0 }
@@ -45,6 +49,7 @@ impl Welt for ExternWelt {
     fn GetLabCurrentTopic(&self, u: Id) -> i32 { self.r(26, &[u]) }
     fn GetLabScientistCount(&self, u: Id) -> i32 { self.r(27, &[u]) }
     fn GetFactoryCargo(&self, u: Id, bay: i32) -> i32 { self.r(28, &[u, bay]) }
+    fn GetFactoryCargoWeapon(&self, u: Id, bay: i32) -> i32 { self.r(29, &[u, bay]) }
     fn GetDockLocation(&self, u: Id) -> Loc { self.rl(30, &[u]) }
     fn GetCargoAmount(&self, u: Id) -> i32 { self.r(31, &[u]) }
     fn GetCargoType(&self, u: Id) -> i32 { self.r(32, &[u]) }
@@ -73,6 +78,8 @@ impl Welt for ExternWelt {
     fn DoUnIdle(&mut self, u: Id) { self.r(55, &[u]); }
     fn DoStop(&mut self, u: Id) { self.r(56, &[u]); }
     fn DoLaunch(&mut self, u: Id, px: i32, py: i32, force: bool) { self.r(57, &[u, px, py, force as i32]); }
+    fn DoSelfDestruct(&mut self, u: Id) { self.r(58, &[u]); }
+    fn DoPoof(&mut self, u: Id) { self.r(59, &[u]); }
     fn PlayerBuildingEnum(&self, p: i32, typ: i32) -> Vec<Id> { self.rv(60, &[p, typ]) }
     fn PlayerVehicleEnum(&self, p: i32) -> Vec<Id> { self.rv(61, &[p]) }
     fn PlayerUnitEnum(&self, p: i32) -> Vec<Id> { self.rv(62, &[p]) }
@@ -80,19 +87,19 @@ impl Welt for ExternWelt {
     fn InRangeEnumerator(&self, l: Loc, r: i32) -> Vec<Id> { self.rv(64, &[l.x, l.y, r]) }
     fn LocationEnumerator(&self, l: Loc) -> Vec<Id> { self.rv(65, &[l.x, l.y]) }
     fn GroupEnumerator(&self, g: Gruppe) -> Vec<Id> { self.rv(66, &[g]) }
-    fn GetHitPoints(&self, typ: i32, p: i32) -> i32 { self.r(67, &[typ, p]) }
-    fn GetArmor(&self, typ: i32, p: i32) -> i32 { self.r(68, &[typ, p]) }
-    fn GetOreCost(&self, typ: i32, p: i32) -> i32 { self.r(69, &[typ, p]) }
-    fn GetRareOreCost(&self, typ: i32, p: i32) -> i32 { self.r(70, &[typ, p]) }
-    fn GetWorkersRequired(&self, typ: i32, p: i32) -> i32 { self.r(71, &[typ, p]) }
-    fn GetScientistsRequired(&self, typ: i32, p: i32) -> i32 { self.r(72, &[typ, p]) }
-    fn GetPowerRequired(&self, typ: i32, p: i32) -> i32 { self.r(73, &[typ, p]) }
-    fn GetWeaponRange(&self, typ: i32, p: i32) -> i32 { self.r(74, &[typ, p]) }
-    fn GetProductionCapacity(&self, typ: i32, p: i32) -> i32 { self.r(75, &[typ, p]) }
-    fn GetReloadTime(&self, typ: i32, p: i32) -> i32 { self.r(76, &[typ, p]) }
-    fn GetPenetrationDamage(&self, typ: i32, p: i32) -> i32 { self.r(77, &[typ, p]) }
-    fn GetConcussionDamage(&self, typ: i32, p: i32) -> i32 { self.r(78, &[typ, p]) }
-    fn GetBuildTime(&self, typ: i32, p: i32) -> i32 { self.r(79, &[typ, p]) }
+    fn GetHitPoints(&self, typ: i32, p: i32) -> i32 { if typ < 1 || typ >= 0x72 || p < 0 || p > 6 { 0 } else { self.r(67, &[typ, p]) } }
+    fn GetArmor(&self, typ: i32, p: i32) -> i32 { if typ < 1 || typ >= 0x72 || p < 0 || p > 6 { 0 } else { self.r(68, &[typ, p]) } }
+    fn GetOreCost(&self, typ: i32, p: i32) -> i32 { if typ < 1 || typ >= 0x72 || p < 0 || p > 6 { 0 } else { self.r(69, &[typ, p]) } }
+    fn GetRareOreCost(&self, typ: i32, p: i32) -> i32 { if typ < 1 || typ >= 0x72 || p < 0 || p > 6 { 0 } else { self.r(70, &[typ, p]) } }
+    fn GetWorkersRequired(&self, typ: i32, p: i32) -> i32 { if typ < 1 || typ >= 0x72 || p < 0 || p > 6 { 0 } else { self.r(71, &[typ, p]) } }
+    fn GetScientistsRequired(&self, typ: i32, p: i32) -> i32 { if typ < 1 || typ >= 0x72 || p < 0 || p > 6 { 0 } else { self.r(72, &[typ, p]) } }
+    fn GetPowerRequired(&self, typ: i32, p: i32) -> i32 { if typ < 1 || typ >= 0x72 || p < 0 || p > 6 { 0 } else { self.r(73, &[typ, p]) } }
+    fn GetWeaponRange(&self, typ: i32, p: i32) -> i32 { if typ < 1 || typ >= 0x72 || p < 0 || p > 6 { 0 } else { self.r(74, &[typ, p]) } }
+    fn GetProductionCapacity(&self, typ: i32, p: i32) -> i32 { if typ < 1 || typ >= 0x72 || p < 0 || p > 6 { 0 } else { self.r(75, &[typ, p]) } }
+    fn GetReloadTime(&self, typ: i32, p: i32) -> i32 { if typ < 1 || typ >= 0x72 || p < 0 || p > 6 { 0 } else { self.r(76, &[typ, p]) } }
+    fn GetPenetrationDamage(&self, typ: i32, p: i32) -> i32 { if typ < 1 || typ >= 0x72 || p < 0 || p > 6 { 0 } else { self.r(77, &[typ, p]) } }
+    fn GetConcussionDamage(&self, typ: i32, p: i32) -> i32 { if typ < 1 || typ >= 0x72 || p < 0 || p > 6 { 0 } else { self.r(78, &[typ, p]) } }
+    fn GetBuildTime(&self, typ: i32, p: i32) -> i32 { if typ < 1 || typ >= 0x72 || p < 0 || p > 6 { 0 } else { self.r(79, &[typ, p]) } }
     fn GetTechCount(&self) -> i32 { self.r(80, &[]) }
     fn GetTechInfo(&self, i: i32) -> TechInfo { let v = self.rv(81, &[i]); if v.is_empty() || v[0] == 0 { return TechInfo::default(); } TechInfo { valid: true, id: v[1], category: v[2], eden_cost: v[3], plymouth_cost: v[4], lab: v[5], max_scientists: v[6], required: Voraus::aus(&v[8..(8 + v[7].max(0) as usize).min(v.len())]) } }
     fn GetPlayerHasTech(&self, i: i32, p: i32) -> bool { self.r(82, &[i, p]) != 0 }

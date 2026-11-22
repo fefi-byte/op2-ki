@@ -61,6 +61,11 @@ fn mischung(welt: &mut dyn Welt, z: &Zustand) -> (bool, Vec<(usize, f64)>) {
     (feindEden, zahl)
 }
 
+/// Steht die Kombination in der Arena-Tabelle (eigene Fraktion)?
+pub fn imTabelle(welt: &mut dyn Welt, z: &Zustand, traeger: i32, waffe: i32) -> bool {
+    if welt.IsEden(z.spieler) { eden_index(traeger, waffe).is_some() } else { ply_index(traeger, waffe).is_some() }
+}
+
 /// Gemessene Bilanz je Budget der eigenen Kombination gegen die Feindmischung (eigene Sicht; 0 ohne Tabelleneintrag).
 pub fn paarWert(welt: &mut dyn Welt, z: &Zustand, traeger: i32, waffe: i32) -> f64 {
     let (feindEden, mix) = mischung(welt, z);
@@ -69,9 +74,9 @@ pub fn paarWert(welt: &mut dyn Welt, z: &Zustand, traeger: i32, waffe: i32) -> f
     mix.iter().map(|&(j, a)| a * if feindEden { TABELLE[i][j] } else { -TABELLE[j][i] }).sum()
 }
 
-/// Gewicht 1 + PAR paarung x Paarungswert (mindestens 0,1); fuer Tuerme 1.
+/// Gewicht 1 + PAR paarung x Paarungswert (mindestens 0,1); 1 ohne Schalter oder ohne neues Kampfmodell.
 pub fn paarFaktor(welt: &mut dyn Welt, z: &Zustand, traeger: i32, waffe: i32) -> f64 {
     let k = PAR(z.spieler).paarung;
-    if k <= 0.0 || traeger == mapGuardPost { return 1.0; }
+    if k <= 0.0 || !kampfModellNeu() || traeger == mapGuardPost { return 1.0; }
     (1.0 + k * paarWert(welt, z, traeger, waffe)).max(0.1)
 }

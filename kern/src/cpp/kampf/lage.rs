@@ -1,9 +1,10 @@
 //! Laufendes Gefecht: Rueckzug pruefen, Verfolgen, Spinnen-Einsatz.
 use super::*;
-use super::GRUPPE_MAX;
+use super::super::*;
+use super::{GRUPPE_MAX, SCAN_TAKT, WERT_WT, WERT_LYNX, EMP_RADIUS, EMP_FLUG, EMP_AUFMARSCH, GEBAEUDE};
 
 /// C++: void rueckzugPruefen(Zustand& z, FightGroup& wache)  (op2_ki.hpp:4084)
-/// Rueckzug: sobald die Truppe vor Ort unterliegt, fahren alle heim.
+/// Rueckzug: sobald die Truppe vor Ort unterliegt, fahren die mit >= 50 % HP heim.
 pub fn rueckzugPruefen(welt: &mut dyn Welt, z: &mut Zustand, wache: Gruppe) {
     if z.bilRueck != 0 || z.bilStart == 0 || z.bilK[0] < 0 { return; }
     let t = welt.Tick();
@@ -13,7 +14,7 @@ pub fn rueckzugPruefen(welt: &mut dyn Welt, z: &mut Zustand, wache: Gruppe) {
     if k == 0 { return; }
     let (mut nah, mut alle, mut e, mut d) = (0, 0, 0, 0);
     kontaktStaerken(welt, z, mx / k, my / k, &mut nah, &mut alle, &mut e, &mut d);
-    // Zwei getrennte Haelften (zwei Wege) -- der gemeinsame Schwerpunkt liegt zwischen ihnen (oft hinter Felsen).
+    // Rust (PAR parallel): zwei getrennte Haelften -- der gemeinsame Schwerpunkt liegt zwischen ihnen (oft hinter Felsen).
     // Je Haelfte am eigenen Schwerpunkt messen; eigene Staerke zusammen, Abwehr die groessere der beiden.
     if z.aufmarsch2X != 0 && z.angriff2An != 0 {
         let schwer = |welt: &mut dyn Welt, g: Gruppe| -> Option<(i32, i32)> {
@@ -27,7 +28,7 @@ pub fn rueckzugPruefen(welt: &mut dyn Welt, z: &mut Zustand, wache: Gruppe) {
                 let (mut n2, mut a2, mut e2, mut d2) = (0, 0, 0, 0);
                 kontaktStaerken(welt, z, c1.0, c1.1, &mut n1, &mut a1, &mut e1, &mut d1);
                 kontaktStaerken(welt, z, c2.0, c2.1, &mut n2, &mut a2, &mut e2, &mut d2);
-                alle = a1; e = e1 + e2; d = d1.max(d2);
+                nah = n1 + n2; alle = a1; e = e1 + e2; d = d1.max(d2);
             }
         }
     }
@@ -39,8 +40,10 @@ pub fn rueckzugPruefen(welt: &mut dyn Welt, z: &mut Zustand, wache: Gruppe) {
         if !welt.IsLive(v) || !welt.IsVehicle(v) || !kaempfer(welt, v) { continue; }
         let mut schon = false; for i in 0..n { if raus[i] == v { schon = true; } }
         if schon { continue; }
-        // alle fahren heim -- wer zurueckbleibt, stirbt gegen die Ueberzahl ohne Gegenwert; daheim repariert die Garage
-        raus[n] = v; n += 1;
+        let hp = welt.GetHitPoints(welt.GetType(v), z.spieler);
+        // Neues Modell: alle fahren heim -- wer zurueckbleibt, stirbt gegen die Ueberzahl ohne Gegenwert; daheim
+        // repariert die Garage ueber die Wache. Altes Modell: nur ab 50 % HP.
+        if kampfModellNeu() || (hp > 0 && welt.GetDamage(v) * 2 <= hp) { raus[n] = v; n += 1; }
     }
     let heim = engine(welt, z, z.bx, z.by + 4);
     for i in 0..n {
@@ -80,7 +83,7 @@ pub fn verfolgen(welt: &mut dyn Welt, z: &mut Zustand) {
         p += 1;
     }
     if !hat { z.jagdZiel = 0; return; }
-    if z.jagdZiel != ziel { z.jagdZiel = ziel; }
+    if z.jagdZiel != ziel { z.jagdZiel = ziel; z.jagdSeit = t; }
     let zl = welt.Location(ziel);
     // bis zu 4 gesunde, freie Wachfahrzeuge, die naechsten zuerst
     // ABWEICHUNG: dj[3] ist in C++ beim 4. Kandidaten uninitialisiert; hier i32::MAX (der 4. wird aufgenommen).

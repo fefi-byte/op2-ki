@@ -62,13 +62,23 @@ Rust ist jetzt ihre einzige Quelle; die Missionen enthalten keine eigene KI.
 | Kampf | `kern/src/cpp/kampf`, `paarung.rs` | frühe Wehr (frühester Angriff aus Lynx-Forschung, Bauzeit und Weg zur nächsten Feindbasis), Armee-Soll, Wachgebiet um alle Gebäude der Basis, Waffenwahl nach Paarungen, Zermürben, Basisangriff |
 | Gefecht | `gefecht.rs`, `gefecht_netz.rs` | Nahkampf mit einem gelernten Netz (`gefecht_netz.txt`) |
 | Zwei Wege | `parallel.rs`, `gelaende.rs` | Angriff über zwei getrennte Wege, wenn das Gelände sie hat |
-| Zweitbasis | `zweitbasis.rs` | Außenposten mit Kommandozentrale und Schmelze an einem fernen Bakenfeld, sobald die Hauptbasis steht, Erz übrig und Personal frei ist |
+| Zweitbasis | `zweitbasis.rs` | Außenposten mit Kommandozentrale und Schmelze an einem fernen Bakenfeld, sobald die Hauptbasis steht, Erz übrig und Personal frei ist; im Missionsmodus eine unabhängige Basis mit eigenen Fabriken, Kolonie und Wache |
+| Gelände | `erweiterung.rs`, `kampf/marsch.rs` | Wache hinter dem Pass und Türme an Engstellen; die Angriffstruppe sammelt sich auf dem Marsch |
+| Missionsmodus | `modus.rs`, `bezirke.rs` | Schwierigkeit, Rollen, Außenposten auf Befehl; Bezirke, Röhren zuerst, Raumhafen-Festung |
 | Mauern | `mauer.rs` | merkt sich aufgezeichnete Mauern, damit dort nichts anderes geplant wird; Bau-Reihenfolge: erst Gebäude mit Personal anschließen, dann Wachtürme (Röhre zur Kommandozentrale), zuletzt Mauern |
 
 Die KI sieht das Spiel nur über den Trait `Welt` (`kern/src/cpp/welt.rs`). In der DLL setzt `dll/src/extern_welt.rs`
 ihn auf eine Rufschnittstelle um, die die Mission übergibt; `missionen/gemeinsam/op2ki_bruecke.hpp` beantwortet die
 Rufe mit der OP2-API. Beide Dateien erzeugt `werkzeug/bruecke.py` aus dem Trait; eine Mission ist nur noch Kartendaten
 plus `op2ki::start` und `op2ki::schritt` (`missionen/gemeinsam/op2ki.hpp`).
+
+## Missionsmodus und eigene Missionen
+
+Mit `missionsModus=1` spielt die KI eine Mission statt eines Mehrspieler-Spiels: Schwierigkeit aus dem Spiel, Rollen
+(aggressiv, defensiv, Kolonie), Außenposten oder eine unabhängige zweite Basis auf Befehl, Bezirke und Mauern aus dem
+Gelände, Armee mit Patrouille vor der Basis, Spinnen, Aufstieg zu Panther und Tiger, MHD- und Solarkraftwerk. Für eine
+eigene Mission (oder aus einem Missions-Editor) braucht man nur drei Header und `op2ki.dll`, siehe
+[EINBINDEN.md](EINBINDEN.md).
 
 ## Simulator
 

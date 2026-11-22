@@ -1,4 +1,4 @@
-//! Erweiterung der Rust-Fassung (nicht in der C++-KI): Bebauungsplan.
+//! Erweiterung der Rust-Fassung (nicht in der C++-KI), zuschaltbar mit PAR.vorplan (nur mit kampfModell): Bebauungsplan.
 //! Bisher sucht die KI den Platz erst, wenn sie ein Gebaeude bauen will -- kleine Gebaeude belegen dann die Flaechen, die
 //! spaeter Fahrzeugfabrik oder Grosslabor fehlen (mp2_08: Eden an der Kartenecke ohne Fabrikplatz). Der Plan rechnet den
 //! Bedarf fuer den Horizont voraus (Bevoelkerung -> Wohnraum, Nahrung; Strom der geplanten Gebaeude; Fabriken, Labore,
@@ -28,9 +28,11 @@ pub fn ausgesetzt() -> bool { AUSSETZEN.with(|a| a.get()) }
 pub fn aussetzen(an: bool) { AUSSETZEN.with(|a| a.set(an)); }
 pub fn zuruecksetzen_vorplan() { PLAN.with(|p| *p.borrow_mut() = Default::default()); }
 
+pub fn an(z: &Zustand) -> bool { kampfModellNeu() && PAR(z.spieler).vorplan >= 0.5 }
+
 /// Die reservierten Plaetze eines Spielers (fuer hindernisse()).
 pub fn reserviert(z: &Zustand) -> Vec<PlanPlatz> {
-    if ausgesetzt() { return Vec::new(); }
+    if !an(z) || ausgesetzt() { return Vec::new(); }
     PLAN.with(|p| p.borrow()[(z.spieler & 7) as usize].plaetze.clone())
 }
 
@@ -131,12 +133,15 @@ fn dichte(welt: &mut dyn Welt, hin: &[Rechteck], nh: i32, x0: i32, y0: i32, w: i
 /// Bebauungsplan (alle 2000 Ticks): fuer jeden Bedarf den besten Platz, der alle Zufahrten offen laesst (kurze Roehre,
 /// nah an der Mitte, dicht, Explosionsabstand). Rust 2026-11-18 aufgeteilt (Verhalten gleich).
 pub fn planen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
+    if !an(z) { return; }
     let sp = (z.spieler & 7) as usize;
     let t = welt.Tick();
     if t < PLAN.with(|p| p.borrow()[sp].naechster) { return; }
     PLAN.with(|p| { let mut p = p.borrow_mut(); p[sp].naechster = t + 2000; p[sp].plaetze.clear(); });
     let pp = PAR(z.spieler);
     let r = pp.vorplanRadius as i32;
+    let kachel = pp.roehreKachel;
+    let dichteW = pp.vorplanDicht;
     let mut hin = [Rechteck::default(); 160];
     let mut nh = hindernisse(welt, z, &mut hin, 150);    // ohne Plan (gerade geleert)
     let abst = super::bau::netzAbstand(welt, z, &hin, nh);
@@ -270,6 +275,7 @@ fn planMelden(welt: &mut dyn Welt, z: &mut Zustand, sp: usize, t: i32, neu: &[Pl
 /// Platz aus dem Plan fuer typ: zuerst einer fuer diesen Typ, sonst einer gleicher Grundflaeche. Prueft ihn wie jeden
 /// Platz (ohne sich selbst als Hindernis) und gibt ihn frei. Liefert (x0, y0).
 pub fn ausPlan(welt: &mut dyn Welt, z: &Zustand, typ: i32) -> Option<(i32, i32)> {
+    if !an(z) { return None; }
     let sp = (z.spieler & 7) as usize;
     let g = grundflaeche(welt, typ);
     let liste = PLAN.with(|p| p.borrow()[sp].plaetze.clone());

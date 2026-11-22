@@ -1,5 +1,5 @@
 //! Hilfen fuer alle Bereiche: Grundflaechen, Namen, Meldungen (melde/selten), Lage erheben, Karte, Plaetze, Kampfwerte, Turmnetz.
-//! C++-KI op2_ki.hpp Zeilen 375-1205, nach Rust uebertragen.
+//! C++-KI op2_ki.hpp Zeilen 375-1205, uebertragen nach Rust (siehe UEBERSETZUNG.md).
 use super::*;
 
 mod karte;
@@ -10,7 +10,7 @@ pub use platz::*;
 pub use kraft::*;
 
 /// C++: Groesse grundflaeche(int typ)  (op2_ki.hpp:377)
-pub fn grundflaeche(_welt: &mut dyn Welt, typ: i32) -> Groesse {
+pub fn grundflaeche(welt: &mut dyn Welt, typ: i32) -> Groesse {
     let (w, h) = match typ {
         mapCommandCenter => (3, 2),
         mapStructureFactory => (4, 3),
@@ -53,7 +53,7 @@ pub fn grundflaeche(_welt: &mut dyn Welt, typ: i32) -> Groesse {
 }
 
 /// C++: const char* name(int typ)  (op2_ki.hpp:418)
-pub fn name(_welt: &mut dyn Welt, typ: i32) -> &'static str {
+pub fn name(welt: &mut dyn Welt, typ: i32) -> &'static str {
     match typ {
         mapCommandCenter => "CommandCenter", mapStructureFactory => "StructureFactory",
         mapVehicleFactory => "VehicleFactory", mapTokamak => "Tokamak",
@@ -94,16 +94,50 @@ pub fn name(_welt: &mut dyn Welt, typ: i32) -> &'static str {
 
 // Zelltypen (siehe mapview/celltypes.py)
 /// C++: bool zelleBebaubar(int c)  (op2_ki.hpp:458)
-pub fn zelleBebaubar(_welt: &mut dyn Welt, c: i32) -> bool { c == 0 || c == 2 || c == 3 || c == 4 || c == 5 || c == 7 || c == 21 }
+pub fn zelleBebaubar(welt: &mut dyn Welt, c: i32) -> bool { c == 0 || c == 2 || c == 3 || c == 4 || c == 5 || c == 7 || c == 21 }
 
 /// C++: bool zelleRoehre(int c)  (op2_ki.hpp:459)
-pub fn zelleRoehre(_welt: &mut dyn Welt, c: i32) -> bool { c >= 26 && c <= 31 }
+pub fn zelleRoehre(welt: &mut dyn Welt, c: i32) -> bool { c >= 26 && c <= 31 }
 
 /// C++: bool zelleBefahrbar(int c)  (op2_ki.hpp:460)
 pub fn zelleBefahrbar(welt: &mut dyn Welt, c: i32) -> bool { zelleBebaubar(welt, c) || c == 22 || zelleRoehre(welt, c) }
 
 /// C++: int eigeneKostenT(const Zustand& z, const tb::Tech& t)  (op2_ki.hpp:463)
 pub fn eigeneKostenT(welt: &mut dyn Welt, z: &Zustand, t: &tb::Tech) -> i32 { if welt.IsEden(z.spieler) { t.eden } else { t.ply } }
+
+/// C++: void hinweis(const Zustand& z, const char* wo)  (op2_ki.hpp:465)
+/// Wegmarke fuer das Crash-Log (op2::crash::g_hinweis) -- weggelassen (UEBERSETZUNG.md), leerer Aufruf.
+pub fn hinweis(welt: &mut dyn Welt, z: &Zustand, wo: &str) { profil::marke(wo); }
+
+/// Zeitmessung je KI-Abschnitt (nur Rust, nicht Teil der C++-KI): an mit OP2KI_PROFIL=1. Jede hinweis-Marke schliesst den
+/// vorigen Abschnitt; "ende" schliesst ohne neuen. bericht() liefert die Summen.
+pub mod profil {
+    use std::cell::RefCell;
+    use std::collections::HashMap;
+    use std::time::{Duration, Instant};
+    thread_local! {
+        static AN: bool = std::env::var("OP2KI_PROFIL").is_ok_and(|v| v == "1");
+        static OFFEN: RefCell<Option<(Instant, String)>> = const { RefCell::new(None) };
+        static SUMME: RefCell<HashMap<String, (Duration, u64)>> = RefCell::new(HashMap::new());
+    }
+    pub fn an() -> bool { AN.with(|a| *a) }
+    pub fn marke(wo: &str) {
+        if !an() { return; }
+        let jetzt = Instant::now();
+        OFFEN.with(|o| {
+            let mut o = o.borrow_mut();
+            if let Some((t0, name)) = o.take() {
+                SUMME.with(|s| { let mut s = s.borrow_mut(); let e = s.entry(name).or_default(); e.0 += jetzt - t0; e.1 += 1; });
+            }
+            if wo != "ende" { *o = Some((jetzt, wo.to_string())); }
+        });
+    }
+    /// (Abschnitt, Gesamtzeit, Aufrufe), absteigend nach Zeit.
+    pub fn bericht() -> Vec<(String, Duration, u64)> {
+        let mut v: Vec<_> = SUMME.with(|s| s.borrow().iter().map(|(k, v)| (k.clone(), v.0, v.1)).collect());
+        v.sort_by(|a, b| b.1.cmp(&a.1)); v
+    }
+}
 
 // Techs fuer das Raumfahrtziel / techs for the space goal
 pub const TECH_RAUMFAHRT: i32 = 5405;   // Space Program: Spaceport, SULV, EDWARD
@@ -151,7 +185,7 @@ pub const GEBAEUDE: [i32; 38] = [
 
 // Summe der Ansprueche auf ein Mittel mit mindestens diesem Rang. Das eigene Vorhaben (gleicher Typ) zaehlt nicht mit.
 /// C++: int beansprucht(const Lage& l, int m, int abRang, int ohneVorhaben = -1)  (op2_ki.hpp:627)
-pub fn beansprucht(_welt: &mut dyn Welt, l: &Lage, m: i32, abRang: i32, ohneVorhaben: i32) -> i32 {
+pub fn beansprucht(welt: &mut dyn Welt, l: &Lage, m: i32, abRang: i32, ohneVorhaben: i32) -> i32 {
     let mut s = 0;
     for i in 0..l.nAnspr as usize {
         let a = &l.anspr[i];
@@ -163,7 +197,7 @@ pub fn beansprucht(_welt: &mut dyn Welt, l: &Lage, m: i32, abRang: i32, ohneVorh
 
 // Hoechster Rang, der ein Mittel beansprucht (-1 = keiner).
 /// C++: int hoechsterAnspruch(const Lage& l, int m)  (op2_ki.hpp:637)
-pub fn hoechsterAnspruch(_welt: &mut dyn Welt, l: &Lage, m: i32) -> i32 {
+pub fn hoechsterAnspruch(welt: &mut dyn Welt, l: &Lage, m: i32) -> i32 {
     let mut r = -1;
     for i in 0..l.nAnspr as usize {
         if l.anspr[i].menge[m as usize] > 0 && l.anspr[i].rang > r { r = l.anspr[i].rang; }
@@ -172,7 +206,7 @@ pub fn hoechsterAnspruch(_welt: &mut dyn Welt, l: &Lage, m: i32) -> i32 {
 }
 
 /// C++: void anspruchDazu(Lage& l, int typ, int rang, int arb, int wiss, int erz, int selten, bool vorhaben = false)  (op2_ki.hpp:642)
-pub fn anspruchDazu(_welt: &mut dyn Welt, l: &mut Lage, typ: i32, rang: i32, arb: i32, wiss: i32, erz: i32, selten: i32, vorhaben: bool) {
+pub fn anspruchDazu(welt: &mut dyn Welt, l: &mut Lage, typ: i32, rang: i32, arb: i32, wiss: i32, erz: i32, selten: i32, vorhaben: bool) {
     if l.nAnspr >= MAX_ANSPR as i32 || (arb <= 0 && wiss <= 0 && erz <= 0 && selten <= 0) { return; }
     let a = &mut l.anspr[l.nAnspr as usize];
     l.nAnspr += 1;
@@ -197,14 +231,18 @@ pub fn erhebe(welt: &mut dyn Welt, z: &Zustand, l: &mut Lage) {
             if t >= 0 && t < 128 && welt.GetCurAction(u) == moObjWait { l.imBau[t as usize] += 1; }   // im Bau (Lauf 13 gemessen: Aktion 6)
             if t == mapCommandCenter && l.cc == 0 { l.cc = u; }
             if t == mapStructureFactory {
-                if l.sf == 0 { l.sf = u; }
+                if l.sf == 0 && !super::zweitbasis::gehoertBasis(z, u) { l.sf = u; }
                 for bay in 0..6 {
                     let k = welt.GetFactoryCargo(u, bay);
                     if k > 0 && k < 128 { l.kitsImSpiel[k as usize] += 1; l.kitsFabrik += 1; }
                 }
             }
-            if t == mapVehicleFactory && l.vf == 0 { l.vf = u; }
-            if t == mapVehicleFactory && l.vfAnzahl < MAX_VF as i32 { l.vfs[l.vfAnzahl as usize] = u; l.vfAnzahl += 1; }
+            // Missionsmodus: die Fahrzeugfabrik einer unabhaengigen zweiten Basis baut nur fuer sie
+            // (auch bevor die Basis sie als ihre eintraegt: im Umkreis der Basis -- sonst rutschte sie kurz in die Liste der
+            // Hauptbasis, in deren Fabrikgruppe, und die Hauptfabrik wurde als "weitere" stillgelegt)
+            let fremd = t == mapVehicleFactory && (super::zweitbasis::gehoertBasis(z, u) || (super::modus::mission(z) && super::zweitbasis::amPosten(welt, z, u)));
+            if t == mapVehicleFactory && l.vf == 0 && !fremd { l.vf = u; }
+            if t == mapVehicleFactory && l.vfAnzahl < MAX_VF as i32 && !fremd { l.vfs[l.vfAnzahl as usize] = u; l.vfAnzahl += 1; }
             if t == mapVehicleFactory && welt.HasPower(u) && welt.HasWorkers(u) { l.vfLaeuft += 1; }
         }
     }
@@ -225,7 +263,8 @@ pub fn erhebe(welt: &mut dyn Welt, z: &Zustand, l: &mut Lage) {
     l.stromFrei = welt.GetAmountPowerAvailable(p);
     l.menschen = welt.Kids(p) + welt.Workers(p) + welt.Scientists(p);
     l.wohnraum = welt.GetTotalResidenceCapacity(p);
-        l.selten = welt.RareOre(p);
+    l.wiss = welt.GetNumAvailableScientists(p);
+    l.selten = welt.RareOre(p);
     l.seltenMax = welt.GetMaxRareOre(p);
     l.arbFrei = welt.GetNumAvailableWorkers(p);
     l.wissFrei = welt.GetNumAvailableScientists(p);
@@ -253,7 +292,33 @@ pub fn erhebe(welt: &mut dyn Welt, z: &Zustand, l: &mut Lage) {
     }
 }
 
-/// Gebaeude im Aufbau? Das Original meldet zur AIProc-Zeit dafuer Aktion 0 (= moDone,
+/// Befehlsprotokoll (nur Rust, Diagnose): mit OP2KI_BEFEHLE=<Datei> haengt jeder Fahrbefehl "Tick Befehl Einheit x y" an.
+/// Im Original (Wine) als Windows-Pfad angeben (Z:\...).
+pub fn befehl_log(t: i32, was: &str, u: i32, x: i32, y: i32) {
+    use std::io::Write;
+    thread_local! {
+        static DATEI: std::cell::RefCell<Option<std::fs::File>> = std::cell::RefCell::new(
+            std::env::var("OP2KI_BEFEHLE").ok().and_then(|p| std::fs::OpenOptions::new().create(true).append(true).open(p).ok()));
+    }
+    DATEI.with(|d| if let Some(f) = d.borrow_mut().as_mut() { let _ = writeln!(f, "{t} {was} {u} {x} {y}"); });
+}
+
+/// Wie befehl_log, beliebige Argumente: "Tick Name a b c...".
+pub fn befehl_log2(t: i32, was: &str, a: &[i32]) {
+    let mut s = String::new();
+    for v in a { s.push(' '); s.push_str(&v.to_string()); }
+    befehl_log_zeile(&format!("{t} {was}{s}"));
+}
+pub fn befehl_log_zeile(z: &str) {
+    use std::io::Write;
+    thread_local! {
+        static DATEI: std::cell::RefCell<Option<std::fs::File>> = std::cell::RefCell::new(
+            std::env::var("OP2KI_BEFEHLE").ok().and_then(|p| std::fs::OpenOptions::new().create(true).append(true).open(p).ok()));
+    }
+    DATEI.with(|d| if let Some(f) = d.borrow_mut().as_mut() { let _ = writeln!(f, "{z}"); });
+}
+
+/// Rust-Erweiterung (neues Modell): Gebaeude im Aufbau? Das Original meldet zur AIProc-Zeit dafuer Aktion 0 (= moDone,
 /// gemessen an Mine und Grosslabor), der Rohbau sieht also aus wie ein fertiges, beschaedigtes Gebaeude. Erkennbar am
 /// eigenen ConVec mit laufendem Baubefehl an der Bauecke unten rechts der Grundflaeche (Sim: Grosslabor 149..151 x 75..77,
 /// ConVec auf 152,78), eine Kachel Spiel -- ein ConVec am Nachbargebaeude steht dort nicht (1 Kachel Abstand).

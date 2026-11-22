@@ -1,6 +1,7 @@
 //! Bauwahl: was als Naechstes gebaut wird (Kuchen der Bereiche Kolonie/Ziel/Wirtschaft/Verteidigung, bauWahl, weitereFabrikLohnt).
 use super::*;
-use super::{WERTUNG_TICK, WERT_WT, WERT_LYNX, MAX_WT, B_KOLONIE, B_ZIEL, B_WIRTSCHAFT, B_VERTEIDIGUNG, B_ANZAHL, BEREICH, snp, ix};
+use super::super::*;
+use super::{SCAN_TAKT, WERTUNG_TICK, WERT_WT, WERT_LYNX, MAX_WT, AUSSEN_R, B_KOLONIE, B_ZIEL, B_WIRTSCHAFT, B_VERTEIDIGUNG, B_ANZAHL, BEREICH, TECH_SELTENERZ, GEBAEUDE, snp, ix};
 
 /// C++: bool weitereFabrikLohnt(const Zustand& z, const Lage& l, char* text, int n)  (op2_ki.hpp:1749)
 pub fn weitereFabrikLohnt(welt: &mut dyn Welt, z: &Zustand, l: &Lage, text: &mut String, n: i32) -> bool {
@@ -21,9 +22,9 @@ pub fn weitereFabrikLohnt(welt: &mut dyn Welt, z: &Zustand, l: &Lage, text: &mut
     if k > 0 { fehlt += k; }
     if m > 0 { fehlt += m; }
     let stueck = (fehlt + wert - 1) / wert;
-    // Fabriken nach der Wirtschaft (Nutzer 2026-11-17) -- bringen die Erzrouten mehr Erz, als die vorhandenen Fabriken
-    // verbauen koennen, lohnt eine weitere, auch wenn das Armee-Soll schon erreichbar ist.
-    {
+    // Rust (PAR fabrikErz, Nutzer 2026-11-17): Fabriken nach der Wirtschaft -- bringen die Erzrouten mehr Erz, als die
+    // vorhandenen Fabriken verbauen koennen, lohnt eine weitere, auch wenn das Armee-Soll schon erreichbar ist.
+    if kampfModellNeu() && par_.fabrikErz >= 0.5 {
         let kostenE = (welt.GetOreCost(fz, sp) + welt.GetOreCost(waffe, sp)).max(1) as f64;
         let blE = bilanz(welt, z, l);
         let mut zuflussE = erzRouten(welt, z) as f64 * blE.routeErz as f64 * 1000.0 / par_.horizont;
@@ -33,7 +34,7 @@ pub fn weitereFabrikLohnt(welt: &mut dyn Welt, z: &Zustand, l: &Lage, text: &mut
         let verbauen = f as f64 * kostenE * 1000.0 / jeFzE;          // Erz je 1000 Ticks, das f Fabriken in Fahrzeuge stecken
         let rnE = rangNeu(welt, z, l, mapVehicleFactory, f);
         let beaE = beansprucht(welt, l, M_ARB as i32, rnE, mapVehicleFactory);
-        let reserveE = forschungsReserve(welt, z);
+        let reserveE = if par_.wissArbeit >= 0.5 { forschungsReserve(welt, z) } else { 0 };
         let arbOk = welt.GetWorkersRequired(mapVehicleFactory, sp) <= l.arbFrei + l.arbStilllegbar[5] - beaE + reserveE;
         if zuflussE > verbauen * par_.fabrikAuslastung && arbOk {
             *text = snp(format!("Fahrzeugfabrik {}: Erzzufluss {:.0} je 1000 Ticks, {} Fabrik(en) verbauen hoechstens {:.0}", f + 1, zuflussE, f, verbauen), n as usize);
@@ -49,9 +50,9 @@ pub fn weitereFabrikLohnt(welt: &mut dyn Welt, z: &Zustand, l: &Lage, text: &mut
     if zufluss < 1.0 { zufluss = 1.0; }
     let fehltErz = stueck * kosten - l.erz;
     let tErz = if fehltErz > 0 { fehltErz as f64 * 1000.0 / zufluss } else { 0.0 };
-    // Bauzeit je Fahrzeug aus dem SDK -- Baupunkte des Fahrgestells x Fabrikleistung / 128 (Produce 0x40E913 /
-    // Werks-Countdown; Lynx 600 Baupunkte, Leistung 128 -> 600 Ticks, wie gemessen), ohne SDK-Werte der Schaetzwert.
-    let jeFz = if welt.GetBuildTime(fz, sp) > 0 && welt.GetProductionCapacity(mapVehicleFactory, sp) > 0 {
+    // Rust (kampfModell): Bauzeit je Fahrzeug aus dem SDK -- Baupunkte des Fahrgestells x Fabrikleistung / 128 (Produce
+    // 0x40E913 / Werks-Countdown; Lynx 600 Baupunkte, Leistung 128 -> 600 Ticks, wie gemessen), sonst der alte Schaetzwert.
+    let jeFz = if kampfModellNeu() && welt.GetBuildTime(fz, sp) > 0 && welt.GetProductionCapacity(mapVehicleFactory, sp) > 0 {
         welt.GetBuildTime(fz, sp) as f64 * welt.GetProductionCapacity(mapVehicleFactory, sp) as f64 / 128.0
     } else { BAU_FZ as f64 };
     let dauer = |fabriken: i32| -> f64 { let tf = stueck as f64 * jeFz / fabriken as f64; if tf > tErz { tf } else { tErz } };
@@ -61,8 +62,8 @@ pub fn weitereFabrikLohnt(welt: &mut dyn Welt, z: &Zustand, l: &Lage, text: &mut
     // Arbeiter nur aus freien oder ueberzaehligen Stellen (Rang < 50)
     let rn = rangNeu(welt, z, l, mapVehicleFactory, f);
     let bea = beansprucht(welt, l, M_ARB as i32, rn, mapVehicleFactory);
-    // Wissenschaftler, die die Forschung abgeben kann (Teams ueber 1), springen als Arbeiter ein
-    let wissReserve = forschungsReserve(welt, z);
+    // Rust (PAR wissArbeit): Wissenschaftler, die die Forschung abgeben kann (Teams ueber 1), springen als Arbeiter ein
+    let wissReserve = if kampfModellNeu() && par_.wissArbeit >= 0.5 { forschungsReserve(welt, z) } else { 0 };
     let arbVF = welt.GetWorkersRequired(mapVehicleFactory, sp);
     if arbVF > l.arbFrei + l.arbStilllegbar[5] - bea + wissReserve { if welt.Tick() % 5000 < TAKT { melde(welt, z, "fabrik", mapVehicleFactory, z.bx, z.by, &format!("zweite Fabrik nein: Arbeiter fehlen (braucht {}, frei {}, stilllegbar {}, beansprucht {}, aus Forschung {})", arbVF, l.arbFrei, l.arbStilllegbar[5], bea, wissReserve)); } return false; }
     let nm = name(welt, fz);
@@ -193,9 +194,11 @@ pub(super) fn wahlKolonie(welt: &mut dyn Welt, z: &Zustand, l: &Lage, b: i32, w:
     if hatGeb(welt, z, l, mapNursery) == 0 && waehle(welt, z, l, mapNursery, b, false, w, "Kindergarten -- ohne ihn keine neuen Kinder") { return true; }
     if hatGeb(welt, z, l, mapUniversity) == 0 && waehle(welt, z, l, mapUniversity, b, false, w, "Universitaet -- bildet Arbeiter und Wissenschaftler aus") { return true; }
     if volk { return false; }
+    // PAR moralFest: stabile Moral -- Wohnraum, Medizin, Freizeit, Forum, GORF, DIRT bringen nichts
+    if moralFestAktiv(welt, z) { return false; }
     #[derive(Clone, Copy)]
     struct K { typ: i32, wert: i32, text: &'static str }
-    let mut k = [K { typ: 0, wert: 0, text: "" }; 6];
+    let mut k = [K { typ: 0, wert: 0, text: "" }; 12];
     let mut nk = 0usize;
     let med = if bew > 0 { l.medKap * 100 / bew } else { 100 };
     let frz = if bew > 0 { l.freizeitKap * 100 / bew } else { 100 };
@@ -217,6 +220,31 @@ pub(super) fn wahlKolonie(welt: &mut dyn Welt, z: &Zustand, l: &Lage, b: i32, w:
     let forumTech = tb::tech(tfF);
     let forumGeht = match forumTech { None => true, Some(t) => eigeneKostenT(welt, z, t) >= 0 };
     if forumGeht && frm < 100 && bew > 60 && l.imBau[ix(mapForum)] == 0 { k[nk] = K { typ: mapForum, wert: (100 - frm) / 2, text: "Forum" }; nk += 1; }
+    // Missionsmodus (PAR raumhafen, Nutzer 2026-11-22): ein Raumhafen in der Mitte der Basis, ohne Satelliten-Ziel
+    if PAR(z.spieler).raumhafen >= 0.5 && super::super::modus::mission(z) && hatGeb(welt, z, l, mapSpaceport) == 0 && l.imBau[ix(mapSpaceport)] == 0
+        && geplant(welt, z, mapSpaceport) == 0 && kitMoeglich(welt, z, mapSpaceport) && bew > 60 {
+        k[nk] = K { typ: mapSpaceport, wert: 80, text: "Raumhafen der Mission" }; nk += 1;
+    }
+    // Missionsmodus, Plymouth (PAR spinnen, Nutzer 2026-11-22: "fuege jetzt noch die Spinnen hinzu"): Spinnenfabrik -- nur sie
+    // baut Spinnen (Spielregel); die Spinnen reparieren je Basis
+    // (die Spinnenfabrik einer zweiten Basis zaehlt nicht -- sonst bekam die Hauptbasis nie Spinnen)
+    let afHaupt = welt.PlayerBuildingEnum(z.spieler, mapArachnidFactory).into_iter().filter(|&u| !super::super::zweitbasis::amPosten(welt, z, u)).count();
+    if PAR(z.spieler).spinnen >= 0.5 && super::super::modus::mission(z) && !welt.IsEden(z.spieler) && afHaupt == 0
+        && l.imBau[ix(mapArachnidFactory)] == 0 && geplant(welt, z, mapArachnidFactory) == 0 && kitMoeglich(welt, z, mapArachnidFactory) && bew > 60 {
+        k[nk] = K { typ: mapArachnidFactory, wert: 55, text: "Spinnenfabrik der Mission" }; nk += 1;
+    }
+    // Missionsmodus (PAR mhd, Nutzer 2026-11-22: "wenn Seltenerz verfuegbar ist, soll ein MHD-Generator gebaut werden")
+    if PAR(z.spieler).mhd >= 0.5 && super::super::modus::mission(z) && hatGeb(welt, z, l, mapMHDGenerator) == 0 && l.imBau[ix(mapMHDGenerator)] == 0
+        && geplant(welt, z, mapMHDGenerator) == 0 && kitMoeglich(welt, z, mapMHDGenerator)
+        && (hatGeb(welt, z, l, mapRareOreMine) > 0 || l.selten >= welt.GetRareOreCost(mapMHDGenerator, z.spieler)) {
+        k[nk] = K { typ: mapMHDGenerator, wert: 60, text: "MHD-Generator der Mission (Seltenerz da)" }; nk += 1;
+    }
+    // Missionsmodus (PAR solar): Solarkraftwerk, sobald ein Solarsatellit im All ist (forschung/raumfahrt.rs startet ihn)
+    if PAR(z.spieler).solar >= 0.5 && super::super::modus::mission(z) && welt.GetSatelliteCount(z.spieler, mapSolarSatellite) > 0
+        && hatGeb(welt, z, l, mapSolarPowerArray) == 0 && l.imBau[ix(mapSolarPowerArray)] == 0 && geplant(welt, z, mapSolarPowerArray) == 0
+        && kitMoeglich(welt, z, mapSolarPowerArray) {
+        k[nk] = K { typ: mapSolarPowerArray, wert: 60, text: "Solarkraftwerk der Mission (Satellit im All)" }; nk += 1;
+    }
     // GORF und DIRT: nach Auslastung -- GORF genau eins in Betrieb, DIRT bis die angeschlossenen Gebaeude abgedeckt sind
     {
         let tg = techFuer(welt, mapGORF);
@@ -278,12 +306,25 @@ pub(super) fn wahlVerteidigung(welt: &mut dyn Welt, z: &Zustand, l: &Lage, b: i3
             if waehle(welt, z, l, mapVehicleFactory, b, false, w, &format!("{}", t2)) { return true; }
         }
     }
-    if hatGeb(welt, z, l, mapGuardPost) >= MAX_WT { return false; }
+    let mut extraWT = if PAR(z.spieler).gelaende > 0.0 { super::erweiterung::passTuermeSoll(welt, z) } else { 0 };
+    // Eden ohne Railgun (Nutzer 2026-11-20): Laser verliert gegen Mikrowelle (Arena: ein Drittel bis doppelt so viel Erz
+    // noetig), eine Turmstellung haelt dagegen -- mehr Tuerme (PAR laserTuerme) und ein eigener Turmanteil (laserTurmAnteil)
+    let laserZeit = welt.IsEden(z.spieler) && !hatTechId(welt, z, 5506);
+    if laserZeit { extraWT += PAR(z.spieler).laserTuerme as i32; }
+    if hatGeb(welt, z, l, mapGuardPost) >= MAX_WT + extraWT { return false; }
     // Weniger Tuerme: Tuerme nur, solange noch kein Kampffahrzeug gebaut werden kann, oder bis zum Turm-Anteil am Soll
     {
         let fahrzeugGeht = fahrgestellWahl(welt, z, 1 << 20) != 0 && hatGeb(welt, z, l, mapVehicleFactory) != 0;
         let turmWert = z.eigeneWTWert + (geplant(welt, z, mapGuardPost) + l.kitsImSpiel[ix(mapGuardPost)] + l.imBau[ix(mapGuardPost)]) * WERT_WT;
-        if fahrzeugGeht && turmWert as f64 >= z.sollArmee as f64 * z.turmAnteil { return false; }
+        let turmWert = if PAR(z.spieler).gelaende > 0.0 && super::erweiterung::passOffen(welt, z) { (turmWert as f64 / PAR(z.spieler).engTurmFaktor) as i32 } else { turmWert };
+        let so = PAR(z.spieler).sonde;
+        if so >= 2.0 && (welt.Tick() as f64) >= so && (welt.Tick() as f64) < so + 600.0 {
+            let (g, k1, k2, hg) = (geplant(welt, z, mapGuardPost), l.kitsImSpiel[ix(mapGuardPost)], l.imBau[ix(mapGuardPost)], hatGeb(welt, z, l, mapGuardPost));
+            melde(welt, z, "sonde", mapGuardPost, 0, 0, &format!("Sonde Turm fahrzeugGeht {} turmWert {} (wt {} geplant {} kits {} imBau {}) soll {} anteil {:.6} wt {}",
+                fahrzeugGeht as i32, turmWert, z.eigeneWTWert, g, k1, k2, z.sollArmee, z.turmAnteil, hg));
+        }
+        let anteil = if laserZeit && PAR(z.spieler).laserTurmAnteil > 0.0 { PAR(z.spieler).laserTurmAnteil } else { z.turmAnteil };
+        if fahrzeugGeht && turmWert as f64 >= z.sollArmee as f64 * anteil { return false; }
     }
     // Unter Druck darf die Verteidigung auch vorgemerktes Erz nehmen
     return waehle(welt, z, l, mapGuardPost, b, z.bedrohung >= 50, w, &format!("Wachturm (Feind Wert {}, eigener {}, Soll {}, fehlt {}, Bedrohung {})",
@@ -300,9 +341,9 @@ pub(super) fn wahlWirtschaft(welt: &mut dyn Welt, z: &Zustand, l: &Lage, b: i32,
                   nm, z.laborFuer, z.laborWert)) { return true; }
     }
     if hatGeb(welt, z, l, mapVehicleFactory) == 0 && waehle(welt, z, l, mapVehicleFactory, b, false, w, "Fahrzeuge nachbauen") { return true; }
-    // Die Schmelze vor Garage und Robot Command Center -- sie bezahlt sich in wenigen tausend Ticks, das RCC in
+    // Neues Modell: die Schmelze vor Garage und Robot Command Center -- sie bezahlt sich in wenigen tausend Ticks, das RCC in
     // zehntausenden; wartet sie hinter einem RCC, das auf Erz wartet, kommt sie nie (gemessen: eine Schmelze die ganze Partie).
-    {
+    if kampfModellNeu() && PAR(sp).erzAusbau >= 0.5 {
         let bl = bilanz(welt, z, l);
         let ew = erzWahl(welt, z, l, &bl);
         if ew.typ == mapCommonOreSmelter && ew.nutzen >= PAR(sp).schmelzeNutzen
@@ -334,7 +375,7 @@ pub(super) fn wahlWirtschaft(welt: &mut dyn Welt, z: &Zustand, l: &Lage, b: i32,
         let rk = welt.GetOreCost(mapRobotCommand, sp);
         let gewinnJeTick = 0.03 * fluss / 1000.0;
         let tr = welt.Tick();
-        let wt = WERTUNG_TICK; let rest = if wt - tr > 40000 { wt - tr } else { 40000 };
+        let wt = wertungTick(z.spieler); let rest = if wt - tr > 40000 { wt - tr } else { 40000 };
         if gewinnJeTick > 0.0 && rk as f64 / gewinnJeTick < rest as f64
             && waehle(welt, z, l, mapRobotCommand, b, false, w, &format!("Robot Command Center -- bessere Wegfindung, bringt die Kosten in {} Ticks ein", (rk as f64 / gewinnJeTick) as i32)) { return true; }
     }
@@ -380,14 +421,32 @@ pub fn bauWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> Wahl {
     if (reichweite < 3000 || l.nahrung < 300) && l.nahrungNetto <= 0 && agriUnterwegs == 0 {
         notfall(&mut w, mapAgridome, format!("Nahrung {}, netto {:+}", l.nahrung, l.nahrungNetto)); return w;
     }
+    // PAR wohnVorrang (2026-11-20, Personal-Engpass frueh): ueberbelegt (mehr Bewohner als Wohnraum) und kein Wohnhaus
+    // unterwegs -> Wohnhaus vor der Eroeffnung. Gemessen: 54 Bewohner auf 50 Plaetzen bis Tick ~12700, die Moralstufe
+    // senkt Geburten und hebt das Sterben (morale.txt CROWDED).
+    // wohnVorrang >= 1.5 (2026-11-21): erst nach den Gebaeuden der Eroeffnung -- vorher schob das Wohnhaus den Kindergarten
+    let wvStufe = PAR(z.spieler).wohnVorrang;
+    // wohnVorrang >= 2.5 (Nutzer 2026-11-21): nur als Teil der Eroeffnung -- Wohnhaus, Kindergarten, Universitaet
+    let wvSperre = if wvStufe >= 2.5 { !super::forschung::eroeffnungBautNoch(welt, z, l) } else { wvStufe >= 1.5 && super::forschung::eroeffnungBautNoch(welt, z, l) };
+    if wvStufe >= 0.5 && !wvSperre && !moralFestAktiv(welt, z) && !standardVolk(welt, l) && l.menschen > l.wohnraum
+        && geplant(welt, z, mapResidence) + l.kitsImSpiel[ix(mapResidence)] + l.imBau[ix(mapResidence)] == 0 && kitMoeglich(welt, z, mapResidence) {
+        if waehle(welt, z, l, mapResidence, B_KOLONIE, false, &mut w, &format!("Wohnraum vor allem anderen: {} Bewohner auf {} Plaetzen", l.menschen, l.wohnraum)) { return w; }
+    }
     // Eroeffnung der Forschung: das Labor fuer eines ihrer offenen Themen zuerst (der Lynx braucht das Advanced Lab;
     // es baut sich ~3300 Ticks, bestellt erst nach Universitaet und Wohnraum stand es zu spaet)
     // ... aber in der Reihenfolge Kindergarten, Universitaet, Labor (Nutzer 2026-11-19): sie sind der Zweck der ersten
     // Eroeffnungsthemen (3304, 3305). Drueckte das Labor den Kindergarten nach hinten, fehlten spaeter die Arbeiter, ihn zu
     // besetzen -- die Kolonie starb aus (mp6_31 Seed 1)
+    // PAR eroeffFolge (Nutzer 2026-11-21): Universitaet, AdvancedLab, dann Kindergarten
+    let folge: &[(i32, &str)] = if PAR(z.spieler).eroeffFolge >= 0.5 {
+        &[(mapUniversity, "Eroeffnung (Folge): Universitaet zuerst"), (mapAdvancedLab, "Eroeffnung (Folge): AdvancedLab nach der Universitaet"),
+          (mapNursery, "Eroeffnung (Folge): Kindergarten nach Universitaet und Labor")]
+    } else {
+        &[(mapNursery, "Eroeffnung: Kindergarten vor Universitaet und Labor -- ohne ihn keine Geburten"),
+          (mapUniversity, "Eroeffnung: Universitaet vor dem Labor -- bildet Arbeiter und Wissenschaftler aus")]
+    };
     if !eroeffnungOffen(welt, z).is_empty() {
-        for (typ, text) in [(mapNursery, "Eroeffnung: Kindergarten vor Universitaet und Labor -- ohne ihn keine Geburten"),
-                            (mapUniversity, "Eroeffnung: Universitaet vor dem Labor -- bildet Arbeiter und Wissenschaftler aus")] {
+        for &(typ, text) in folge.iter() {
             if hatGeb(welt, z, l, typ) == 0 && kitMoeglich(welt, z, typ) {
                 if waehle(welt, z, l, typ, B_KOLONIE, false, &mut w, text) { return w; }
             }
@@ -406,6 +465,17 @@ pub fn bauWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> Wahl {
     if fabrikErwartet(welt, z, l) {
         if waehle(welt, z, l, mapVehicleFactory, B_VERTEIDIGUNG, z.bedrohung >= 50, &mut w, "Fabrik frueh: Waffenforschung begonnen, Fahrzeugfabrik soll bereitstehen") { return w; }
     }
+    // PAR moralBau (2026-11-21): eine erforschte Moral-Technik ohne ihr Gebaeude senkt die Moral (sie vergroessert den Teiler
+    // der Moralformel, Punkte gibt erst das Gebaeude) -- ml2_05 Seed 1: Medizin 3303 bei 13 203, Medical Center erst bei
+    // 21 803, Moral 85 -> 68 %, die Kolonie wuchs nicht mehr. Darum das Gebaeude sofort, vor Tuermen und Ausbau.
+    if PAR(z.spieler).moralBau >= 0.5 && !standardVolk(welt, l) {
+        for (tech, typ) in [(3303, mapMedicalCenter), (3306, mapRecreationFacility), (3301, mapDIRT), (3302, mapGORF)] {
+            if hatTechId(welt, z, tech) && hatGeb(welt, z, l, typ) == 0 && l.imBau[ix(typ)] == 0 && l.kitsImSpiel[ix(typ)] == 0 && kitMoeglich(welt, z, typ) {
+                let nm = name(welt, typ);
+                if waehle(welt, z, l, typ, B_KOLONIE, false, &mut w, &format!("Moral: Tech {} erforscht, ohne {} senkt sie die Moral", tech, nm)) { return w; }
+            }
+        }
+    }
     // Seltenerz-Schmelze, sobald Seltenerz-Fahrzeuge sich lohnen (Parameter seltenGewinn)
     if seltenErwartet(welt, z, l) {
         let sv = (100.0 * seltenVorteil(welt, z)) as i32;
@@ -413,9 +483,9 @@ pub fn bauWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> Wahl {
         if waehle(welt, z, l, mapRareOreSmelter, B_WIRTSCHAFT, false, &mut w, &format!("Seltenerz-Schmelze: Fahrzeuge mit Seltenerz bringen {} % mehr Kampfkraft je Erz (Schwelle {} %)",
                   sv, sg)) { return w; }
     }
-    // Weitere Fahrzeugfabrik, sobald der Erzzufluss mehr ist, als die Fabriken verbauen -- unabhaengig vom Bau-Kuchen und
-    // vom Armee-Soll (Nutzer 2026-11-17: die KI hatte nur eine Fabrik und griff zu selten an)
-    if l.geb[ix(mapVehicleFactory)] > 0 {
+    // Rust (PAR fabrikErz): weitere Fahrzeugfabrik, sobald der Erzzufluss mehr ist, als die Fabriken verbauen -- unabhaengig
+    // vom Bau-Kuchen und vom Armee-Soll (Nutzer 2026-11-17: die KI hatte nur eine Fabrik und griff zu selten an)
+    if kampfModellNeu() && PAR(z.spieler).fabrikErz >= 0.5 && l.geb[ix(mapVehicleFactory)] > 0 {
         let mut text = String::new();
         if weitereFabrikLohnt(welt, z, l, &mut text, 160) && waehle(welt, z, l, mapVehicleFactory, B_VERTEIDIGUNG, false, &mut w, &text) { return w; }
     }
@@ -436,7 +506,8 @@ pub fn bauWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> Wahl {
     }
     // 3. Lueckenfueller: nur mit Erz, das nicht vorgemerkt ist
     let mut grund = String::new();
-    if l.stromFrei < 150 && tokamakUnterwegs == 0 && baubar(welt, z, l, mapTokamak, false, &mut grund, 120) == 0 {
+    if l.stromFrei < 150 && tokamakUnterwegs == 0 && (PAR(z.spieler).lueckeKlug < 0.5 || stromBaldNoetig(welt, z, l) > l.stromFrei)
+        && baubar(welt, z, l, mapTokamak, false, &mut grund, 120) == 0 {
         w.typ = mapTokamak; w.bereich = -1;
         w.warum = snp(format!("Lueckenfueller: nur {} Strom frei", l.stromFrei), 200); return w;
     }
@@ -448,7 +519,7 @@ pub fn bauWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> Wahl {
     w
 }
 
-/// Wissenschaftler in Forschungsteams ueber dem ersten je Labor -- so viele koennen als Arbeiter
+/// Rust (PAR wissArbeit): Wissenschaftler in Forschungsteams ueber dem ersten je Labor -- so viele koennen als Arbeiter
 /// einspringen, wenn die Forschung sie abgibt.
 pub fn forschungsReserve(welt: &mut dyn Welt, z: &Zustand) -> i32 {
     let mut n = 0;
@@ -457,6 +528,18 @@ pub fn forschungsReserve(welt: &mut dyn Welt, z: &Zustand) -> i32 {
             if !welt.IsLive(lab) || welt.GetLabCurrentTopic(lab) <= 0 { continue; }
             n += (welt.GetLabScientistCount(lab) - 1).max(0);
         }
+    }
+    n
+}
+
+/// lueckeKlug: Strombedarf der Gebaeude, die der Bebauungsplan als naechste vorsieht und die schon baubar sind
+pub fn stromBaldNoetig(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> i32 {
+    let mut n = 0;
+    let mut grund = String::new();
+    for pp in super::super::vorplan::reserviert(z) {
+        if pp.typ == mapTokamak || pp.typ == mapMHDGenerator || pp.typ == mapSolarPowerArray || pp.typ == mapGeothermalPlant { continue; }
+        if baubar(welt, z, l, pp.typ, false, &mut grund, 0) != 0 { continue; }
+        n += welt.GetPowerRequired(pp.typ, z.spieler).max(0);
     }
     n
 }

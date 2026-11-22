@@ -1,11 +1,13 @@
 //! Bauen: Personal (Arbeiter, Stilllegen), Bauplaetze, BuildingGroup, Roehrennetz und Anschluss.
-//! C++-KI op2_ki.hpp Zeilen 2266-3228, nach Rust uebertragen.
+//! C++-KI op2_ki.hpp Zeilen 2266-3228, uebertragen nach Rust (siehe UEBERSETZUNG.md).
 use super::*;
 
 mod arbeit;
 mod plaetze;
 mod gruppe;
 mod netz;
+mod stau;
+pub use stau::*;
 pub use arbeit::*;
 pub use plaetze::*;
 pub use gruppe::*;

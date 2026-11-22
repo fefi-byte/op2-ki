@@ -1,6 +1,7 @@
 //! Kartenscan je SCAN_TAKT: Feind (Armee, Gebaeude, unterwegs, Drohung), eigene Staerke, Aussenposten, Gefechte lernen, Soll-Armee.
 use super::*;
-use super::{SCAN_TAKT, AUSSEN_R, GEBAEUDE};
+use super::super::*;
+use super::{SCAN_TAKT, WERTUNG_TICK, WERT_WT, WERT_LYNX, MAX_WT, AUSSEN_R, B_KOLONIE, B_ZIEL, B_WIRTSCHAFT, B_VERTEIDIGUNG, B_ANZAHL, BEREICH, TECH_SELTENERZ, GEBAEUDE, snp, ix};
 
 /// C++: void karteScannen(Zustand& z)  (op2_ki.hpp:1206)
 /// Ergebnis des Feindscans: Armeewert, Wert/Anzahl im Nahradius, Gebaeude (Anzahl, Summe der Koordinaten), Fahrzeugfabriken,
@@ -13,6 +14,7 @@ pub fn karteScannen(welt: &mut dyn Welt, z: &mut Zustand) {
     let t = welt.Tick();
     if t < z.naechsterScan { return; }
     z.naechsterScan = t + SCAN_TAKT;
+    hinweis(welt, z, "ki::karteScannen/feind");
     let FeindScan { armee, nah, nahN, geb, gx, gy, fabriken, wt, bestW, bestT, bestWf } = feindScannen(welt, z);
     let eigen = eigeneZaehlen(welt, z);
     aussenpostenErfassen(welt, z, t);
@@ -27,7 +29,8 @@ pub fn karteScannen(welt: &mut dyn Welt, z: &mut Zustand) {
     z.feindArmee = armee; z.feindNah = nah; z.feindGeb = geb; z.feindFabriken = fabriken; z.feindWT = wt;
     // Qualitaet merken (das staerkste je gesehene bleibt -- ein Tiger, der einmal da war, kommt wieder)
     if bestW > z.feindBestWert {
-        z.feindBestWert = bestW;         let fz = fahrgestellWahl(welt, z, 1 << 20);
+        z.feindBestWert = bestW; z.feindBestTyp = bestT; z.feindBestWaffe = bestWf;
+        let fz = fahrgestellWahl(welt, z, 1 << 20);
         let n1 = name(welt, bestT);
         let n2 = name(welt, bestWf);
         let n3 = if fz != 0 { name(welt, fz) } else { "-" };
@@ -92,7 +95,7 @@ pub(super) fn feindScannen(welt: &mut dyn Welt, z: &mut Zustand) -> FeindScan {
                 z.angriffSektoren |= 1 << ((((wk / (3.14159265358979 / 4.0) + 0.5).floor() as i32) + 8) % 8);
             }
             if z.feindPosN < 16 { z.feindPosX[z.feindPosN as usize] = ux; z.feindPosY[z.feindPosN as usize] = uy; z.feindPosN += 1; }
-            if d2 < z.feindMinD2 { z.feindMinD2 = d2; }
+            if d2 < z.feindMinD2 { z.feindMinD2 = d2; z.feindNX = ux; z.feindNY = uy; }
         }
         for &ty in GEBAEUDE.iter() {
             for b in welt.PlayerBuildingEnum(p, ty) {
@@ -110,8 +113,9 @@ pub(super) fn feindScannen(welt: &mut dyn Welt, z: &mut Zustand) -> FeindScan {
 
 /// Eigene Staerke: Kampffahrzeuge (mobil) und fertige Tuerme
 pub(super) fn eigeneZaehlen(welt: &mut dyn Welt, z: &mut Zustand) -> i32 {
-    let (mut mobil, mut wtWert) = (0i32, 0i32);
+    let (mut eigen, mut mobil, mut wtWert) = (0i32, 0i32, 0i32);
     {
+        hinweis(welt, z, "ki::karteScannen/eigene-fz");
         for u in welt.PlayerVehicleEnum(z.spieler) { if welt.IsLive(u) && kaempfer(welt, u) { mobil += kampfWert(welt, u); } }
     }
     {
@@ -119,8 +123,9 @@ pub(super) fn eigeneZaehlen(welt: &mut dyn Welt, z: &mut Zustand) -> i32 {
             if welt.IsLive(b) && welt.GetCurAction(b) != moObjWait { wtWert += kampfWert(welt, b); }
         }
     }
+    eigen = mobil + wtWert;
     z.eigeneMobil = mobil; z.eigeneWTWert = wtWert;
-    mobil + wtWert
+    eigen
 }
 
 /// Aussenposten: eigene Minen weiter als AUSSEN_R von der Basismitte. Feind in 10 Kacheln = Angriff dort.
@@ -163,12 +168,14 @@ pub(super) fn aussenpostenErfassen(welt: &mut dyn Welt, z: &mut Zustand, t: i32)
 }
 
 /// Unterwegs = feindliche Kampffahrzeuge mehr als 15 Kacheln von der Mitte ihrer Gebaeude (ohne bekannte Basis: alle);
-/// nur, was naeher kommt; Drohung fuer die Kolonie; Heimwache der Feindbasis
+/// Rust (kampfModell): nur, was naeher kommt; Drohung fuer die Kolonie; Heimwache der Feindbasis
 pub(super) fn unterwegsMessen(welt: &mut dyn Welt, z: &mut Zustand, geb: i32) {
     let par_ = PAR(z.spieler);
     {
         let mut unterwegs = 0;
+        let neu = kampfModellNeu();
         let (mut neuId, mut neuD, mut neuN) = ([0i32; 128], [0i32; 128], 0usize);
+        let mut heim = 0;
         let mut zurueck = 0.0f64;
         let mut drohung = 0;
         let mut p = 0;
@@ -181,31 +188,35 @@ pub(super) fn unterwegsMessen(welt: &mut dyn Welt, z: &mut Zustand, geb: i32) {
                 let ex = edX(welt, z, lo);
                 let ey = edY(welt, z, lo);
                 let draussen = geb == 0 || abstand2(welt, ex, ey, z.feindX, z.feindY) > 15 * 15;
+                if !draussen { heim += w; }
                 if geb != 0 {
-                    // Abwehr der Feindbasis: wer vor unserer Truppe zurueck sein kann, zaehlt voll, weiter weg abnehmend
+                    // abwehrRueckkehr: wer vor unserer Truppe zurueck sein kann, zaehlt voll, weiter weg abnehmend
                     let dHeim = (abstand2(welt, ex, ey, z.feindX, z.feindY) as f64).sqrt();
                     let dUns = (abstand2(welt, z.bx, z.by, z.feindX, z.feindY) as f64).sqrt();
                     let f = if dHeim <= 15.0 || dHeim <= dUns { 1.0 } else { (1.0 - (dHeim - dUns) / 30.0).clamp(0.0, 1.0) };
                     zurueck += w as f64 * f;
                 }
-                // Unterwegs zaehlt nur, was auf uns zukommt -- seit dem letzten Scan mehr als 2 Kacheln naeher an der
-                // eigenen Basis. Stehende Wachen an Aussenposten oder Paessen sperren sonst jeden Angriff (mp4_12).
-                let d = (abstand2(welt, ex, ey, z.bx, z.by) as f64).sqrt() as i32;
-                let vorher = (0..z.unterwegsN as usize).find(|&i| z.unterwegsId[i] == u).map(|i| z.unterwegsD[i]);
-                if neuN < 128 { neuId[neuN] = u; neuD[neuN] = d; neuN += 1; }
-                let naeher = vorher.is_some_and(|v| d < v - 2);
-                if draussen && naeher { unterwegs += w; }
-                // Drohung fuer die Kolonie: im Nahradius und entweder im Anmarsch oder naeher an uns als an der
-                // eigenen Basis. Die Heimwache vor der Feindbasis bedroht nichts, auch wenn die Basen nah beieinander liegen.
-                let dFeind = if geb == 0 { i32::MAX } else { abstand2(welt, ex, ey, z.feindX, z.feindY) };
-                let dEigen = abstand2(welt, ex, ey, z.bx, z.by);
-                if (dEigen as f64) < par_.nahRadius * par_.nahRadius && (naeher || dEigen < dFeind) { drohung += w; }
+                if neu {
+                    // Rust (kampfModell): nur, was auf uns zukommt -- seit dem letzten Scan mehr als 2 Kacheln naeher an der
+                    // eigenen Basis. Stehende Wachen an Aussenposten oder Paessen sperren sonst jeden Angriff (mp4_12).
+                    let d = (abstand2(welt, ex, ey, z.bx, z.by) as f64).sqrt() as i32;
+                    let vorher = (0..z.unterwegsN as usize).find(|&i| z.unterwegsId[i] == u).map(|i| z.unterwegsD[i]);
+                    if neuN < 128 { neuId[neuN] = u; neuD[neuN] = d; neuN += 1; }
+                    let naeher = vorher.is_some_and(|v| d < v - 2);
+                    if draussen && naeher { unterwegs += w; }
+                    // Drohung fuer die Kolonie: im Nahradius und entweder im Anmarsch oder naeher an uns als an der
+                    // eigenen Basis. Die Heimwache vor der Feindbasis bedroht nichts, auch wenn die Basen nah beieinander liegen.
+                    let dFeind = if geb == 0 { i32::MAX } else { abstand2(welt, ex, ey, z.feindX, z.feindY) };
+                    let dEigen = abstand2(welt, ex, ey, z.bx, z.by);
+                    if (dEigen as f64) < par_.nahRadius * par_.nahRadius && (naeher || dEigen < dFeind) { drohung += w; }
+                } else if draussen { unterwegs += w; }
             }
             p += 1;
         }
-        z.unterwegsN = neuN as i32; z.unterwegsId = neuId; z.unterwegsD = neuD;
+        if neu { z.unterwegsN = neuN as i32; z.unterwegsId = neuId; z.unterwegsD = neuD; }
+        z.feindArmeeHeim = heim;
         z.feindArmeeZurueck = zurueck as i32;
-        z.feindDrohung = drohung;
+        z.feindDrohung = if neu { drohung } else { z.feindNah };
         z.feindUnterwegs = unterwegs;
     }
 }
@@ -227,7 +238,7 @@ pub(super) fn verlusteMelden(welt: &mut dyn Welt, z: &mut Zustand, t: i32) {
 pub(super) fn welleLernen(welt: &mut dyn Welt, z: &mut Zustand, t: i32, nah: i32, eigen: i32) {
     let par_ = PAR(z.spieler);
     if nah > 0 {
-        if z.welleSpitze == 0 { z.welleEigenStart = eigen; z.welleEigenMin = eigen; }
+        if z.welleSpitze == 0 { z.welleStart = t; z.welleEigenStart = eigen; z.welleEigenMin = eigen; }
         if nah > z.welleSpitze { z.welleSpitze = nah; }
         if eigen < z.welleEigenMin { z.welleEigenMin = eigen; }
     } else if z.welleSpitze > 0 && t - z.letzterAngriff > 1000 {
@@ -239,7 +250,8 @@ pub(super) fn welleLernen(welt: &mut dyn Welt, z: &mut Zustand, t: i32, nah: i32
         if anteil > 0.05 { z.reserve *= 1.0 + anteil * par_.reserveLernrate; } else { z.reserve *= par_.reserveRueckgang; }
         if z.reserve < 1.0 { z.reserve = 1.0; }
         if z.reserve > par_.reserveMax { z.reserve = par_.reserveMax; }
-        if l_kolonieLebt(welt, z) { }
+        if verlust > 0 { z.verlustSumme += verlust; }
+        if l_kolonieLebt(welt, z) { z.ueberstanden += 1; }
         melde(welt, z, "lernen", mapNone, z.bx, z.by, &format!("Gefecht {}: eigener Wert {} -> Tiefst {} (Verlust {} %) -- Reserve {:.2} -> {:.2}",
               z.anzWellen + 1, z.welleEigenStart, z.welleEigenMin, (anteil * 100.0) as i32, alt, z.reserve));
         z.naechstesSpeichern = 0; // Gelerntes gleich sichern
@@ -270,19 +282,16 @@ pub(super) fn sollArmee(welt: &mut dyn Welt, z: &mut Zustand, armee: i32, fabrik
     fruehWehr(welt, z);
 }
 
-/// Fruehe Wehr (die Kolonie muss sich frueh verteidigen koennen, danach wird die KI selbststaendiger): der frueheste
-/// Angriff aus der Karte -- Lynx-Forschung des Gegners (11600 Ticks, gemessen mit der schnellsten Eroeffnung) + Bauzeit des
-/// Lynx (Spieldaten) + Wegkacheln zur naechsten feindlichen Kommandozentrale x 40 Ticks je Kachel (gemessen). Von 6000 Ticks
-/// davor bis 5000 danach ist das Armee-Soll mindestens 16 und die Bedrohung steigt bis 60; die Wege dahin (Tuerme,
-/// Fahrzeuge, Forschung) waehlt die KI wie sonst.
-pub(super) const FW_AUFRUEST: f64 = 11600.0;
-pub(super) const FW_FAHRT: f64 = 40.0;
-pub(super) const FW_WERT: f64 = 16.0;
-pub(super) const FW_VORLAUF: f64 = 6000.0;
-pub(super) const FW_NACH: f64 = 5000.0;
-pub(super) const FW_BEDROHUNG: f64 = 60.0;
+/// Fruehe Wehr (Nutzer 2026-11-19: die Kolonie muss sich frueh verteidigen koennen, danach wird die KI selbststaendiger):
+/// der frueheste Angriff aus der Karte -- Wegkacheln zur Feindbasis x Fahrzeit je Kachel (PAR fwFahrt) plus die Zeit, die
+/// ein Gegner mindestens zum Aufruesten braucht (PAR fwAufruest). Von fwVorlauf Ticks davor bis fwNach Ticks danach ist
+/// das Armee-Soll mindestens fwWert; die Wege dahin (Tuerme, Fahrzeuge, Forschung) waehlt die KI wie sonst.
 fn fruehWehr(welt: &mut dyn Welt, z: &mut Zustand) {
+    let p = PAR(z.spieler);
     if z.fwAngriff == 0 && z.feindGeb != 0 {
+        // Nutzer 2026-11-19: das Eintreffen aus Bau- und Fahrzeit zur naechsten feindlichen Basis (nicht zum Mittelpunkt
+        // aller Feindgebaeude): Lynx-Forschung des Gegners (PAR fwAufruest, gemessen mit der schnellsten Eroeffnung) + Bauzeit
+        // des Lynx (Spieldaten) + Wegkacheln x Fahrzeit je Kachel (PAR fwFahrt, gemessen im Sparring)
         let (b, h) = (z.breite, z.hoehe);
         let mut zellen = vec![0i32; (b * h).max(0) as usize];
         for y in 0..h { for x in 0..b { let l = engine(welt, z, x, y); zellen[(y * b + x) as usize] = welt.GetCellType(l); } }
@@ -293,18 +302,17 @@ fn fruehWehr(welt: &mut dyn Welt, z: &mut Zustand) {
                 if !welt.IsLive(u) { continue; }
                 let lo = welt.Location(u);
                 let ort = (edX(welt, z, lo), edY(welt, z, lo));
-                let g = super::super::gelaende::Gelaende::neu(&zellen, b, h, (z.bx, z.by), ort);
-                let gw = if ort.0 >= 0 && ort.1 >= 0 && ort.0 < b && ort.1 < h { g.d_eigen[(ort.1 * b + ort.0) as usize] } else { -1 };
-                let weg = if gw > 0 { gw } else { ((abstand2(welt, z.bx, z.by, ort.0, ort.1) as f64).sqrt() * 1.3) as i32 };
+                let g = super::super::gelaende::Gelaende::neu(&zellen, b, h, (z.bx, z.by), ort, 0.4, 1, 0, 0);
+                let weg = if g.weg > 0 { g.weg } else { ((abstand2(welt, z.bx, z.by, ort.0, ort.1) as f64).sqrt() * 1.3) as i32 };
                 if best.is_none_or(|bb| weg < bb.0) { best = Some((weg, q, ort)); }
             }
         }
         let (weg, q, ort) = best.unwrap_or((((abstand2(welt, z.bx, z.by, z.feindX, z.feindY) as f64).sqrt() * 1.3) as i32, -1, (z.feindX, z.feindY)));
         let bau = if q >= 0 { welt.GetBuildTime(mapLynx, q) * 4 } else { 0 };
-        z.fwAngriff = (FW_AUFRUEST + bau as f64 + weg as f64 * FW_FAHRT) as i32;
+        z.fwAngriff = (p.fwAufruest + bau as f64 + weg as f64 * p.fwFahrt) as i32;
         melde(welt, z, "kampf", mapLynx, ort.0, ort.1, &format!(
             "Fruehe Wehr: fruehester Angriff um Tick {} (Lynx-Forschung {:.0} + Bau {} + {} Wegkacheln zur naechsten Feindbasis x {:.0}), Mindestabwehr Wert {:.0} von Tick {} bis {}",
-            z.fwAngriff, FW_AUFRUEST, bau, weg, FW_FAHRT, FW_WERT, z.fwAngriff - FW_VORLAUF as i32, z.fwAngriff + FW_NACH as i32));
+            z.fwAngriff, p.fwAufruest, bau, weg, p.fwFahrt, p.fwWert, z.fwAngriff - p.fwVorlauf as i32, z.fwAngriff + p.fwNach as i32));
     }
     let t = welt.Tick();
     // Frueheres Ende: ist zum geschaetzten Angriff weder eine feindliche Armee noch eine Fahrzeugfabrik zu sehen, ruestet
@@ -313,19 +321,13 @@ fn fruehWehr(welt: &mut dyn Welt, z: &mut Zustand) {
         melde(welt, z, "kampf", mapLynx, z.feindX, z.feindY, "Fruehe Wehr vorbei: zum geschaetzten Angriff weder Feindarmee noch Fahrzeugfabrik");
         z.fwAngriff = -1;
     }
-    let (von, bis) = (z.fwAngriff - FW_VORLAUF as i32, z.fwAngriff + FW_NACH as i32);
+    let (von, bis) = (z.fwAngriff - p.fwVorlauf as i32, z.fwAngriff + p.fwNach as i32);
     if z.fwAngriff > 0 && t >= von && t <= bis {
-        if (z.sollArmee as f64) < FW_WERT { z.sollArmee = FW_WERT as i32; }
-        // erwartete Bedrohung: steigt im Vorlauf bis 60 zum geschaetzten Angriff (Verteidigung und Militaerforschung werden
-        // dringlich, bevor der Feind zu sehen ist)
-        let anteil = ((t - von) as f64 / FW_VORLAUF).clamp(0.0, 1.0);
-        let b = (FW_BEDROHUNG * anteil) as i32;
+        if (z.sollArmee as f64) < p.fwWert { z.sollArmee = p.fwWert as i32; }
+        // erwartete Bedrohung: steigt im Vorlauf bis fwBedrohung zum geschaetzten Angriff (Verteidigung und
+        // Militaerforschung werden dringlich, bevor der Feind zu sehen ist)
+        let anteil = if p.fwVorlauf > 0.0 { ((t - von) as f64 / p.fwVorlauf).clamp(0.0, 1.0) } else { 1.0 };
+        let b = (p.fwBedrohung * anteil) as i32;
         if b > z.bedrohung { z.bedrohung = b.min(100); }
     }
-}
-
-/// Liegt der Tick im Fenster der fruehen Wehr?
-pub fn fwFenster(welt: &mut dyn Welt, z: &Zustand) -> bool {
-    let t = welt.Tick();
-    z.fwAngriff > 0 && t >= z.fwAngriff - FW_VORLAUF as i32 && t <= z.fwAngriff + FW_NACH as i32
 }

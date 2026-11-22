@@ -62,7 +62,9 @@ now its only source; the missions contain no AI of their own.
 | Military | `kern/src/cpp/kampf`, `paarung.rs` | early defense (earliest attack from Lynx research, build time and path to the nearest enemy base), army target, guard area around all base buildings, weapon choice by matchups, raids, base attack |
 | Combat | `gefecht.rs`, `gefecht_netz.rs` | close combat by a learned network (`gefecht_netz.txt`) |
 | Two routes | `parallel.rs`, `gelaende.rs` | attacks over two separate paths when the terrain has them |
-| Second base | `zweitbasis.rs` | an outpost with command center and smelter at a far beacon field, once the main base stands, ore is spare and workers are free |
+| Second base | `zweitbasis.rs` | an outpost with command center and smelter at a far beacon field, once the main base stands, ore is spare and workers are free; in mission mode an independent base with its own factories, colony and guard |
+| Terrain | `erweiterung.rs`, `kampf/marsch.rs` | guard behind the pass and towers at narrow passes; the attack force gathers on the march |
+| Mission mode | `modus.rs`, `bezirke.rs` | difficulty, roles, outposts on command; districts, tubes first, spaceport fortress |
 | Walls | `mauer.rs` | remembers recorded walls so no building is planned on them; build order: first connect buildings with staff, then guard towers (tube to the command center), walls last |
 
 The AI sees the game only through the `Welt` ("world") trait in `kern/src/cpp/welt.rs`. In the DLL,
@@ -70,6 +72,14 @@ The AI sees the game only through the `Welt` ("world") trait in `kern/src/cpp/we
 `missionen/gemeinsam/op2ki_bruecke.hpp` answers those calls with the OP2 API. Both files are generated from the trait
 by `werkzeug/bruecke.py`; a mission itself is only map data plus a call to `op2ki::start` and `op2ki::schritt`
 (`missionen/gemeinsam/op2ki.hpp`).
+
+## Mission mode and your own missions
+
+With `missionsModus=1` the AI plays a mission instead of a multiplayer game: difficulty from the game, roles
+(aggressive, defensive, colony), an outpost or an independent second base on command, districts and walls from the
+terrain, an army that patrols in front of the base, spiders, upgrades to Panther and Tiger, MHD and solar power.
+To use the AI in your own mission (or from a mission editor) you only need three headers and `op2ki.dll`; see
+[EINBINDEN.md](EINBINDEN.md) (German, with an English summary).
 
 ## Simulator
 

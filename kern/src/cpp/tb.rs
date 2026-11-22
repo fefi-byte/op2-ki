@@ -17,8 +17,10 @@ pub const E_POWER_REQUIRED: i32 = 11;
 pub const E_WORKERS_REQUIRED: i32 = 12;
 pub const E_STORAGE_CAPACITY: i32 = 13;
 pub const E_IMPROVED: i32 = 14;
+pub const EIG_NAME: &[&str] = &[ "Hit_Points", "Armor", "Rate_Of_Fire", "Penetration_Damage", "Concussion_Damage", "Sight_Range", "Move_Speed", "Production_Capacity", "Production_Rate", "Common_Required", "Rare_Required", "Power_Required", "Workers_Required", "Storage_Capacity", "Improved" ];
 pub const BEREICH_NAME: &[&str] = &[ "Kolonie", "Kampf", "Wirtschaft", "Space" ];
 #[derive(Clone, Copy, Debug)] pub struct Einheit { pub typ: i32, pub hp: i32, pub panzer: i32, pub pen: i32, pub kon: i32, pub reload: i32, pub reichweite: i32, pub erz: i32, pub selten: i32, pub tech: i32 }
+pub const ANZ_EINHEIT: i32 = 93;
 pub static EINHEIT: [Einheit; 93] = [
     Einheit { typ: mapAcidCloud, hp: 0, panzer: 0, pen: 10, kon: 15, reload: 150, reichweite: 6, erz: 950, selten: 200, tech: 8503 },
     Einheit { typ: mapAdvancedLab, hp: 1500, panzer: 4, pen: 0, kon: 0, reload: 0, reichweite: 0, erz: 1800, selten: 0, tech: 5104 },
@@ -115,6 +117,7 @@ pub static EINHEIT: [Einheit; 93] = [
     Einheit { typ: mapWall, hp: 300, panzer: 0, pen: 0, kon: 0, reload: 0, reichweite: 0, erz: 75, selten: 0, tech: 5106 },
 ];
 #[derive(Clone, Copy, Debug)] pub struct Wirkung { pub typ: i32, pub eig: i32, pub wert: i32 }
+pub const ANZ_WIRKUNG: i32 = 92;
 pub static WIRKUNG: [Wirkung; 92] = [
     Wirkung { typ: mapResidence, eig: E_PRODUCTION_CAPACITY, wert: 35 },
     Wirkung { typ: mapTokamak, eig: E_PRODUCTION_CAPACITY, wert: 300 },

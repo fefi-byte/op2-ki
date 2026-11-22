@@ -1,9 +1,10 @@
 //! Lagegroessen: Feindrichtung, Tuerme bei, Soll der mobilen Truppe, Rohstoff-Bilanz und Erzwahl, Kampf fehlt.
 use super::*;
-use super::{WERT_WT, WERT_LYNX, ix};
+use super::super::*;
+use super::{SCAN_TAKT, WERTUNG_TICK, WERT_WT, WERT_LYNX, MAX_WT, AUSSEN_R, B_KOLONIE, B_ZIEL, B_WIRTSCHAFT, B_VERTEIDIGUNG, B_ANZAHL, BEREICH, TECH_SELTENERZ, GEBAEUDE, snp, ix};
 
 /// C++: void feindRichtung(const Zustand& z, int x, int y, double& ux, double& uy)  (op2_ki.hpp:1416)
-pub fn feindRichtung(_welt: &mut dyn Welt, z: &Zustand, x: i32, y: i32, ux: &mut f64, uy: &mut f64) {
+pub fn feindRichtung(welt: &mut dyn Welt, z: &Zustand, x: i32, y: i32, ux: &mut f64, uy: &mut f64) {
     let dx = if z.feindGeb != 0 { z.feindX - x } else { 1 };
     let dy = if z.feindGeb != 0 { z.feindY - y } else { 0 };
     let len = ((dx * dx + dy * dy) as f64).sqrt();
@@ -52,12 +53,12 @@ pub fn mobilSoll(welt: &mut dyn Welt, z: &Zustand, mitAngriff: bool) -> i32 {
 }
 
 /// C++: int erzRouten(const Zustand& z)  (op2_ki.hpp:1505)
-pub fn erzRouten(_welt: &mut dyn Welt, z: &Zustand) -> i32 {
+pub fn erzRouten(welt: &mut dyn Welt, z: &Zustand) -> i32 {
     let mut n = 0; for i in 0..MAX_MINEN { if z.minenId[i] != 0 { n += 1; } } n
 }
 
 /// C++: int seltenRouten(const Zustand& z)  (op2_ki.hpp:1506)
-pub fn seltenRouten(_welt: &mut dyn Welt, z: &Zustand) -> i32 {
+pub fn seltenRouten(welt: &mut dyn Welt, z: &Zustand) -> i32 {
     let mut n = 0; for i in 0..2 { if z.seltenMineId[i] != 0 { n += 1; } } n
 }
 
@@ -104,8 +105,10 @@ pub fn bilanz(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> Bilanz {
         b.bedarfErz += welt.GetOreCost(mapEMPMissile, sp); seltenKampf += welt.GetRareOreCost(mapEMPMissile, sp);
         b.erzHaengtAnSelten += welt.GetOreCost(mapEMPMissile, sp);
     }
-    // Der Bebauungsplan nennt, was im Horizont gebaut wird -- seine Kosten sind Erzbedarf
-    for q in super::vorplan::reserviert(z) { b.bedarfErz += welt.GetOreCost(q.typ, sp); }
+    // Neues Modell: der Bebauungsplan nennt, was im Horizont gebaut wird -- seine Kosten sind Erzbedarf
+    if kampfModellNeu() && par_.erzAusbau >= 0.5 {
+        for q in super::vorplan::reserviert(z) { b.bedarfErz += welt.GetOreCost(q.typ, sp); }
+    }
     b.bedarfSelten = seltenZiel + seltenKampf;
     b.treiber = if seltenZiel >= seltenKampf { if seltenZiel != 0 { "Ziel" } else { "-" } } else { "Verteidigung" };
     // Netto-Fluss nur, wenn er positiv ist
@@ -154,8 +157,28 @@ pub fn erzWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage, b: &Bilanz) -> ErzWah
         <= l.arbFrei + stilllegbarS + erzGebunden - beansprucht(welt, l, M_ARB as i32, rangS, mapCommonOreSmelter);
     if mn > 0 && schm < 2 * mn && schm < MAX_MINEN as i32 && b.engpassErz > 0 && schmArbeiter && kitMoeglich(welt, z, mapCommonOreSmelter) {
         let mut n = (if b.engpassErz < b.routeErz { b.engpassErz } else { b.routeErz }) as f64 / (welt.GetOreCost(mapCommonOreSmelter, sp) + 1) as f64;
-        // keine zweite Schmelze vor Kindergarten, Universitaet und Eroeffnungslabor: die eine BuildingGroup baut der Reihe nach
-        if schm >= 1 && super::forschung::eroeffnungBautNoch(welt, z, l) { n = 0.0; }
+        if schm >= 2 && PAR(sp).schmelzeSpaet > 1.0 { n /= PAR(sp).schmelzeSpaet; }   // dritte und weitere Schmelze spaeter
+        if schm >= 1 && PAR(sp).schmelzeEroeff >= 0.5 && super::forschung::eroeffnungBautNoch(welt, z, l) { n = 0.0; }
+        // PAR schmelzeRisiko (2026-11-21): eine weitere Schmelze samt Lastwagen kostet Erz, das sonst Kampffahrzeuge wuerden. Ist die
+        // eigene Armee (mit Tuermen) schwaecher als schmelzeRisiko x die feindliche, wartet sie -- ausser sie zahlt sich vor dem
+        // geschaetzten ersten Feindangriff aus. Gemessen ml2_11/ml4_05: Eden baute nach der Eroeffnung die zweite Schmelze und
+        // 6 Lastwagen dazu, hatte beim ersten Plymouth-Angriff (Tick 20-28k) Kampfwert 3-11 gegen 37-60 und verlor.
+        if schm >= 1 && n > 0.0 && PAR(sp).schmelzeRisiko > 0.0 {
+            let eigen = (z.eigeneArmee + z.eigeneWTWert) as f64;
+            // Massstab: die gesehene Feindarmee, was der Feind aufstellen kann, und das eigene Soll (darin die fruehe Abwehr gegen
+            // den erwarteten ersten Angriff -- zu Beginn hat der Feind noch keine Armee, die erste Schmelze kam trotzdem zu frueh)
+            let feind = z.feindArmee.max(z.feindPotenzial).max(z.sollArmee) as f64;
+            if eigen < PAR(sp).schmelzeRisiko * feind {
+                // Lastwagen der neuen Route: so viele wie die bestehenden Routen im Mittel haben (mindestens 3)
+                let lkwJe = (l.fz[ix(mapCargoTruck)] as f64 / schm.max(1) as f64).max(3.0);
+                let kosten = welt.GetOreCost(mapCommonOreSmelter, sp) as f64 + lkwJe * welt.GetOreCost(mapCargoTruck, sp) as f64;
+                let jeTick = b.routeErz.max(1) as f64 / PAR(sp).horizont.max(1.0);
+                let rueck = kosten / jeTick;
+                let t = welt.Tick();
+                let bis = if z.fwAngriff > t { (z.fwAngriff - t) as f64 } else { 0.0 };
+                if rueck > bis { n = 0.0; }
+            }
+        }
         if n > w.nutzen { w = ErzWahl { typ: mapCommonOreSmelter, nutzen: n }; }
     }
     let sel = l.geb[ix(mapRareOreSmelter)] + geplant(welt, z, mapRareOreSmelter) + l.kitsImSpiel[ix(mapRareOreSmelter)];
@@ -182,7 +205,10 @@ pub fn hatGeb(welt: &mut dyn Welt, z: &Zustand, l: &Lage, t: i32) -> i32 {
 }
 
 /// C++: bool standardVolk(const Lage& l)  (op2_ki.hpp:1639)
-pub fn standardVolk(_welt: &mut dyn Welt, l: &Lage) -> bool { l.menschen >= 8000 } // KI-Kolonisten der Engine
+/// Stabile Moral: aus dem Spiel (Mehrspieler-Option "Moral stabil", Welt::MoralStabil) oder erzwungen mit PAR moralFest
+pub fn moralFestAktiv(welt: &mut dyn Welt, z: &Zustand) -> bool { PAR(z.spieler).moralFest >= 0.5 || welt.MoralStabil() }
+
+pub fn standardVolk(welt: &mut dyn Welt, l: &Lage) -> bool { l.menschen >= 8000 } // KI-Kolonisten der Engine
 
 /// C++: int kolonieGewicht(const Lage& l)  (op2_ki.hpp:1643)
 pub fn kolonieGewicht(welt: &mut dyn Welt, l: &Lage) -> i32 {
@@ -192,7 +218,7 @@ pub fn kolonieGewicht(welt: &mut dyn Welt, l: &Lage) -> i32 {
 }
 
 /// C++: int nahrungsReichweite(const Lage& l)  (op2_ki.hpp:1650)
-pub fn nahrungsReichweite(_welt: &mut dyn Welt, l: &Lage) -> i32 {
+pub fn nahrungsReichweite(welt: &mut dyn Welt, l: &Lage) -> i32 {
     if l.nahrungNetto >= 0 { return 1 << 30; }
     l.nahrung * 100 / (-l.nahrungNetto) // netto ist je 100 Ticks (eine Markierung)
 }

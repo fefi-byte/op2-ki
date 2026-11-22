@@ -1,6 +1,6 @@
 //! Datenstrukturen der C++-KI (op2_ki.hpp), Feld fuer Feld uebertragen. Erzeugt von struktur.py, danach von Hand ergaenzt.
-#![allow(non_snake_case, non_camel_case_types)]
-use super::welt::{Gruppe, Id};
+#![allow(non_snake_case, non_camel_case_types, dead_code)]
+use super::welt::{Gruppe, Id, Loc};
 
 mod parameter;
 mod spieler;
@@ -13,6 +13,7 @@ pub const MAX_PLAETZE: usize = 48;
 pub const MAX_ROEHREN: usize = 48;
 pub const MAX_MINEN: usize = 4;
 pub const MAX_VF: usize = 4;
+pub const GEDULD_BAU: i32 = 1500;
 pub const GEDULD_KIT: i32 = 2500;
 pub const MAX_ANSPR: usize = 40;
 pub const MAX_VORHABEN: usize = 4;
@@ -46,6 +47,7 @@ pub struct Lage {
     pub stromFrei: i32,
     pub menschen: i32,
     pub wohnraum: i32,
+    pub wiss: i32,
     pub selten: i32,   // Seltenerz / rare ore
     pub seltenMax: i32,   // Seltenerz / rare ore
     pub arbFrei: i32,   // freie Arbeiter / Wissenschaftler
@@ -65,7 +67,7 @@ pub struct Lage {
     pub angeschlossen: i32,   // % der angeschlossenen Gebaeude, die laufende DIRTs abdecken (10 je DIRT); GORF in Betrieb
     pub kitsFabrik: i32,   // fertige Bausaetze in der Strukturfabrik, die auf einen ConVec warten
     pub seltenSpart: bool,   // die erwartete Seltenerz-Schmelze sammelt Erz: neue Kampffahrzeuge warten (ohne akute Bedrohung)
-    pub erzSpart: bool,   // eine lohnende Erzschmelze sammelt Erz -- neue Kampffahrzeuge warten (ohne akute Bedrohung)
+    pub erzSpart: bool,   // Rust (kampfModell): eine lohnende Erzschmelze sammelt Erz -- neue Kampffahrzeuge warten (ohne akute Bedrohung)
     pub anspr: [Anspruch; 40],   // Ansprueche (arbeitErheben)
     pub nAnspr: i32,   // Ansprueche (arbeitErheben)
 }
@@ -89,7 +91,7 @@ impl Default for Lage {
             stromFrei: 0,
             menschen: 0,
             wohnraum: 0,
-            
+            wiss: 0,
             selten: 0,
             seltenMax: 0,
             arbFrei: 0,
@@ -181,3 +183,23 @@ impl Puffer {
     pub fn schreiben(&mut self, welt: &mut dyn super::welt::Welt) { welt.kiRaw(&self.b); self.b.clear(); }
 }
 
+// netz:: (kleines Netz aus Datei), wie in C++
+pub const MERKMAL_VERSION: i32 = 1;
+pub const MAX_EIN: usize = 96;
+pub const MAX_BREIT: usize = 64;
+pub const MAX_SCHICHT: usize = 4;
+pub const MAX_AUS: usize = 4;
+#[derive(Clone)]
+pub struct Netz {
+    pub geladen: i32, pub versucht: i32, pub ein: i32, pub aus: i32, pub schichten: i32,
+    pub zeilen: [i32; MAX_SCHICHT], pub spalten: [i32; MAX_SCHICHT], pub tanh_: [i32; MAX_SCHICHT],
+    pub mx: [f32; MAX_EIN], pub sx: [f32; MAX_EIN], pub my: [f32; MAX_AUS], pub sy: [f32; MAX_AUS],
+    pub W: Vec<[f32; MAX_EIN * MAX_BREIT]>,
+    pub b: [[f32; MAX_BREIT]; MAX_SCHICHT],
+}
+impl Default for Netz {
+    fn default() -> Self {
+        Netz { geladen: 0, versucht: 0, ein: 0, aus: 0, schichten: 0, zeilen: [0; MAX_SCHICHT], spalten: [0; MAX_SCHICHT], tanh_: [0; MAX_SCHICHT],
+            mx: [0.0; MAX_EIN], sx: [0.0; MAX_EIN], my: [0.0; MAX_AUS], sy: [0.0; MAX_AUS], W: vec![[0.0; MAX_EIN * MAX_BREIT]; MAX_SCHICHT], b: [[0.0; MAX_BREIT]; MAX_SCHICHT] }
+    }
+}

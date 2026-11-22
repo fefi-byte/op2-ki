@@ -1,6 +1,7 @@
 //! Garage (Fahrzeuge einlagern/reparieren) und Reparatur beschaedigter Gebaeude und Fahrzeuge.
 use super::*;
-use super::GEBAEUDE;
+use super::super::*;
+use super::{TECH_RAUMFAHRT, WERT_WT, WERT_LYNX, EMP_TECH, GEBAEUDE};
 
 /// C++: void garageAblauf(Zustand& z, const Lage& l)  (op2_ki.hpp:4990)
 pub fn garageAblauf(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
@@ -18,6 +19,7 @@ pub fn garageAblauf(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     if !welt.HasPower(g) || !welt.HasWorkers(g) { return; }
     let dock = welt.GetDockLocation(g);
     // 1. Frisch herausgeholt: vom Dock weg und zurueck zur Wache
+    hinweis(welt, z, "ki::garage/1");
     if z.garRaus != 0 {
         // Erst wenn es wirklich wieder auf der Karte steht (Befehl waehrend der Ausfahrt stuerzt ab, 00475EF5).
         let mut draussen = false;
@@ -27,9 +29,11 @@ pub fn garageAblauf(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
         if draussen && t - z.garRausSeit >= 100 && welt.IsLive(v) && welt.GetCurAction(v) == moDone && rl.x == dock.x && rl.y == dock.y {
             z.garRaus = 0; // zuerst: ein Absturz darf den Ablauf nicht festhalten
             let hin = engine(welt, z, z.bx, z.by + 4);
+            hinweis(welt, z, "ki::garage/1b");
             welt.DoMove(v, hin);
             let wache = z.wache;
             sicherNehmen(welt, z, wache, v);
+            hinweis(welt, z, "ki::garage/1c");
             let dx = edX(welt, z, dock);
             let dy = edY(welt, z, dock);
             let d = welt.GetDamage(v);
@@ -39,6 +43,7 @@ pub fn garageAblauf(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
         }
         return;
     }
+    hinweis(welt, z, "ki::garage/2");
     // Die Reparatur braucht Erz: ohne Erz steht sie still, die Frist laeuft dann nicht weiter
     if l.erz < 50 { for i in 0..6 { if z.garBucht[i] != 0 { z.garFrei[i] += TAKT; } } }
     // 2. Fertig reparierte Bucht leeren, wenn das Dock frei ist
@@ -52,6 +57,7 @@ pub fn garageAblauf(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
         }
     }
     // 3. Unterwegs zum Dock: dort angekommen in eine freie Bucht
+    hinweis(welt, z, "ki::garage/3");
     if z.garDran != 0 {
         let v: Id = z.garDran;
         if !welt.IsLive(v) || !welt.IsVehicle(v) || t - z.garDranSeit > 2500 {
@@ -66,7 +72,8 @@ pub fn garageAblauf(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
                     let d = welt.GetDamage(v);
                     welt.DoTransferCargo(g, i as i32);
                     z.garBucht[i] = v; z.garFrei[i] = t + d * 100 / 70 + 200;
-                    z.garDran = 0;                     let vt = welt.GetType(v);
+                    z.garDran = 0; z.garZaehl += 1;
+                    let vt = welt.GetType(v);
                     let dx = edX(welt, z, dock);
                     let dy = edY(welt, z, dock);
                     let nm = name(welt, vt);
@@ -80,6 +87,7 @@ pub fn garageAblauf(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
         }
         return;
     }
+    hinweis(welt, z, "ki::garage/4");
     // 4. Naechstes Fahrzeug: am staerksten beschaedigt, aus der Wache, Erz fuer die Reparatur da, kein Feind in der Naehe
     if t % 100 >= TAKT || z.feindUnterwegs > 0 || z.feindNah > 0 { return; }
     let mut freiB = false;
@@ -94,6 +102,7 @@ pub fn garageAblauf(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
         if welt.GetDamage(v) > besteD { besteD = welt.GetDamage(v); beste = v; }
     }
     if besteD < 0 || l.erz < 200 { return; }
+    hinweis(welt, z, "ki::garage/5");
     welt.RemoveUnit(z.wache, beste);
     welt.DoDock(beste, dock);
     z.garDran = beste; z.garDranSeit = t;
@@ -132,6 +141,36 @@ pub fn reparatur(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     if nf != 0 { fahrzeugSchaeden(welt, z, &mut beste, &mut nb); }
     if nb == 0 { return; }
     if nf == 0 && !convecAushelfen(welt, z, l, &mut beste, &mut nb, &mut frei, &mut nf) { return; }
+    // Missionsmodus: je Ziel das naechste freie Reparaturgeraet (Spinne/Reparaturfahrzeug) derselben Basis; fehlt dort eines,
+    // hilft ein ConVec derselben Basis (convecAushelfen)
+    if super::super::modus::mission(z) && nf > 0 {
+        let mut benutzt = [false; 6];
+        for j in 0..nb {
+            let ziel = beste[j].u;
+            let zp = super::super::zweitbasis::amPosten(welt, z, ziel);
+            let zl = welt.Location(ziel);
+            let mut wahl: Option<usize> = None; let mut bd = i32::MAX;
+            for i in 0..nf {
+                if benutzt[i] || super::super::zweitbasis::gehoertBasis(z, frei[i]) != zp { continue; }
+                let ul = welt.Location(frei[i]); let d = abstand2(welt, ul.x, ul.y, zl.x, zl.y);
+                if d < bd { bd = d; wahl = Some(i); }
+            }
+            if let Some(i) = wahl {
+                benutzt[i] = true;
+                welt.DoRepair(frei[i], ziel);
+                if selten(welt, z, 26, 300) {
+                    let bt = welt.GetType(ziel); let (x, y) = (edX(welt, z, zl), edY(welt, z, zl)); let nm = name(welt, bt);
+                    let wer = if welt.GetType(frei[i]) == mapSpider { "Spinne" } else { "Reparaturfahrzeug" };
+                    melde(welt, z, "reparatur", bt, x, y, &format!("{} hat {} % Schaden -- {} derselben Basis repariert", nm, beste[j].proz, wer));
+                }
+            } else if !beste[j].fz {
+                let mut b1 = [beste[j], RepZiel::default(), RepZiel::default(), RepZiel::default(), RepZiel::default(), RepZiel::default()];
+                let (mut n1, mut f1, mut nf1) = (1usize, [0 as Id; 6], 0usize);
+                if convecAushelfen(welt, z, l, &mut b1, &mut n1, &mut f1, &mut nf1) { welt.DoRepair(f1[0], ziel); }
+            }
+        }
+        return;
+    }
     let mut i = 0;
     while i < nf && i < nb {
         welt.DoRepair(frei[i], beste[i].u);
@@ -155,7 +194,7 @@ pub(super) fn gebaeudeSchaeden(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, b
             // Im Bau zaehlt die fehlende Bauleistung als Schaden -- das ist keine Reparatur.
             let akt = welt.GetCurAction(b);
             if akt == moObjWait || akt == moDevelop || akt == moOperationalWait { continue; }
-            if imAufbau(welt, z, b, ty) { continue; }
+            if kampfModellNeu() && imAufbau(welt, z, b, ty) { continue; }
             let dmg = welt.GetDamage(b);
             if dmg <= 0 { continue; }
             let hp = welt.GetHitPoints(ty, z.spieler);
@@ -217,10 +256,21 @@ pub(super) fn convecAushelfen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, be
         if z.plaetze[i].zustand == P_FAHRT && z.plaetze[i].convec == 0 { auftraege += 1; }
     }
     let mut kandidat: Id = 0;
+    // Missionsmodus (Nutzer 2026-11-22: "es sieht so aus, als wuerde die 2. Basis von der ersten aus gebaut"): nur ein ConVec
+    // derselben Basis repariert, der naechste -- sonst fuhren ConVecs ~150 Kacheln zwischen den Basen hin und her
+    let mission = super::super::modus::mission(z);
+    let ziel = beste[0].u;
+    let zielPosten = mission && super::super::zweitbasis::amPosten(welt, z, ziel);
+    let zl = welt.Location(ziel);
+    let mut bestD = i32::MAX;
     for u in welt.PlayerVehicleEnum(z.spieler) {
         if welt.GetType(u) == mapConVec && welt.GetCurAction(u) == moDone && !welt.IsBusy(u) && (welt.GetCargo(u) <= 0 || welt.GetCargo(u) == mapNone) {
+            if mission && super::super::zweitbasis::gehoertBasis(z, u) != zielPosten { continue; }
             ruhig += 1;
-            if kandidat == 0 { kandidat = u; }
+            if !mission { if kandidat == 0 { kandidat = u; } continue; }
+            let ul = welt.Location(u);
+            let d = abstand2(welt, ul.x, ul.y, zl.x, zl.y);
+            if d < bestD { bestD = d; kandidat = u; }
         }
     }
     if kandidat == 0 || ruhig <= auftraege { return false; }

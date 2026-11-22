@@ -1,6 +1,7 @@
 //! Diagnose-Spur: Lastwagen/Erzrouten, Stau an Schmelzen, Spur-Zeile "stand" je SPUR_TAKT.
 use super::*;
-use super::{B_ANZAHL, GEBAEUDE};
+use super::super::*;
+use super::{WERTUNG_TICK, SCAN_TAKT, B_ANZAHL, GEBAEUDE, OreTypeCommon, Bar3, Bar2, VariantRandom, KI_MESSUNG};
 
 /// C++: void lkwDiagnose(Zustand& z)  (op2_ki.hpp:6453)
 // Lastwagen-Diagnose: alle 500 Ticks die Erzrouten (Mine, Schmelze, Lastwagen in der Gruppe) und jeder Lastwagen mit Ort,
@@ -137,20 +138,27 @@ pub fn spur(welt: &mut dyn Welt, z: &Zustand, l: &Lage) {
     let mut p = Puffer::default();
     spurStand(welt, z, l, &mut p);
     // Unbekannte Felder der Spielerstruktur (HFL OP2Player) -- Messung, um den genauen Moralwert zu finden.
+    hinweis(welt, z, "ki::spur/1");
     // FEHLT: Rohspeicher der Spielerstruktur (isInited && playerArray, ",\"roh\":[...]") -- in Welt nicht verfuegbar, entfaellt
     // Tafel: Bau-Kuchen, Vormerkung und Stand der Teilziele (ok / bau / frei = baubar / Tech = Technik fehlt)
+    hinweis(welt, z, "ki::spur/2");
     spurTafel(welt, z, l, &mut p);
     // Kontrolle: fertige Gebaeude, die nicht laufen (ohne Arbeiter, Wissenschaftler oder Strom), ausser den
     // bewusst stillgelegten. Check: finished buildings that are not running, except deliberately idled ones.
+    hinweis(welt, z, "ki::spur/3");
     spurInaktiv(welt, z, l, &mut p);
     p.roh(",\"geb\":[");
+    hinweis(welt, z, "ki::spur/4");
     spurGebaeude(welt, z, l, &mut p);
     p.roh("],\"fz\":[");
+    hinweis(welt, z, "ki::spur/5");
     spurFahrzeuge(welt, z, l, &mut p);
     p.roh("],\"plaetze\":[");
+    hinweis(welt, z, "ki::spur/6");
     spurPlaetzeRoehren(welt, z, l, &mut p);
     p.roh("]}");
     p.schreiben(welt);
+    if std::env::var("OP2KI_ARMEE_SPUR").is_ok() { spurArmee(welt, z); }
 }
 
 /// Vorrat, Strom, Bevoelkerung, Ziel, Arbeit, DIRT
@@ -161,6 +169,7 @@ pub(super) fn spurStand(welt: &mut dyn Welt, z: &Zustand, l: &Lage, p: &mut Puff
         welt.Tick(), pl, l.erz, l.erzMax, welt.RareOre(pl), l.nahrung, l.nahrungNetto,
         welt.GetAmountPowerGenerated(pl), welt.GetAmountPowerConsumed(pl),
         welt.Kids(pl), welt.Workers(pl), welt.Scientists(pl), l.wohnraum, welt.MoraleLevel(pl)));
+    { let nw = netzWert(welt, z, l); if nw > -1e8 { p.f(&format!(",\"netzWert\":{:.0}", nw)); } }   // Wertnetz (falls geladen)
     p.f(&format!(",\"ziel\":{},\"zielErreicht\":{},\"raumSchritt\":{},\"satelliten\":{},\"seltenMax\":{}",
         z.ziel, z.zielErreicht, z.raumSchritt, welt.GetSatelliteCount(pl, mapEDWARDSatellite), l.seltenMax));
     // Bevoelkerung und Arbeit: frei/benoetigt, stillgelegte/aktive Gebaeude, Kapazitaeten (Medizin, Freizeit, Forum)
@@ -177,6 +186,7 @@ pub(super) fn spurStand(welt: &mut dyn Welt, z: &Zustand, l: &Lage, p: &mut Puff
 
 /// Bau-Kuchen, Vormerkung, Bilanz, Lernen, Dringlichkeit, Kampf und Tafel der Teilziele
 pub(super) fn spurTafel(welt: &mut dyn Welt, z: &Zustand, l: &Lage, p: &mut Puffer) {
+    let pl = z.spieler;
     let mut anteil = [0i32; B_ANZAHL as usize];
     bauKuchen(welt, z, l, &mut anteil);
     p.f(&format!(",\"kuchen\":{{\"Kolonie\":{},\"Ziel\":{},\"Wirtschaft\":{},\"Verteidigung\":{}}},\"vorgemerkt\":[{},{},\"{}\"]",
@@ -222,7 +232,7 @@ pub(super) fn spurTafel(welt: &mut dyn Welt, z: &Zustand, l: &Lage, p: &mut Puff
 }
 
 /// Fertige Gebaeude, die nicht laufen (ohne Arbeiter, Wissenschaftler oder Strom)
-pub(super) fn spurInaktiv(welt: &mut dyn Welt, z: &Zustand, _l: &Lage, p: &mut Puffer) {
+pub(super) fn spurInaktiv(welt: &mut dyn Welt, z: &Zustand, l: &Lage, p: &mut Puffer) {
     let pl = z.spieler;
     p.roh(",\"inaktiv\":[");
     let mut erst = true;
@@ -245,7 +255,7 @@ pub(super) fn spurInaktiv(welt: &mut dyn Welt, z: &Zustand, _l: &Lage, p: &mut P
 }
 
 /// Alle Gebaeude (hoechstens 120): Name, Ort, beschaeftigt, Aktion, Strom, Arbeiter, Id
-pub(super) fn spurGebaeude(welt: &mut dyn Welt, z: &Zustand, _l: &Lage, p: &mut Puffer) {
+pub(super) fn spurGebaeude(welt: &mut dyn Welt, z: &Zustand, l: &Lage, p: &mut Puffer) {
     let pl = z.spieler;
     let mut erst = true;
     let mut k = 0;
@@ -265,7 +275,7 @@ pub(super) fn spurGebaeude(welt: &mut dyn Welt, z: &Zustand, _l: &Lage, p: &mut 
 }
 
 /// Alle Fahrzeuge (hoechstens 120): Name, Ort, Ladung, Aktion, Id
-pub(super) fn spurFahrzeuge(welt: &mut dyn Welt, z: &Zustand, _l: &Lage, p: &mut Puffer) {
+pub(super) fn spurFahrzeuge(welt: &mut dyn Welt, z: &Zustand, l: &Lage, p: &mut Puffer) {
     let pl = z.spieler;
     let mut erst = true;
     let mut k = 0;
@@ -286,7 +296,8 @@ pub(super) fn spurFahrzeuge(welt: &mut dyn Welt, z: &Zustand, _l: &Lage, p: &mut
 }
 
 /// Bauplaetze und Roehrenauftraege
-pub(super) fn spurPlaetzeRoehren(welt: &mut dyn Welt, z: &Zustand, _l: &Lage, p: &mut Puffer) {
+pub(super) fn spurPlaetzeRoehren(welt: &mut dyn Welt, z: &Zustand, l: &Lage, p: &mut Puffer) {
+    let pl = z.spieler;
     for i in 0..z.anzahlPlaetze as usize {
         let q = z.plaetze[i];
         let g = grundflaeche(welt, q.typ as i32);
@@ -294,6 +305,7 @@ pub(super) fn spurPlaetzeRoehren(welt: &mut dyn Welt, z: &Zustand, _l: &Lage, p:
         p.f(&format!("{}[\"{}\",{},{},{},{},{}]", if i != 0 { "," } else { "" }, nm, q.x0, q.y0, g.w, g.h, q.zustand as i32));
     }
     p.roh("],\"roehren\":[");
+    hinweis(welt, z, "ki::spur/7");
     for i in 0..z.anzahlRoehren as usize {
         let r = z.roehren[i];
         p.f(&format!("{}[{},{},{},{},{}]", if i != 0 { "," } else { "" }, r.x1, r.y1, r.x2, r.y2, r.zustand as i32));
@@ -302,3 +314,29 @@ pub(super) fn spurPlaetzeRoehren(welt: &mut dyn Welt, z: &Zustand, _l: &Lage, p:
 
 // ---------------------------------------------------------------------------------------------------
 // Oeffentliche Schnittstelle / public interface
+
+/// Nur mit OP2KI_ARMEE_SPUR: Spur-Zeile "armee" -- Kampffahrzeuge je Fahrgestell/Waffe (GetWeapon; GetCargo liefert bei
+/// Kampffahrzeugen keine Waffe)
+fn spurArmee(welt: &mut dyn Welt, z: &Zustand) {
+    let mut n: Vec<(String, i32)> = Vec::new();
+    for u in welt.PlayerVehicleEnum(z.spieler) {
+        if !welt.IsLive(u) || kampfWert(welt, u) <= 0 { continue; }
+        let (ty, wf) = (welt.GetType(u), welt.GetWeapon(u));
+        let k = format!("{}/{}", name(welt, ty), name(welt, wf));
+        match n.iter_mut().find(|e| e.0 == k) { Some(e) => e.1 += 1, None => n.push((k, 1)) }
+    }
+    let txt: Vec<String> = n.iter().map(|e| format!("\"{}\":{}", e.0, e.1)).collect();
+    // Labore: [Typ, Thema (Tech-ID, 0 = keins), Wissenschaftler]
+    let mut lab: Vec<String> = Vec::new();
+    for &ty in [mapBasicLab, mapStandardLab, mapAdvancedLab].iter() {
+        for b in welt.PlayerBuildingEnum(z.spieler, ty) {
+            if !welt.IsLive(b) { continue; }
+            let th = welt.GetLabCurrentTopic(b);
+            let id = if th > 0 { let i = if th < welt.GetTechCount() { th } else { super::super::forschung::techIndex(welt, th) }; if i >= 0 { super::super::forschung::techInfo(welt, i).id } else { th } } else { 0 };
+            lab.push(format!("[\"{}\",{},{}]", name(welt, ty), id, welt.GetLabScientistCount(b)));
+        }
+    }
+    let mut p = Puffer::default();
+    p.roh(&format!("{{\"t\":{},\"art\":\"armee\",\"p\":{},\"n\":{{{}}},\"labore\":[{}]}}", welt.Tick(), z.spieler, txt.join(","), lab.join(",")));
+    p.schreiben(welt);
+}

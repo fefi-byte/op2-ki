@@ -1,6 +1,7 @@
 //! Seltenerz: Seltenerz-Mine anlegen und Routen zur Seltenerz-Schmelze.
 use super::*;
-use super::{ix, exy};
+use super::super::*;
+use super::{TECH_SELTENERZ, WERT_LYNX, GEBAEUDE, ix, exy};
 
 /// C++: void seltenErz(Zustand& z, const Lage& l)  (op2_ki.hpp:3592)
 /// C++: void seltenErz(Zustand& z, const Lage& l). Seltenerz-Mine anlegen, Routen zur Seltenerz-Schmelze.
@@ -9,12 +10,24 @@ pub fn seltenErz(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     if l.geb[ix(mapRareOreSmelter)] == 0 { return; }        // Mine erst, wenn die Schmelze steht
     let p = z.spieler;
     let t = welt.Tick();
-    if l.geb[ix(mapRareOreMine)] == 0 { seltenMineAnlegen(welt, z, l, p, t); }
+    // Missionsmodus: jede Basis ihre eigene Seltenerz-Mine (die der zweiten Basis zaehlt daheim nicht mit), jede Mine zur
+    // naechsten Seltenerz-Schmelze
+    let mission = super::super::modus::mission(z);
+    let mineDaheim = if mission {
+        let r2 = { let r = PAR(p).minenUmkreis.max(35.0); (r * r) as i32 };
+        welt.PlayerBuildingEnum(p, mapRareOreMine).into_iter().any(|m| { let ml = welt.Location(m); let (mx, my) = exy(welt, z, ml); abstand2(welt, mx, my, z.bx, z.by) <= r2 })
+    } else { l.geb[ix(mapRareOreMine)] > 0 };
+    if !mineDaheim { seltenMineAnlegen(welt, z, l, p, t); }
     // Mine -> Seltenerz-Schmelze, zwei Lastwagen je Mine
-    let schmelze: Id = welt.PlayerBuildingEnum(p, mapRareOreSmelter).first().copied().unwrap_or(0);
+    let alle = welt.PlayerBuildingEnum(p, mapRareOreSmelter);
+    let schmelze: Id = alle.first().copied().unwrap_or(0);
     if schmelze == 0 { return; }
     for mine in welt.PlayerBuildingEnum(p, mapRareOreMine) {
-        if !seltenRoute(welt, z, p, mine, schmelze) { break; }
+        let ziel = if mission {
+            let ml = welt.Location(mine);
+            alle.iter().copied().min_by_key(|&s| { let sl = welt.Location(s); abstand2(welt, ml.x, ml.y, sl.x, sl.y) }).unwrap_or(schmelze)
+        } else { schmelze };
+        if !seltenRoute(welt, z, p, mine, ziel) { break; }
     }
 }
 
@@ -80,7 +93,7 @@ pub(super) fn seltenMineAnlegen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, 
             melde(welt, z, "mine", mapRareOreMine, blx, bly, &txt);
         } else if z.seltenMinerSeit != 0 && t - z.seltenMinerSeit > 3000 && !welt.IsBusy(m) && welt.GetCurAction(m) == moDone {
             // Rueckfall: die Gruppe hat ihn nicht eingesetzt -> direkter Befehl wie beim gewoehnlichen Erz
-            welt.DoBuild(m, mapRareOreMine, Loc::new(bl.x + 1, bl.y + 1));
+            let ecke = super::minenEcke(welt, z, bl); welt.DoBuild(m, mapRareOreMine, ecke);
             z.seltenMinerSeit = t - 2000;
             let txt = format!("BuildingGroup setzt Robo-Miner {} nicht ein -- direkter DoBuild", m);
             melde(welt, z, "fehler", mapRareOreMine, blx, bly, &txt);
@@ -116,7 +129,10 @@ pub(super) fn seltenRoute(welt: &mut dyn Welt, z: &mut Zustand, p: i32, mine: Id
         melde(welt, z, "mine", mapRareOreMine, mx, my, &txt);
     }
     if welt.TotalUnitCount(z.seltenGruppe[gu]) < 2 {
-        for u in welt.PlayerVehicleEnum(p) {
+        let mut lkw = welt.PlayerVehicleEnum(p);
+        // Missionsmodus: der naechste Lastwagen (die zweite Basis baut ihre eigenen)
+        if super::super::modus::mission(z) { let sl = welt.Location(schmelze); lkw.sort_by_key(|&u| { let ul = welt.Location(u); abstand2(welt, ul.x, ul.y, sl.x, sl.y) }); }
+        for u in lkw {
             if welt.GetType(u) != mapCargoTruck || welt.IsBusy(u) || !welt.IsLive(u) { continue; }
             if lastwagenVergeben(welt, z, u) { continue; }
             welt.TakeUnit(z.seltenGruppe[gu], u);

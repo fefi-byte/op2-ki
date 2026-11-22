@@ -1,5 +1,5 @@
 //! Rohstoffe: Erzbaken, Minen, Erzrouten mit Lastwagen, Seltenerz, Fahrzeugproduktion.
-//! C++-KI op2_ki.hpp Zeilen 3229-3949, nach Rust uebertragen.
+//! C++-KI op2_ki.hpp Zeilen 3229-3949, uebertragen nach Rust (siehe UEBERSETZUNG.md).
 use super::*;
 
 mod baken;

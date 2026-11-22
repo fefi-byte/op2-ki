@@ -1,4 +1,4 @@
-//! Erweiterung (nicht Teil der C++-KI): parallele Angriffswege. Die Angriffstruppe teilt sich
+//! Erweiterung (nicht Teil der C++-KI, Nutzeridee 2026-11-17): parallele Angriffswege. Die Angriffstruppe teilt sich
 //! auf zwei Aufmarschpunkte, deren Wege zum Ziel moeglichst wenig gemeinsam haben, und schlaegt von beiden Seiten
 //! gleichzeitig los -- statt alle durch denselben Gang (mp2_08: Querschnitt 18-46 Kacheln, aber viele schmale Gaenge).
 //! Extension: two staging points with disjoint routes to the target; both halves attack at the same time.

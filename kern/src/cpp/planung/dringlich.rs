@@ -1,6 +1,7 @@
 //! Dringlichkeit der Bereiche (Kuchenanteile), Moralzahl, erwartete Fabrik/Seltenerz, Notfall.
 use super::*;
-use super::{B_ANZAHL, TECH_SELTENERZ, snp, ix};
+use super::super::*;
+use super::{SCAN_TAKT, WERTUNG_TICK, WERT_WT, WERT_LYNX, MAX_WT, AUSSEN_R, B_KOLONIE, B_ZIEL, B_WIRTSCHAFT, B_VERTEIDIGUNG, B_ANZAHL, BEREICH, TECH_SELTENERZ, GEBAEUDE, snp, ix};
 
 /// C++: int moralZahl(const Zustand& z)  (op2_ki.hpp:2041)
 pub fn moralZahl(welt: &mut dyn Welt, z: &Zustand) -> i32 {
@@ -21,7 +22,8 @@ pub fn dringlichkeit(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> Dringlichkei
     let bew = if l.menschen > 0 { l.menschen } else { 1 };
     if hatGeb(welt, z, l, mapNursery) == 0 { kol(&mut d, 100, "kein Kindergarten -- keine Geburten"); }
     if hatGeb(welt, z, l, mapUniversity) == 0 { let v = if welt.Kids(z.spieler) > 0 { 80 } else { 40 }; kol(&mut d, v, "keine Universitaet -- Kinder werden nicht ausgebildet"); }
-    if !standardVolk(welt, l) {
+    // PAR moralFest (Nutzer 2026-11-21, Mehrspieler mit stabiler Moral 75): Wohnraum, Medizin, Freizeit und Moral zaehlen nicht
+    if !standardVolk(welt, l) && !moralFestAktiv(welt, z) {
         if l.wohnraum <= 0 { kol(&mut d, 100, "kein Wohnraum"); }
         else { let g = par_.wohnraumGrenze as i32; kol(&mut d, (l.menschen * 100 / l.wohnraum - g) * 100 / (if 100 - g > 1 { 100 - g } else { 1 }), "Wohnraum-Auslastung"); }
         kol(&mut d, 100 - l.medKap * 100 / bew, "Medizin-Abdeckung");
@@ -89,6 +91,10 @@ pub fn dringlichkeit(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> Dringlichkei
             if v > d.kampfForschung { d.kampfForschung = v; }
         }
     }
+    // Erweiterung Gelaende (Rust): ein unbesetzter Pass zum Feind macht die Verteidigung dringlich (dort ist ein Turm viel wert)
+    if par_.gelaende > 0.0 && z.feindGeb != 0 && kitMoeglich(welt, z, mapGuardPost) && super::erweiterung::passOffen(welt, z) {
+        if d.verteidigung < par_.engDringlichkeit as i32 { d.verteidigung = par_.engDringlichkeit as i32; }
+    }
     if z.ziel >= 1 && z.zielErreicht == 0 {
         let mut m = d.kolonie; if d.wirtschaft > m { m = d.wirtschaft; } if d.verteidigung > m { m = d.verteidigung; }
         if blockiert && d.kampfForschung > m { m = d.kampfForschung; } // Blockade der Verteidigung geht dem Ziel vor
@@ -99,9 +105,11 @@ pub fn dringlichkeit(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> Dringlichkei
         else if z.ziel == 3 { if rest > d.kampfForschung { d.kampfForschung = rest; } if rest > d.verteidigung && z.feindGeb != 0 { d.verteidigung = rest / 2; } }
     }
     // Fruehe Wehr: im Fenster um den fruehesten Angriff (planung/scan.rs fruehWehr) geht die Verteidigung vor, solange die
-    // Mindestabwehr fehlt -- die anderen Bereiche auf ein Zehntel gedaempft. Steht sie, verteilt die KI wieder frei.
-    if super::scan::fwFenster(welt, z) && d.verteidigung > 0 && kampfFehlt(welt, z, l) > 0 {
-        let f = 1.0 - 0.9f64.clamp(0.0, 1.0);
+    // Mindestabwehr fehlt -- die anderen Bereiche um PAR fwVorrang gedaempft. Steht sie, verteilt die KI wieder frei.
+    let t = welt.Tick();
+    if z.fwAngriff > 0 && t >= z.fwAngriff - par_.fwVorlauf as i32 && t <= z.fwAngriff + par_.fwNach as i32
+        && d.verteidigung > 0 && kampfFehlt(welt, z, l) > 0 {
+        let f = 1.0 - par_.fwVorrang.clamp(0.0, 1.0);
         d.kolonie = (d.kolonie as f64 * f) as i32; d.ziel = (d.ziel as f64 * f) as i32; d.wirtschaft = (d.wirtschaft as f64 * f) as i32;
     }
     d

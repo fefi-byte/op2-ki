@@ -1,5 +1,7 @@
 //! Zuschauer-Kamera (OP2KI_KAMERA=1): Ansicht auf den heftigsten Kampf, ohne Spielzustand.
 use super::*;
+use super::super::*;
+use super::{GRUPPE_MAX, SCAN_TAKT, WERT_WT, WERT_LYNX, EMP_RADIUS, EMP_FLUG, EMP_AUFMARSCH, GEBAEUDE};
 
 // Zuschauer-Kamera (Rust, nur mit Umgebungsvariable OP2KI_KAMERA): der lokale Spieler blickt auf den heftigsten Kampf.
 // Kein Spielzustand -- CenterViewOn verschiebt nur die Ansicht, keine Zufallszahl, kein Befehl.

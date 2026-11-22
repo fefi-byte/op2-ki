@@ -1,6 +1,7 @@
 //! Selbstpruefung (Widersprueche erkennen), Stillstandsgruende, Vorhersage in die Spur.
 use super::*;
-use super::GEBAEUDE;
+use super::super::*;
+use super::{TECH_RAUMFAHRT, WERT_WT, WERT_LYNX, EMP_TECH, GEBAEUDE};
 
 /// C++: const char* stillstandGrund(UnitEx u)  (op2_ki.hpp:5661)
 // Rueckgabe "" steht fuer nullptr (kein Stillstand).

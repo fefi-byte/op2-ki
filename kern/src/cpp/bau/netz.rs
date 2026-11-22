@@ -1,6 +1,7 @@
 //! Roehrennetz: Wegsuche, Netzkacheln, Abstand zum Netz, Anschluss unverbundener Gebaeude (anschluss).
 use super::*;
-use super::GEBAEUDE;
+use super::super::*;
+use super::{GEBAEUDE, TECH_RAUMFAHRT, B_ZIEL};
 
 // ---------------------------------------------------------------------------------------------------
 // Anschluss / connection: Gebaeude ohne Verbindung zur Kommandozentrale per Roehre anschliessen.
@@ -10,7 +11,7 @@ pub fn angeschlossen(welt: &mut dyn Welt, u: Id) -> bool { welt.HasPower(u) }
 
 // Belegte Kacheln: Grundflaechen aller eigenen Gebaeude und geplanten Plaetze
 /// C++: bool belegt(const Rechteck* hin, int nh, int x, int y)  (op2_ki.hpp:3061)
-pub fn belegt(_welt: &mut dyn Welt, hin: &[Rechteck], nh: i32, x: i32, y: i32) -> bool {
+pub fn belegt(welt: &mut dyn Welt, hin: &[Rechteck], nh: i32, x: i32, y: i32) -> bool {
     for i in 0..nh as usize {
         if x >= hin[i].x0 && x < hin[i].x0 + hin[i].w && y >= hin[i].y0 && y < hin[i].y0 + hin[i].h { return true; }
     }
@@ -19,10 +20,35 @@ pub fn belegt(_welt: &mut dyn Welt, hin: &[Rechteck], nh: i32, x: i32, y: i32) -
 
 // Kachel direkt an einer Seite der Grundflaeche (ohne Ecken). Tile directly beside a side (no corners).
 /// C++: bool anGrundflaeche(const Rechteck& r, int x, int y)  (op2_ki.hpp:3068)
-pub fn anGrundflaeche(_welt: &mut dyn Welt, r: &Rechteck, x: i32, y: i32) -> bool {
+pub fn anGrundflaeche(welt: &mut dyn Welt, r: &Rechteck, x: i32, y: i32) -> bool {
     let innenX = x >= r.x0 && x < r.x0 + r.w;
     let innenY = y >= r.y0 && y < r.y0 + r.h;
     (innenX && (y == r.y0 - 1 || y == r.y0 + r.h)) || (innenY && (x == r.x0 - 1 || x == r.x0 + r.w))
+}
+
+thread_local! {
+    /// PAR roehreAnNetz (Missionsmodus): Netzkacheln, deren Roehren auch als Ziel gelten (gesetzt nur waehrend anschluss)
+    static NETZ_ZIEL: std::cell::RefCell<Option<std::rc::Rc<Vec<bool>>>> = const { std::cell::RefCell::new(None) };
+    /// dazu die aufgezeichneten, noch nicht gebauten Roehren (auch aus derselben Runde): sonst lief der zweite Turm-Anschluss
+    /// parallel neben dem ersten her (cm03 West/Ost, Nutzer 2026-11-22)
+    static OFFEN_ZIEL: std::cell::RefCell<Vec<(i16, i16)>> = const { std::cell::RefCell::new(Vec::new()) };
+    /// Dock-Kacheln eigener Gebaeude: dort keine Roehre (Missionsmodus; im Original blieben solche Roehren unbebaut liegen)
+    static DOCKS: std::cell::RefCell<Vec<(i32, i32)>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// Dock-Kacheln aller eigenen Gebaeude mit Dock (Fabriken, Schmelzen, Lager, Garage, Raumhafen)
+pub fn dockKacheln(welt: &mut dyn Welt, z: &Zustand) -> Vec<(i32, i32)> {
+    let mut v = Vec::new();
+    for typ in [mapStructureFactory, mapVehicleFactory, mapArachnidFactory, mapConsumerFactory, mapCommonOreSmelter, mapRareOreSmelter,
+                mapCommonStorage, mapRareStorage, mapGarage, mapSpaceport] {
+        for u in welt.PlayerBuildingEnum(z.spieler, typ) { let d = welt.GetDockLocation(u); if d.x != 0 || d.y != 0 { v.push((edX(welt, z, d), edY(welt, z, d))); } }
+    }
+    v
+}
+/// Ist (x, y) gerade als Dock gesperrt (nur waehrend anschluss im Missionsmodus gesetzt)?
+pub fn dockGesperrt(x: i32, y: i32) -> bool { DOCKS.with(|d| d.borrow().iter().any(|&(dx, dy)| dx == x && dy == y)) }
+
+thread_local! {
 }
 
 // Kuerzester Weg (Breitensuche) vom Rand von `von` zum Rand eines Ziel-Rechtecks. Liefert die Laenge,
@@ -42,6 +68,7 @@ pub fn wegSuchen(welt: &mut dyn Welt, z: &Zustand, von: &Rechteck, ziele: &[Rech
         let c = zelle(welt, z, x, y);
         if ohneRoehren && zelleRoehre(welt, c) { return false; }
         (zelleBebaubar(welt, c) || zelleRoehre(welt, c)) && !belegt(welt, hin, nh, x, y) && !super::super::mauer::geplantIn(z, x, y, 1, 1)
+            && !dockGesperrt(x, y)
     };
     for y in (von.y0 - 1)..=(von.y0 + von.h) {
         for x in (von.x0 - 1)..=(von.x0 + von.w) {
@@ -52,10 +79,27 @@ pub fn wegSuchen(welt: &mut dyn Welt, z: &Zustand, von: &Rechteck, ziele: &[Rech
     }
     const DX: [i32; 4] = [1, -1, 0, 0];
     const DY: [i32; 4] = [0, 0, 1, -1];
+    let netzZiel = NETZ_ZIEL.with(|n| n.borrow().clone());
     while kopf < ende {
         let x = qx[kopf] as i32;
         let y = qy[kopf] as i32;
         kopf += 1;
+        // PAR roehreAnNetz: eine Roehre im Netz ist schon das Ziel -- der Weg endet an der naechsten vorhandenen Roehre statt
+        // daneben einen eigenen Strang zum Gebaeude zu ziehen (doppelte Roehren, Nutzer 2026-11-22)
+        if let Some(nz2) = &netzZiel {
+            let i = (y * B + x) as usize;
+            let offen = OFFEN_ZIEL.with(|o| o.borrow().iter().any(|&(ox, oy)| ox as i32 == x && oy as i32 == y));
+            if !ohneRoehren && (offen || (i < nz2.len() && nz2[i] && { let c = zelle(welt, z, x, y); zelleRoehre(welt, c) })) {
+                let (mut n, mut cx, mut cy) = (0i32, x, y);
+                while n < MAX_WEG {
+                    wx[n as usize] = cx as i16; wy[n as usize] = cy as i16; n += 1;
+                    let v = vor[(cy * B + cx) as usize];
+                    if v < 0 { break; }
+                    cx = v % B; cy = v / B;
+                }
+                return n;
+            }
+        }
         for k in 0..nz as usize {
             if anGrundflaeche(welt, &ziele[k], x, y) {
                 let (mut n, mut cx, mut cy) = (0i32, x, y);
@@ -176,7 +220,7 @@ pub fn imNetz(z: &Zustand, netz: &[bool], r: &Rechteck) -> bool {
 
 /// C++: void anschluss(Zustand& z, const Lage& l)  (op2_ki.hpp:3115)
 /// Unverbundene Gebaeude und geplante Plaetze samt Hindernissen und Netzzielen (fuer die Wegsuche der Roehren)
-pub(super) struct Lose { hin: [Rechteck; 160], nh: i32, ziele: [Rechteck; 64], nz: usize, lose: [Id; 8], loseR: [Rechteck; 8], nl: usize }
+pub(super) struct Lose { hin: [Rechteck; 160], nh: i32, ziele: [Rechteck; 64], nz: usize, lose: [Id; 8], loseR: [Rechteck; 8], nl: usize, netz: Option<Vec<bool>> }
 
 /// C++: void anschluss(Zustand& z, const Lage& l). Roehren zu unverbundenen Gebaeuden. Rust 2026-11-18 aufgeteilt (Verhalten gleich).
 pub fn anschluss(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
@@ -184,6 +228,12 @@ pub fn anschluss(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     if t < z.naechsterAnschluss || z.bauAn == 0 { return; }
     z.naechsterAnschluss = t + 200;
     let offen = roehrenPruefen(welt, z, t);
+    if offen != 0 && std::env::var("OP2KI_ROEHRE_DIAG").is_ok() && t % 4000 < 200 {
+        let v: Vec<String> = (0..z.anzahlRoehren.max(0) as usize).filter(|&i| z.roehren[i].zustand == 1).map(|i| { let r = z.roehren[i];
+            let lo = engine(welt, z, r.x1 as i32, r.y1 as i32); let n = welt.LocationEnumerator(lo).len();
+            format!("{},{} seit {} Einheiten {}", r.x1, r.y1, t - r.seit, n) }).collect();
+        melde(welt, z, "diagnose", mapTube, z.bx, z.by, &format!("offene Roehren: {}", v.join("; ")));
+    }
     if offen != 0 {
         if selten(welt, z, 19, 3000) {
             melde(welt, z, "warte", mapEarthworker, z.bx, z.by, &format!("{} Roehrenkacheln aufgezeichnet, noch nicht gebaut (Erz {})", offen, l.erz));
@@ -191,10 +241,22 @@ pub fn anschluss(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
         return;
     }
     let lo = loseErfassen(welt, z, l);
-    // Bau-Reihenfolge: nichts offen, nichts anzuschliessen -- Luft fuer die wartenden Mauern
-    if lo.nl == 0 { super::super::mauer::freigeben(welt, z); }
+    // PAR bauReihe: nichts offen, nichts anzuschliessen -- Luft fuer die wartenden Mauern
+    if lo.nl == 0 && PAR(z.spieler).bauReihe >= 0.5 { super::super::mauer::freigeben(welt, z); }
     if lo.nl == 0 || lo.nz == 0 { return; }
-    for j in anschlussReihe(welt, z, &lo) { anschliessen(welt, z, l, t, &lo, j); }
+    let anNetz = PAR(z.spieler).roehreAnNetz > 0.0;
+    if anNetz {
+        let nk = match &lo.netz { Some(v) => v.clone(), None => netzKacheln(welt, z) }; NETZ_ZIEL.with(|n| *n.borrow_mut() = Some(std::rc::Rc::new(nk)));
+        let d = dockKacheln(welt, z); DOCKS.with(|x| *x.borrow_mut() = d);
+    }
+    for j in anschlussReihe(welt, z, &lo) {
+        if anNetz {
+            let v: Vec<(i16, i16)> = (0..z.anzahlRoehren.max(0) as usize).filter(|&i| z.roehren[i].zustand == 1).map(|i| (z.roehren[i].x1, z.roehren[i].y1)).collect();
+            OFFEN_ZIEL.with(|o| *o.borrow_mut() = v);
+        }
+        anschliessen(welt, z, l, t, &lo, j);
+    }
+    if anNetz { NETZ_ZIEL.with(|n| *n.borrow_mut() = None); OFFEN_ZIEL.with(|o| o.borrow_mut().clear()); DOCKS.with(|x| x.borrow_mut().clear()); }
     // Erledigte Eintraege vorn entfernen, damit die Liste nicht voll laeuft
     let mut k = 0usize;
     for i in 0..z.anzahlRoehren as usize { if z.roehren[i].zustand != 2 { z.roehren[k] = z.roehren[i]; k += 1; } }
@@ -202,9 +264,22 @@ pub fn anschluss(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
 }
 
 /// Laufende Roehrenauftraege: fertig, sobald die Kachel eine Roehre ist. Gebaut wird nur ueber die BuildingGroup (RecordTube):
-/// ein direkter DoBuildWall mit einem 1x1-Rechteck an den Earthworker pfluegte im Original die ganze Spalte bis zum
-/// Kartenrand, und dort hing die Wegsuche des Spiels ~143 s.
+/// der fruehere Rueckfall -- DoBuildWall mit einem 1x1-Rechteck direkt an den Earthworker -- pfluegte im Original die ganze
+/// Spalte bis zum Kartenrand, und dort hing die Wegsuche des Spiels ~143 s (Harness on4_03 Seed 1, Nutzer 2026-11-20: entfernt)
 pub(super) fn roehrenPruefen(welt: &mut dyn Welt, z: &mut Zustand, t: i32) -> i32 {
+    // Missionsmodus: im Original blieben ganze Gruppen aufgezeichneter Roehren ueber 100 000 Ticks liegen (die Earthworker standen
+    // daneben); weil anschluss auf offene Roehren wartet, blieben dahinter alle neuen Gebaeude ohne Personal (cm03, Bau-Stillstand
+    // ab ~200 000). Nach 12 000 Ticks freigeben: anschluss plant sie neu und zeichnet sie erneut auf.
+    if super::super::modus::mission(z) {
+        let mut weg = 0;
+        for i in 0..z.anzahlRoehren.max(0) as usize {
+            if z.roehren[i].zustand == 1 && t - z.roehren[i].seit > 12000 {
+                let c = zelle(welt, z, z.roehren[i].x1 as i32, z.roehren[i].y1 as i32);
+                if !zelleRoehre(welt, c) { z.roehren[i].zustand = 2; weg += 1; }
+            }
+        }
+        if weg > 0 { melde(welt, z, "warte", mapEarthworker, z.bx, z.by, &format!("{} Roehrenkacheln seit ueber 12000 Ticks offen -- neu geplant", weg)); }
+    }
     let mut offen = 0;
     for i in 0..z.anzahlRoehren as usize {
         let mut r = z.roehren[i];
@@ -225,7 +300,7 @@ pub(super) fn roehrenPruefen(welt: &mut dyn Welt, z: &mut Zustand, t: i32) -> i3
 }
 
 /// Unverbundene fertige Gebaeude (hoechstens 8) und, im neuen Modell, geplante Plaetze ohne Anschluss
-pub(super) fn loseErfassen(welt: &mut dyn Welt, z: &mut Zustand, _l: &Lage) -> Lose {
+pub(super) fn loseErfassen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) -> Lose {
     let mut hin = [Rechteck::default(); 160];
     let nh = hindernisse(welt, z, &mut hin, 160);
     let mut ziele = [Rechteck::default(); 64];
@@ -233,70 +308,80 @@ pub(super) fn loseErfassen(welt: &mut dyn Welt, z: &mut Zustand, _l: &Lage) -> L
     let mut lose = [0 as Id; 8];
     let mut loseR = [Rechteck::default(); 8];
     let mut nl = 0usize;
-    // Anschluss aus dem Roehrennetz statt aus HasPower (ein Gebaeude ohne Roehre hat trotzdem Strom).
-    let netz = netzKacheln(welt, z);
+    // Neues Modell: Anschluss aus dem Roehrennetz statt aus HasPower (ein Gebaeude ohne Roehre hat trotzdem Strom).
+    let netz = if kampfModellNeu() { Some(netzKacheln(welt, z)) } else { None };
     let mut tuerme: Vec<(Id, Rechteck)> = Vec::new();
     for &typ in GEBAEUDE.iter() {
         for u in welt.PlayerBuildingEnum(z.spieler, typ) {
             let lo = welt.Location(u);
             let (ex, ey) = (edX(welt, z, lo), edY(welt, z, lo));
             let r = rechteckUm(welt, typ, ex, ey);
-            // Wachtuerme haben keinen Stutzen, brauchen aber die Roehre zur Kommandozentrale (ohne sie weniger Schaden) --
-            // jeder unverbundene fertige Turm wird wie ein loses Gebaeude angeschlossen.
-            // Bau-Reihenfolge: Tuerme erst, wenn kein Gebaeude mit Personal mehr auf seinen Anschluss wartet (unten).
-            if typ == mapGuardPost {
+            // Rust (PAR turmRoehre): Wachtuerme haben keinen Stutzen, brauchen aber die Roehre zur Kommandozentrale (ohne sie
+            // weniger Schaden, siehe turmNetz) -- jeder unverbundene fertige Turm wird wie ein loses Gebaeude angeschlossen.
+            if typ == mapGuardPost && PAR(z.spieler).turmRoehre >= 0.5 {
                 if welt.GetCurAction(u) != moDone || welt.IsBusy(u) || turmAngeschlossen(welt, u) { continue; }
-                if tuerme.len() < 8 { tuerme.push((u, r)); }
-                continue;
+                // PAR bauReihe: Tuerme erst, wenn kein Gebaeude mit Personal mehr auf seinen Anschluss wartet (unten)
+                if PAR(z.spieler).bauReihe >= 0.5 { if tuerme.len() < 8 { tuerme.push((u, r)); } continue; }
+                if nl >= 8 { continue; }
+                lose[nl] = u; loseR[nl] = r; nl += 1; continue;
             }
-            let verbunden = imNetz(z, &netz, &r);
+            let verbunden = match &netz { Some(n) => imNetz(z, n, &r), None => angeschlossen(welt, u) };
             if typ == mapCommandCenter || (hatStutzen(welt, typ) && verbunden) { if nz < 64 { ziele[nz] = r; nz += 1; } continue; }
             if !hatStutzen(welt, typ) || nl >= 8 { continue; }
             // Nur fertige, ruhige Gebaeude: im Bau stehen sie auf Aktion 6, beschaeftigt und ohne Strom -- KEIN fehlender Anschluss.
             if welt.GetCurAction(u) != moDone || welt.IsBusy(u) { continue; }
+            if netz.is_none() {
+                let bedarfStrom = welt.GetPowerRequired(typ, z.spieler);
+                if bedarfStrom <= 0 { continue; } // Lager u.ae.: nie Strom, nicht erkennbar
+                if l.stromFrei < bedarfStrom { continue; } // fehlt wirklich Strom
+            }
             lose[nl] = u; loseR[nl] = r; nl += 1;
         }
     }
-    // Auch geplante Plaetze ohne Anschluss (platzFern) -- die Roehre wird gleich mit dem Platz aufgezeichnet,
+    // Neues Modell: auch geplante Plaetze ohne Anschluss (platzFern) -- die Roehre wird gleich mit dem Platz aufgezeichnet,
     // nicht erst, wenn das Gebaeude fertig ist (sonst steht es nach dem Aufbau noch tausende Ticks ohne Personal).
-    for i in 0..z.anzahlPlaetze as usize {
-        if nl >= 8 { break; }
-        let q = z.plaetze[i];
-        if q.zustand != P_FAHRT && q.zustand != P_BAUT { continue; }
-        let typ = q.typ as i32;
-        if !hatStutzen(welt, typ) || typ == mapCommandCenter { continue; }
-        let g = grundflaeche(welt, typ);
-        let r = Rechteck { x0: q.x0 as i32, y0: q.y0 as i32, w: g.w, h: g.h, stutzen: true };
-        if imNetz(z, &netz, &r) { continue; }
-        // liegt schon ein Netzgebaeude daneben (Stutzen an Stutzen), schliesst es sich beim Bau selbst an
-        let mut nachbar = false;
-        for y in (r.y0 - 1)..=(r.y0 + r.h) { for x in (r.x0 - 1)..=(r.x0 + r.w) {
-            if anGrundflaeche(welt, &r, x, y) && x >= 0 && y >= 0 && x < z.breite.min(256) && y < z.hoehe.min(256)
-                && netz[(y * z.breite.min(256) + x) as usize] { nachbar = true; }
-        } }
-        if nachbar { continue; }
-        lose[nl] = 0; loseR[nl] = r; nl += 1;
+    if let Some(n) = &netz {
+        for i in 0..z.anzahlPlaetze as usize {
+            if nl >= 8 { break; }
+            let q = z.plaetze[i];
+            if q.zustand != P_FAHRT && q.zustand != P_BAUT { continue; }
+            let typ = q.typ as i32;
+            if !hatStutzen(welt, typ) || typ == mapCommandCenter { continue; }
+            let g = grundflaeche(welt, typ);
+            let r = Rechteck { x0: q.x0 as i32, y0: q.y0 as i32, w: g.w, h: g.h, stutzen: true };
+            if imNetz(z, n, &r) { continue; }
+            // liegt schon ein Netzgebaeude daneben (Stutzen an Stutzen), schliesst es sich beim Bau selbst an
+            let mut nachbar = false;
+            for y in (r.y0 - 1)..=(r.y0 + r.h) { for x in (r.x0 - 1)..=(r.x0 + r.w) {
+                if anGrundflaeche(welt, &r, x, y) && x >= 0 && y >= 0 && x < z.breite.min(256) && y < z.hoehe.min(256)
+                    && n[(y * z.breite.min(256) + x) as usize] { nachbar = true; }
+            } }
+            if nachbar { continue; }
+            lose[nl] = 0; loseR[nl] = r; nl += 1;
+        }
     }
     if nl == 0 {
         for (u, r) in tuerme { if nl >= 8 { break; } lose[nl] = u; loseR[nl] = r; nl += 1; }
     }
-    Lose { hin, nh, ziele, nz, lose, loseR, nl }
+    Lose { hin, nh, ziele, nz, lose, loseR, nl, netz }
 }
 
-/// Alle unverbundenen in einer Runde, kuerzeste Anschluesse zuerst (die BuildingGroup legt die Kacheln in
+/// Alle unverbundenen in einer Runde; neues Modell: kuerzeste Anschluesse zuerst (die BuildingGroup legt die Kacheln in
 /// Aufzeichnungsreihenfolge, ein langer Weg haelt sonst alle kurzen auf)
 pub(super) fn anschlussReihe(welt: &mut dyn Welt, z: &mut Zustand, lo: &Lose) -> Vec<usize> {
-    let Lose { hin, nh, ziele, nz, loseR, nl, .. } = lo;
+    let Lose { hin, nh, ziele, nz, loseR, nl, netz, .. } = lo;
     let (nh, nz, nl) = (*nh, *nz, *nl);
     let mut reihe: Vec<usize> = (0..nl).collect();
-    let mut laenge = [0i32; 8];
-    for j in 0..nl {
-        let mut wx = [0i16; MAX_WEG as usize];
-        let mut wy = [0i16; MAX_WEG as usize];
-        let n = wegSuchen(welt, z, &loseR[j], ziele, nz as i32, hin, nh, &mut wx, &mut wy, false);
-        laenge[j] = if n > 0 { n } else { i32::MAX };
+    if netz.is_some() {
+        let mut laenge = [0i32; 8];
+        for j in 0..nl {
+            let mut wx = [0i16; MAX_WEG as usize];
+            let mut wy = [0i16; MAX_WEG as usize];
+            let n = wegSuchen(welt, z, &loseR[j], ziele, nz as i32, hin, nh, &mut wx, &mut wy, false);
+            laenge[j] = if n > 0 { n } else { i32::MAX };
+        }
+        reihe.sort_by_key(|&j| laenge[j]);
     }
-    reihe.sort_by_key(|&j| laenge[j]);
     reihe
 }
 
@@ -315,6 +400,11 @@ pub(super) fn anschliessen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, t: i3
         let c = zelle(welt, z, wx[i as usize] as i32, wy[i as usize] as i32);
         if !zelleRoehre(welt, c) { alleRoehre = false; }
         i += 1;
+    }
+    if alleRoehre && PAR(z.spieler).roehreAnNetz > 0.0 {
+        // PAR roehreAnNetz: liegt der Weg schon ganz auf Roehren, keinen zweiten Strang daneben ziehen (das ergab die doppelten
+        // Roehren, vor allem zu Tuermen, deren Anschlusspruefung anders zaehlt als das Netz)
+        return;
     }
     if alleRoehre {
         let n2 = wegSuchen(welt, z, &loseR[j], ziele, nz as i32, hin, nh, &mut wx, &mut wy, true);
@@ -337,7 +427,7 @@ pub(super) fn anschliessen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, t: i3
         }
         if schon { continue; }
         let ort = engine(welt, z, wx[i] as i32, wy[i] as i32);
-        welt.RecordTube(z.bau, ort);
+        welt.RecordTube(super::super::zweitbasis::gruppeAm(z, wx[i] as i32, wy[i] as i32), ort);
         if (z.anzahlRoehren as usize) < MAX_ROEHREN {
             let idx = z.anzahlRoehren as usize;
             z.anzahlRoehren += 1;

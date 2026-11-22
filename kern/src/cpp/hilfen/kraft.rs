@@ -1,5 +1,6 @@
 //! Kampfwerte und Waffen: kampfWert, Waffen-/Fahrgestellwahl, EMP-Rakete, Kraft je Erz, Seltenerz-Vorteil.
 use super::*;
+use super::super::*;
 
 // Was als Naechstes gebaut wird: Notfaelle, Bau-Kuchen (Kolonie / Ziel / Wirtschaft), Lueckenfueller.
 pub const B_KOLONIE: i32 = 0;
@@ -11,16 +12,32 @@ pub const BEREICH: [&str; B_ANZAHL as usize] = ["Kolonie", "Ziel", "Wirtschaft",
 
 // Kampf: Lagebild der Gegner (Kartenscan), Bedrohung, Soll-Staerke.
 pub const SCAN_TAKT: i32 = 200;
+/// Ende der Wertung: PAR wertungTick (> 0, Nutzer 2026-11-18: lange Partien bis 1 Mio Ticks), sonst WERTUNG_TICK
+pub fn wertungTick(sp: i32) -> i32 { let w = PAR(sp).wertungTick; if w > 0.0 { w as i32 } else { WERTUNG_TICK } }
 pub const WERTUNG_TICK: i32 = 200000;   // Spieler 2026-11-05: lange Spiele, damit Raumhafen/EMP-Raketen zaehlen (vorher 80000)
 pub const WERT_WT: i32 = 4;     // Kampfwert eines Laser-Wachturms nach SDK (fuer Geplantes)
 pub const WERT_LYNX: i32 = 5;   // Laser-Lynx nach SDK
 pub const MAX_WT: i32 = 8;
 pub const AUSSEN_R: i32 = 12;   // Minen weiter weg von der Basismitte sind Aussenposten
+pub const ABFANG_R: i32 = 90;   // so weit fahren Lynx einer anrueckenden Welle entgegen
 
 // Kampfmodell aus der Arena: Gegenwert g = Waffenfaktor x Fahrgestellfaktor x Wurzel(HP x Schaden je Tick).
+// static int g_kraftSpieler = 1 -> globale.rs
+/// Rust (PAR.kampfModell >= 0.5): das Arena-8-Modell der bewertenden KI (g_kraftSpieler) statt des alten.
+pub fn kampfModellNeu() -> bool { PAR(g_kraftSpieler.with(|c| c.get())).kampfModell >= 0.5 }
+
 /// Faktoren des Arena-8-Modells (auswertung/kampf_fit.py, 14076 Kaempfe Stufe 9/12, Test 74,5 % statt 66,2 %). Waffen ohne
 /// Messung (Railgun, Energiekanone): alter Faktor im Verhaeltnis Laser neu/alt.
 pub fn waffenFaktorNeu(w: i32) -> f64 {
+    // PAR faktorNeu der bewertenden KI (2026-11-20): neu gefittet auf der Kampf-Arena mit der Gefechtsfuehrung des Standards
+    // (op2ki-sim --kampf-arena, 7776 Kaempfe, 860 reine entschieden; Siegquote logistisch aus dem Staerkeverhaeltnis,
+    // 5-fach kreuzvalidiert 84 % statt 65 % richtig). Energiekanone und EMP ohne reine Messung wie bisher.
+    if PAR(g_kraftSpieler.with(|c| c.get())).faktorNeu >= 0.5 {
+        return match w {
+            mapAcidCloud => 5.62, mapESG => 3.17, mapLaser => 0.49, mapMicrowave => 0.55, mapRPG => 1.11, mapThorsHammer => 1.46,
+            mapRailGun => 1.05, mapEnergyCannon => 0.50, mapEMP => 1.20, _ => 0.49,
+        };
+    }
     match w {
         mapAcidCloud => 3.57, mapESG => 1.65, mapLaser => 0.49, mapMicrowave => 0.52, mapRPG => 0.66, mapThorsHammer => 0.85,
         mapRailGun => 0.62, mapEnergyCannon => 0.50, mapEMP => 1.20, _ => 0.49,
@@ -28,6 +45,9 @@ pub fn waffenFaktorNeu(w: i32) -> f64 {
 }
 /// Gestellfaktor des Arena-8-Modells (Skorpion und Wachturm ohne Messung: alter Faktor im Verhaeltnis Lynx neu/alt).
 pub fn gestellFaktorNeu(f: i32) -> f64 {
+    if PAR(g_kraftSpieler.with(|c| c.get())).faktorNeu >= 0.5 {
+        return if f == mapLynx { 0.96 } else if f == mapPanther { 0.88 } else if f == mapTiger { 1.40 } else if f == mapScorpion { 0.62 } else { 0.90 };
+    }
     if f == mapLynx { 0.96 } else if f == mapPanther { 0.85 } else if f == mapTiger { 1.23 } else if f == mapScorpion { 0.62 } else { 0.90 }
 }
 /// Verstaerkung der Hauptgruppe durch einen EMP-Anteil q: Staerke x (1 + a x q) (Arena 8; ungemessene Waffen: Mittel 0,15).
@@ -37,19 +57,40 @@ pub fn empVerstaerkung(w: i32) -> f64 {
     }
 }
 
+/// C++: double waffenFaktor(int w)  (op2_ki.hpp:999)
+pub fn waffenFaktor(welt: &mut dyn Welt, w: i32) -> f64 {
+    if kampfModellNeu() { return waffenFaktorNeu(w); }
+    match w {
+        mapAcidCloud => 3.59, mapESG => 2.38, mapRailGun => 0.85, mapThorsHammer => 0.83,
+        mapRPG => 0.80, mapLaser => 0.67, mapMicrowave => 0.61, mapEnergyCannon => 0.69,
+        _ => 0.67,
+    }
+}
+
+/// C++: double gestellFaktor(int f)  (op2_ki.hpp:1006)
+pub fn gestellFaktor(welt: &mut dyn Welt, f: i32) -> f64 {
+    if kampfModellNeu() { return gestellFaktorNeu(f); }
+    if f == mapLynx { 1.07 } else if f == mapPanther { 0.95 } else if f == mapScorpion { 0.69 } else { 1.0 }
+}
 
 /// C++: double gegenwert(int spieler, int traeger, int waffe, double hpAnteil = 1.0)  (op2_ki.hpp:1007)
 pub fn gegenwert(welt: &mut dyn Welt, spieler: i32, traeger: i32, waffe: i32, hpAnteil: f64) -> f64 {
     let mut waffe = waffe;
-    // EMP mit seinen eigenen SDK-Werten (betaeubt ueber die Erschuetterung) und eigenem Faktor; Schaum zaehlt wie Laser.
-    if waffe == mapStickyfoam { waffe = mapLaser; }
+    let mut zusatz = 1.0;
+    let neu = kampfModellNeu();
+    // Neues Modell: EMP mit seinen eigenen SDK-Werten (betaeubt ueber die Erschuetterung) und eigenem Faktor.
+    if waffe == mapEMP && !neu { waffe = mapLaser; zusatz = 1.4; }
+    else if waffe == mapStickyfoam { waffe = mapLaser; zusatz = 1.0; }
     else if waffe == mapNone || waffe <= 0 || waffe >= 128 { waffe = if traeger == mapScorpion { mapEnergyCannon } else { mapLaser }; }
     let r = welt.GetReloadTime(waffe, spieler);
     let dps = (0.9 * welt.GetPenetrationDamage(waffe, spieler) as f64 + 0.33 * welt.GetConcussionDamage(waffe, spieler) as f64 * 1.1)
         / (if r > 0 { r } else { 1 }) as f64;
-    let hp = welt.GetHitPoints(traeger, spieler) as f64 * (if hpAnteil > 0.05 { hpAnteil } else { 0.05 });
-    // Massstab: ein Lynx mit Laser hat denselben Wert wie im alten Modell (0,426 x 0,67 x 1,07 = 0,649 x 0,49 x 0,96).
-    0.649 * waffenFaktorNeu(waffe) * gestellFaktorNeu(traeger) * (hp * dps).sqrt()
+    let mut hp = welt.GetHitPoints(traeger, spieler) as f64 * (if hpAnteil > 0.05 { hpAnteil } else { 0.05 });
+    // PAR panzerModell der bewertenden KI: Panzer-Ausbauten (8306, 10303) verlaengern das Ueberleben gegen die Waffen der Feinde;
+    // die Grundpanzerung bleibt der Eichpunkt der gemessenen Gestellfaktoren.
+    if PAR(g_kraftSpieler.with(|c| c.get())).panzerModell >= 0.5 { hp *= panzerFaktor(welt, spieler, traeger); }
+    // Massstab: neu so, dass ein Lynx mit Laser denselben Wert wie bisher hat (0,426 x 0,67 x 1,07 = 0,649 x 0,49 x 0,96).
+    (if neu { 0.649 } else { 0.426 }) * zusatz * waffenFaktor(welt, waffe) * gestellFaktor(welt, traeger) * (hp * dps).sqrt()
 }
 
 /// Panzerwert der Simulation je Panzerklasse 0..5 (op2-rs rules.rs: Anteil des Erschuetterungsschadens / 256)
@@ -98,14 +139,24 @@ pub fn feindTreffer(welt: &mut dyn Welt, spieler: i32, pw: i32) -> f64 {
     pw as f64 * k / 256.0 + p
 }
 
+/// Ueberlebens-Faktor eines Fahrgestells/Turms durch Panzer-Ausbau: Schaden bei Grundpanzerung / Schaden jetzt (1 ohne Ausbau)
+pub fn panzerFaktor(welt: &mut dyn Welt, spieler: i32, traeger: i32) -> f64 {
+    let grund = match tb::einheit(traeger) { Some(e) => panzerWert(e.panzer), None => return 1.0 };
+    let jetzt = panzerJetzt(welt, traeger, spieler);
+    if jetzt >= grund { return 1.0; }
+    let (a, b) = (feindTreffer(welt, spieler, grund), feindTreffer(welt, spieler, jetzt));
+    if b > 0.0 && a > b { a / b } else { 1.0 }
+}
+
 /// C++: int kampfWert(UnitEx u)  (op2_ki.hpp:1018)
 pub fn kampfWert(welt: &mut dyn Welt, u: Id) -> i32 {
     let t = welt.GetType(u); let w = welt.GetWeapon(u);
     if t == mapSpider { return 1; }                                  // repariert nur
     if t != mapLynx && t != mapPanther && t != mapTiger && t != mapScorpion && t != mapGuardPost { return 0; }
-    // Ein Wachturm ohne Roehrenverbindung zur Kommandozentrale hat keinen Strom und macht nur einen Teil des Schadens
-    // (im Original gemessen 2026-11-17: ~230 statt ~425 Schaden an Lynx, kein Abschuss) -- er zaehlt mit PAR turmOhneNetz.
-    let ohneNetz = if t == mapGuardPost && !turmAngeschlossen(welt, u) {
+    // Rust (PAR turmNetz der bewertenden KI): ein Wachturm ohne Roehrenverbindung zur Kommandozentrale hat keinen Strom und
+    // macht nur einen Teil des Schadens (im Original gemessen 2026-11-17: ~230 statt ~425 Schaden an Lynx, kein Abschuss) --
+    // er zaehlt mit PAR turmOhneNetz (0,55).
+    let ohneNetz = if t == mapGuardPost && PAR(g_kraftSpieler.with(|c| c.get())).turmNetz >= 0.5 && !turmAngeschlossen(welt, u) {
         PAR(g_kraftSpieler.with(|c| c.get())).turmOhneNetz } else { 1.0 };
     let hp = welt.GetHitPoints(t, welt.OwnerID(u));
     let anteil = if hp > 0 { 1.0 - welt.GetDamage(u) as f64 / hp as f64 } else { 1.0 };
@@ -173,13 +224,13 @@ pub fn empLohnt(welt: &mut dyn Welt, z: &Zustand, wert: Option<&mut i32>) -> boo
 }
 
 /// C++: bool istKampfFz(int typ)  (op2_ki.hpp:1079)
-pub fn istKampfFz(_welt: &mut dyn Welt, typ: i32) -> bool { typ == mapLynx || typ == mapPanther || typ == mapTiger }
+pub fn istKampfFz(welt: &mut dyn Welt, typ: i32) -> bool { typ == mapLynx || typ == mapPanther || typ == mapTiger }
 
 /// C++: int reparaturTyp(const Zustand& z)  (op2_ki.hpp:1081)
 pub fn reparaturTyp(welt: &mut dyn Welt, z: &Zustand) -> i32 { if welt.IsEden(z.spieler) { mapRepairVehicle } else { mapSpider } }
 
 /// C++: double kraft(const Kraftwerte& v, int waffe)  (op2_ki.hpp:1084)
-pub fn kraft(_welt: &mut dyn Welt, v: &Kraftwerte, waffe: i32) -> f64 {
+pub fn kraft(welt: &mut dyn Welt, v: &Kraftwerte, waffe: i32) -> f64 {
     if v.reload <= 0 || v.hp <= 0 { return 0.0; }
     let mut dps = (v.pen as f64 + 0.5 * v.kon as f64) / v.reload as f64;
     if waffe == mapEMP { dps = 0.9; }                                  // betaeubt nur kurz: wie eine Laser-Klasse-Waffe
@@ -231,6 +282,18 @@ pub fn staerkeAusVorrat(welt: &mut dyn Welt, z: &Zustand, traeger: i32, waffe: i
 pub fn waffeWahl(welt: &mut dyn Welt, z: &Zustand, traeger: i32, seltenDa: i32) -> i32 {
     const KANDIDATEN: [i32; 8] = [mapLaser, mapMicrowave, mapRailGun, mapRPG, mapAcidCloud, mapESG, mapThorsHammer, mapEnergyCannon];
     let mut beste = if welt.IsEden(z.spieler) { mapLaser } else { mapMicrowave };
+    // Missionsmodus (aufstieg, Nutzer 2026-11-22: "Tiger mit den richtigen Waffen aus den Arena-Tests"): die erforschte Waffe
+    // mit der besten gemessenen Bilanz der Paarungs-Arena gegen die gesehene Feindmischung, Seltenerz muss reichen
+    if traeger != mapGuardPost && PAR(z.spieler).aufstieg >= 0.5 && super::super::modus::mission(z) {
+        let mut bw = super::paarung::paarWert(welt, z, traeger, beste);
+        for &w in KANDIDATEN.iter() {
+            if w == beste || !einheitErforscht(welt, z, w) || welt.GetRareOreCost(w, z.spieler) > seltenDa { continue; }
+            if !super::paarung::imTabelle(welt, z, traeger, w) { continue; }
+            let v = super::paarung::paarWert(welt, z, traeger, w);
+            if v > bw { bw = v; beste = w; }
+        }
+        return beste;
+    }
     let erzDa = erzFuerKampf(welt, z);
     let mut bestWert = staerkeAusVorrat(welt, z, traeger, beste, erzDa, seltenDa) * super::paarung::paarFaktor(welt, z, traeger, beste);
     for &w in KANDIDATEN.iter() {
@@ -248,6 +311,14 @@ pub fn waffeWahl(welt: &mut dyn Welt, z: &Zustand, traeger: i32, seltenDa: i32) 
 /// C++: int fahrgestellWahl(const Zustand& z, int seltenDa)  (op2_ki.hpp:1139)
 pub fn fahrgestellWahl(welt: &mut dyn Welt, z: &Zustand, seltenDa: i32) -> i32 {
     const REIHE: [i32; 3] = [mapTiger, mapPanther, mapLynx];
+    // Missionsmodus (aufstieg, Nutzer 2026-11-22: "Fahrzeuge mit der Forschung besser werden"): das schwerste erforschte
+    // Fahrgestell, fuer das das Seltenerz reicht -- nicht das mit der meisten Kraft je Erz (das war immer der Lynx)
+    if PAR(z.spieler).aufstieg >= 0.5 && super::super::modus::mission(z) {
+        for &f in REIHE.iter() {
+            if einheitErforscht(welt, z, f) && welt.GetRareOreCost(f, z.spieler) <= seltenDa { return f; }
+        }
+        return 0;
+    }
     let erzDa = erzFuerKampf(welt, z);
     let mut beste = 0; let mut bestWert = -1.0;
     for &f in REIHE.iter() {
@@ -313,7 +384,7 @@ pub fn l_kolonieLebt(welt: &mut dyn Welt, z: &Zustand) -> bool { !welt.PlayerBui
 // Prognose der naechsten Welle: Trend der letzten beiden Wellen (nie kleiner als die letzte). Vor der ersten
 // Welle: zwei Lynx je Feind-Fahrzeugfabrik, nach der ersten die Haelfte mehr.
 /// C++: int welleProg(const Zustand& z)  (op2_ki.hpp:1198)
-pub fn welleProg(_welt: &mut dyn Welt, z: &Zustand) -> i32 {
+pub fn welleProg(welt: &mut dyn Welt, z: &Zustand) -> i32 {
     if z.anzWellen == 0 { return z.feindFabriken * 2 * WERT_LYNX; }
     let letzte = z.wellen[(z.anzWellen - 1) as usize];
     if z.anzWellen == 1 { return letzte + letzte / 2; }

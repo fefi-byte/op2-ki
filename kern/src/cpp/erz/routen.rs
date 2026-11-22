@@ -1,11 +1,12 @@
 //! Gewoehnliches Erz: Mine anlegen (Surveyor, Robo-Miner), Erzrouten Mine -> Schmelze, Lastwagen je Route.
 use super::*;
-use super::{TECH_SELTENERZ, ix, exy};
+use super::super::*;
+use super::{TECH_SELTENERZ, WERT_LYNX, GEBAEUDE, ix, exy};
 
 /// C++: int lastwagenFuerAbstand(double kacheln)  (op2_ki.hpp:3335)
 // Lastwagen je Erzroute aus der Entfernung Mine-Schmelze (Erztest): eine Fahrt ~300 + 60 Ticks je Kachel,
 // eine Ladung ~500 Erz, die Schmelze verarbeitet hoechstens ~1400 Erz je 1000 Ticks.
-pub fn lastwagenFuerAbstand(_welt: &mut dyn Welt, kacheln: f64) -> i32 {
+pub fn lastwagenFuerAbstand(welt: &mut dyn Welt, kacheln: f64) -> i32 {
     let fahrt = 300.0 + 60.0 * kacheln;                 // Ticks je Fahrt
     let jeLkw = (500 * 1000) as f64 / fahrt;             // Erz je 1000 Ticks und Lastwagen
     let n = (1400.0 / jeLkw + 0.85) as i32;              // bis die Schmelze (fast) ausgelastet ist
@@ -50,6 +51,7 @@ pub fn erz(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     // oder ohne, wenn es keinen Surveyor gibt oder er zu lange braucht.
     mineFertigMelden(welt, z, l);
     bakenErfassen(welt, z, t);
+    erzSonde(welt, z, p, t);
     if l.geb[ix(mapCommonOreMine)] < MAX_MINEN as i32 { mineAnlegen(welt, z, p, t); }
     // 3) Erzrouten: jede fertige Schmelze bekommt eine Mine, eine Mine versorgt bis zu 2 Schmelzen.
     //    Je Route eine MiningGroup mit zwei Lastwagen.
@@ -83,8 +85,31 @@ pub(super) fn mineFertigMelden(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     z.minenGesehen = l.geb[ix(mapCommonOreMine)];
 }
 
+/// Zielpunkt fuer den Minenbau (Ecke unten rechts der 2x1-Grundflaeche mit Rand): Bake rechts wie bisher. PAR mineSeite
+/// (2026-11-21): ist der Rand dort nicht befahrbar, die Bake links -- die Engine nimmt die Bake unter jeder der beiden
+/// Kacheln. ml2_10 Bake 75,102: Randkachel 73,101 ist Fels, "can't build here", Platz 1 bekam seine nahe Mine nie.
+pub fn minenEcke(welt: &mut dyn Welt, z: &Zustand, bl: Loc) -> Loc {
+    let rechts = Loc::new(bl.x + 1, bl.y + 1);
+    if PAR(z.spieler).mineSeite < 0.5 { return rechts; }
+    let (ex, ey) = (edX(welt, z, bl), edY(welt, z, bl));
+    let frei = |welt: &mut dyn Welt, x0: i32| -> bool {
+        for y in (ey - 1)..=(ey + 1) { for x in x0..=(x0 + 3) {
+            if !aufKarte(welt, z, x, y, 0) { return false; }
+            let c = zelle(welt, z, x, y);
+            if !zelleBefahrbar(welt, c) { return false; }
+        } }
+        true
+    };
+    if frei(welt, ex - 2) { return rechts; }
+    if frei(welt, ex - 1) {
+        melde(welt, z, "mine", mapCommonOreMine, ex, ey, "Mine mit der Bake links: rechts ist der Rand nicht befahrbar");
+        return Loc::new(bl.x + 2, bl.y + 1);
+    }
+    rechts
+}
+
 /// Erzbaken der Karte erfassen (alle 5000 Ticks, hoechstens 32)
-pub(super) fn bakenErfassen(welt: &mut dyn Welt, z: &mut Zustand, t: i32) {
+pub fn bakenErfassen(welt: &mut dyn Welt, z: &mut Zustand, t: i32) {
     if z.kbStand == 0 || t - z.kbStand > 5000 {
         z.kbStand = if t > 0 { t } else { 1 };
         z.kbN = 0;
@@ -100,6 +125,34 @@ pub(super) fn bakenErfassen(welt: &mut dyn Welt, z: &mut Zustand, t: i32) {
             z.kbY[z.kbN as usize] = y as i16;
             z.kbN += 1;
         }
+    }
+}
+
+/// Sonde (PAR sonde): Minen, Schmelzen, Zielbake in die Spur
+pub(super) fn erzSonde(welt: &mut dyn Welt, z: &mut Zustand, p: i32, t: i32) {
+    let so = PAR(z.spieler).sonde;
+    if so > 0.0 && (t % 100 < TAKT || (so >= 2.0 && (t as f64) >= so && (t as f64) < so + 600.0)) {
+        let v: Vec<(i32, i32, bool)> = welt.PlayerBuildingEnum(p, mapCommonOreMine).into_iter().map(|u| (u, welt.GetCurAction(u), welt.IsLive(u))).collect();
+        let s2: Vec<(i32, i32, bool)> = welt.PlayerBuildingEnum(p, mapCommonOreSmelter).into_iter().map(|u| (u, welt.GetCurAction(u), welt.IsLive(u))).collect();
+        melde(welt, z, "sonde", mapNone, 0, 0, &format!("Sonde Minen {:?} Schmelzen {:?}", v, s2));
+    }
+    if PAR(z.spieler).sonde > 0.0 && (t % 100 < TAKT || (so >= 2.0 && (t as f64) >= so && (t as f64) < so + 600.0)) && z.bakeZiel > 0 {
+        let lo = welt.Location(z.bakeZiel);
+        let v: Vec<(i32, i32, i32, i32)> = welt.LocationEnumerator(lo).into_iter().map(|u| (u, welt.GetType(u), welt.OwnerID(u), welt.GetCurAction(u))).collect();
+        let w: Vec<(i32, i32)> = welt.InRangeEnumerator(lo, 1).into_iter().map(|u| (u, welt.GetType(u))).collect();
+        let txt = format!("Sonde Bake {} bei {},{}: LocationEnumerator {:?}, InRange1 {:?}, mineAuf {}", z.bakeZiel, lo.x, lo.y, v, w, mineAuf(welt, lo));
+        melde(welt, z, "sonde", mapNone, lo.x, lo.y, &txt);
+    }
+    if so >= 2.0 && (t as f64) >= so && (t as f64) < so + 600.0 {
+        let bis = hoechsteEinheit(welt);
+        let mut v = Vec::new();
+        for id in 1..=bis {
+            if !welt.IsLive(id) || welt.GetType(id) != mapMiningBeacon { continue; }
+            let lo = welt.Location(id);
+            let gesperrt = (0..8).any(|i| z.sperrBake[i] == id && t < z.sperrBis[i]);
+            v.push(format!("{}:{}{}{}", id, welt.GetOreType(id), if mineAuf(welt, lo) { "M" } else { "" }, if gesperrt { "S" } else { "" }));
+        }
+        melde(welt, z, "sonde", mapNone, 0, 0, &format!("Sonde Baken ziel {} [{}]", z.bakeZiel, v.join(" ")));
     }
 }
 
@@ -126,14 +179,43 @@ pub(super) fn mineAnlegen(welt: &mut dyn Welt, z: &mut Zustand, p: i32, t: i32) 
             melde(welt, z, "info", mapMiningBeacon, blx, bly, &txt);
         }
         let vermessen = (welt.GetSurveyedBy(b) & (1 << p)) != 0;
-        let (_, surveyor) = surveyorFuehren(welt, z, p, &f, b, bl, blx, bly, vermessen);
+        let (s, surveyor) = surveyorFuehren(welt, z, p, &f, b, bl, blx, bly, vermessen);
+        erkunden(welt, z, p, s, f.unvermessen);
         minerEinsetzen(welt, z, p, t, b, bl, blx, bly, vermessen, surveyor);
+    }
+}
+
+/// Missionsmodus, Rolle Kolonie: weitere untaetige Vermesser erkunden die Umgebung -- je zur naechsten unvermessenen Bake,
+/// die nicht das Ziel des ersten Vermessers ist und nicht naeher am Feind liegt als an der eigenen Basis
+fn erkunden(welt: &mut dyn Welt, z: &mut Zustand, p: i32, erster: Id, schonZiel: Id) {
+    if super::super::modus::rolle(z) != super::super::modus::ROLLE_KOLONIE || !selten(welt, z, 12, 600) { return; }
+    let andere: Vec<Id> = welt.PlayerVehicleEnum(p).into_iter()
+        .filter(|&u| u != erster && welt.GetType(u) == mapRoboSurveyor && welt.IsLive(u) && !welt.IsBusy(u) && welt.GetCurAction(u) == moDone).collect();
+    if andere.is_empty() { return; }
+    let mut baken: Vec<(Id, Loc)> = Vec::new();
+    let bis = hoechsteEinheit(welt);
+    for id in 1..=bis {
+        let u: Id = id;
+        if !welt.IsLive(u) || welt.GetType(u) != mapMiningBeacon || u == schonZiel { continue; }
+        if welt.GetSurveyedBy(u) & (1 << p) != 0 { continue; }
+        let lo = welt.Location(u); let (bx, by) = exy(welt, z, lo);
+        if z.feindGeb != 0 && abstand2(welt, bx, by, z.feindX, z.feindY) < abstand2(welt, bx, by, z.bx, z.by) { continue; }
+        baken.push((u, lo));
+    }
+    for s in andere {
+        let sl = welt.Location(s);
+        let Some(&(u, lo)) = baken.iter().min_by_key(|(_, lo)| abstand2(welt, sl.x, sl.y, lo.x, lo.y)) else { return };
+        let mut hin = lo; if abstand2(welt, sl.x, sl.y, lo.x, lo.y) > 2 { hin.x += 1; }   // erst daneben, dann drauf
+        welt.DoMove(s, hin);
+        baken.retain(|b| b.0 != u);
+        let (bx, by) = exy(welt, z, lo);
+        melde(welt, z, "vermessen", mapRoboSurveyor, bx, by, &format!("Kolonie: Vermesser {} erkundet die Bake bei {},{}", s, bx, by));
     }
 }
 
 /// Surveyor: zur Zielbake (bis sie vermessen ist), danach die naechste unvermessene Bake
 #[allow(clippy::too_many_arguments)]
-pub(super) fn surveyorFuehren(welt: &mut dyn Welt, z: &mut Zustand, p: i32, f: &BakenFund, _b: Id, bl: Loc, blx: i32, bly: i32, vermessen: bool) -> (Id, bool) {
+pub(super) fn surveyorFuehren(welt: &mut dyn Welt, z: &mut Zustand, p: i32, f: &BakenFund, b: Id, bl: Loc, blx: i32, bly: i32, vermessen: bool) -> (Id, bool) {
     // Surveyor
     let mut s: Id = 0;
     let mut surveyor = false;
@@ -207,7 +289,7 @@ pub(super) fn minerEinsetzen(welt: &mut dyn Welt, z: &mut Zustand, p: i32, t: i3
             let weg: &str;
             if z.minerWeg == 1 {
                 // wie beim ConVec: Zielpunkt = Ecke unten rechts der Grundflaeche (2x1, Bake rechts) mit Rand
-                welt.DoBuild(u, mapCommonOreMine, Loc::new(bl.x + 1, bl.y + 1));
+                let ecke = minenEcke(welt, z, bl); welt.DoBuild(u, mapCommonOreMine, ecke);
                 weg = "Weg 1: DoBuild";
             } else if z.minerWeg == 2 {
                 if z.minenBauAn == 0 {
@@ -271,6 +353,7 @@ fn lastwagenVorfahren(welt: &mut dyn Welt, z: &mut Zustand, p: i32, b: Id, bl: L
 /// Routen, deren Mine oder Schmelze nicht mehr steht, aufloesen -- die Lastwagen vorher aus der Gruppe nehmen
 pub(super) fn routenAufloesen(welt: &mut dyn Welt, z: &mut Zustand, schmelzen: &[Id], minen: &[Id]) {
     let (ns, nm) = (schmelzen.len(), minen.len());
+    hinweis(welt, z, "ki::erz/routen-pruefen");
     for i in 0..MAX_MINEN {
         if z.minenId[i] == 0 { continue; }
         let mut m = false;
@@ -278,6 +361,7 @@ pub(super) fn routenAufloesen(welt: &mut dyn Welt, z: &mut Zustand, schmelzen: &
         for k in 0..nm { if minen[k] == z.minenId[i] { m = true; } }
         for k in 0..ns { if schmelzen[k] == z.schmelzeId[i] { sm = true; } }
         if !m || !sm {
+            hinweis(welt, z, "ki::erz/route-aufloesen");
             let mut raus: Vec<Id> = Vec::new();
             // nur lebende Lastwagen herausnehmen
             for v in welt.GroupEnumerator(z.minenGruppe[i]) {
@@ -304,6 +388,7 @@ pub(super) fn schmelzeRoute(welt: &mut dyn Welt, z: &mut Zustand, p: i32, schmel
         let mut besteN = 3;
         let mut besteD = 1 << 30;
         if !welt.IsLive(schmelzen[k]) { return Route::Uebersprungen; }              // gerade zerstoert
+        hinweis(welt, z, "ki::erz/route-suchen");
         let sl = welt.Location(schmelzen[k]);
         for m in 0..nm {
             let mut n = 0;
@@ -311,9 +396,10 @@ pub(super) fn schmelzeRoute(welt: &mut dyn Welt, z: &mut Zustand, p: i32, schmel
             if !welt.IsLive(minen[m]) { continue; }
             let ml = welt.Location(minen[m]);
             let d = abstand2(welt, ml.x, ml.y, sl.x, sl.y);
-            // mit Zweitbasis: die naechste Mine, nicht die mit den wenigsten Routen (sonst faehrt die Schmelze der
-            // Zweitbasis zur Mine der Hauptbasis)
-            if n < 2 && d < besteD { beste = m as i32; besteN = n; besteD = d; }
+            // Erweiterung Zweitbasis (Rust): die naechste Mine, nicht die mit den wenigsten Routen (sonst faehrt die
+            // Schmelze der Zweitbasis zur Mine der Hauptbasis)
+            let zb = PAR(z.spieler).zweitbasis > 0.0 || super::super::modus::mission(z);
+            if n < 2 && (if zb { d < besteD } else { n < besteN || (n == besteN && d < besteD) }) { beste = m as i32; besteN = n; besteD = d; }
         }
         if beste < 0 { return Route::Uebersprungen; }                                     // jede Mine hat schon zwei Schmelzen
         // Nicht mitten im Gefecht: Mine/Schmelze schwer beschaedigt oder Feind in der Naehe -> spaeter
@@ -333,6 +419,7 @@ pub(super) fn schmelzeRoute(welt: &mut dyn Welt, z: &mut Zustand, p: i32, schmel
         }
         for i in 0..MAX_MINEN { if z.minenId[i] == 0 { g = i as i32; break; } }
         if g < 0 { return Route::KeinPlatz; }
+        hinweis(welt, z, "ki::erz/route-anlegen");
         let gu = g as usize;
         z.minenGruppe[gu] = welt.CreateMiningGroup(p);
         z.minenId[gu] = minen[beste as usize];
@@ -350,6 +437,7 @@ pub(super) fn schmelzeRoute(welt: &mut dyn Welt, z: &mut Zustand, p: i32, schmel
 
 /// Lastwagen je Route nach Entfernung (gemessen, lastwagenSoll)
 pub(super) fn lastwagenZuteilen(welt: &mut dyn Welt, z: &mut Zustand, p: i32, gu: usize) {
+    hinweis(welt, z, "ki::erz/lastwagen");
     let g = gu as i32;
     let hat = welt.TotalUnitCount(z.minenGruppe[gu]);
     let soll = lastwagenSoll(welt, z, g);
@@ -357,6 +445,8 @@ pub(super) fn lastwagenZuteilen(welt: &mut dyn Welt, z: &mut Zustand, p: i32, gu
         // die zur Mine vorgefahrenen zuerst, auch wenn sie noch fahren: ihr einziger Auftrag ist das Vorfahren, und bleiben
         // sie an der Mine haengen, waeren sie sonst fuer immer "beschaeftigt" (mp2_05: Route ohne Lastwagen, kein Erz)
         let mut lkw = welt.PlayerVehicleEnum(p);
+        // Missionsmodus: der naechste Lastwagen zuerst (die zweite Basis baut ihre eigenen)
+        if super::super::modus::mission(z) { let sl = welt.Location(z.schmelzeId[gu]); lkw.sort_by_key(|&u| { let ul = welt.Location(u); abstand2(welt, ul.x, ul.y, sl.x, sl.y) }); }
         for &v in z.lkwVor.iter().rev() { if let Some(i) = lkw.iter().position(|&u| u == v && v != 0) { let x = lkw.remove(i); lkw.insert(0, x); } }
         for u in lkw {
             let vor = u != 0 && z.lkwVor.contains(&u);

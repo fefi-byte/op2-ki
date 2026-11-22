@@ -11,6 +11,7 @@ static int __cdecl ruf(int code, const int* a, int na, int* o, int no) {
     case 0: return TethysGame::Tick();   // Tick
     case 1: return TethysGame::NoPlayers();   // NoPlayers
     case 2: return TethysGame::LocalPlayer();   // LocalPlayer
+    case 3: return TethysGame::GetRand(a[0]);   // GetRand
     case 4: TethysGame::FreeMoraleLevel(a[0]); return 0;   // FreeMoraleLevel
     case 5: return GameMap::GetCellType(LOCATION(a[0], a[1]));   // GetCellType
     case 6: { Unit u; TethysGame::CreateUnit(u, (map_id)a[0], LOCATION(a[1], a[2]), a[3], (map_id)a[4], a[5]); return u.unitID; }   // CreateUnit
@@ -27,6 +28,7 @@ static int __cdecl ruf(int code, const int* a, int na, int* o, int no) {
     case 17: return U.GetDamage();   // GetDamage
     case 18: return U.GetWeapon();   // GetWeapon
     case 19: return U.GetCargo();   // GetCargo
+    case 20: return U.GetConVecCargoTurret();   // GetConVecCargoTurret
     case 21: return U.GetCurAction();   // GetCurAction
     case 22: return U.GetLastCommand();   // GetLastCommand
     case 23: return U.HasPower() ? 1 : 0;   // HasPower
@@ -35,6 +37,7 @@ static int __cdecl ruf(int code, const int* a, int na, int* o, int no) {
     case 26: return U.GetLabCurrentTopic();   // GetLabCurrentTopic
     case 27: return U.GetLabScientistCount();   // GetLabScientistCount
     case 28: return U.GetFactoryCargo(a[1]);   // GetFactoryCargo
+    case 29: return U.GetFactoryCargoWeapon(a[1]);   // GetFactoryCargoWeapon
     case 30: { const LOCATION l = U.GetDockLocation(); o[0] = l.x; o[1] = l.y; return 2; }   // GetDockLocation
     case 31: return U.GetCargoAmount();   // GetCargoAmount
     case 32: return (int)U.GetCargoType();   // GetCargoType
@@ -63,6 +66,8 @@ static int __cdecl ruf(int code, const int* a, int na, int* o, int no) {
     case 55: U.DoUnIdle(); return 0;   // DoUnIdle
     case 56: U.DoStop(); return 0;   // DoStop
     case 57: U.DoLaunch(a[1], a[2], a[3]); return 0;   // DoLaunch
+    case 58: U.DoSelfDestruct(); return 0;   // DoSelfDestruct
+    case 59: U.DoPoof(); return 0;   // DoPoof
     case 60: { int n = 0; if (a[1] == mapNone || a[1] == mapAny) { for (int t : op2ki::GEBAEUDE) { PlayerBuildingEnum e(a[0], (map_id)t); UnitEx u; while (e.GetNext(u) && n < no) o[n++] = u.unitID; } } else { PlayerBuildingEnum e(a[0], (map_id)a[1]); UnitEx u; while (e.GetNext(u) && n < no) o[n++] = u.unitID; } return n; }   // PlayerBuildingEnum
     case 61: { int n = 0; PlayerVehicleEnum e(a[0]); UnitEx u; while (e.GetNext(u) && n < no) o[n++] = u.unitID; return n; }   // PlayerVehicleEnum
     case 62: { int n = 0; PlayerUnitEnum e(a[0]); UnitEx u; while (e.GetNext(u) && n < no) o[n++] = u.unitID; return n; }   // PlayerUnitEnum
@@ -140,6 +145,8 @@ static int __cdecl ruf(int code, const int* a, int na, int* o, int no) {
     case 134: { ScGroup* g = gruppe(a[0]); if (g && art[a[0]] == 3) { LOCATION m(a[1], a[2]), s(a[3], a[4]); MAP_RECT r(LOCATION(a[5], a[6]), LOCATION(a[7], a[8])); ((MiningGroup*)g)->Setup(m, s, r); } return 0; }   // Setup
     case 139: { const int v = U.GetTimeEMPed(); return v > 0 ? v : 0; }   // zeitEMP
     case 140: { const int v = U.GetTimeStickyfoamed(); return v > 0 ? v : 0; }   // zeitSchaum
+    case 141: return TethysGame::UsesMorale() ? 0 : 1;   // MoralStabil
+    case 142: return Player[a[0]].Difficulty() + 1;   // Schwierigkeit
   }
   return 0;
 }

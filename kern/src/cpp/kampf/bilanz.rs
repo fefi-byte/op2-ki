@@ -1,9 +1,11 @@
 //! Angriffsbilanz: Einsatz, Ankunft, Kontakt, Ende (was kostete ein Angriff, was kam zurueck).
 use super::*;
+use super::super::*;
+use super::{GRUPPE_MAX, SCAN_TAKT, WERT_WT, WERT_LYNX, EMP_RADIUS, EMP_FLUG, EMP_AUFMARSCH, GEBAEUDE};
 
 // --- Angriffsbilanz: was hat ein Angriff gekostet, was kam zurueck, was wurde zerstoert. Nur Messung.
 /// C++: void mixDazu(short* typ, short* wf, short* anz, int& n, int t, int w)  (op2_ki.hpp:3982)
-pub fn mixDazu(_welt: &mut dyn Welt, typ: &mut [i16], wf: &mut [i16], anz: &mut [i16], n: &mut i32, t: i32, w: i32) {
+pub fn mixDazu(welt: &mut dyn Welt, typ: &mut [i16], wf: &mut [i16], anz: &mut [i16], n: &mut i32, t: i32, w: i32) {
     for i in 0..*n as usize { if typ[i] as i32 == t && wf[i] as i32 == w { anz[i] += 1; return; } }
     if *n < 12 { let k = *n as usize; typ[k] = t as i16; wf[k] = w as i16; anz[k] = 1; *n += 1; }
 }

@@ -1,6 +1,7 @@
 //! Personal: Arbeiter-Rangliste (arbeitErheben), Stilllegen/Einschalten (arbeit), Leerlauf, gesperrte Bausaetze.
 use super::*;
-use super::{GEBAEUDE, TECH_RAUMFAHRT};
+use super::super::*;
+use super::{GEBAEUDE, TECH_RAUMFAHRT, B_ZIEL};
 
 /// Vorhaben der letzten Bauwahl (g_vorhaben[sp][0..g_nVorhaben[sp]]) und g_vorhabenTick[sp].
 pub(super) fn vorhabenListe(sp: usize) -> (i32, Vec<Anspruch>) {
@@ -96,8 +97,8 @@ pub fn arbeitErheben(welt: &mut dyn Welt, z: &Zustand, l: &mut Lage) {
         }
         l.seltenSpart = l.erz < welt.GetOreCost(mapRareOreSmelter, z.spieler);
     }
-    // Lohnende Erzschmelze -- Arbeiter und Erz vormerken; solange das Erz fehlt, warten neue Kampffahrzeuge.
-    {
+    // Neues Modell: lohnende Erzschmelze -- Arbeiter und Erz vormerken; solange das Erz fehlt, warten neue Kampffahrzeuge.
+    if kampfModellNeu() && PAR(z.spieler).erzAusbau >= 0.5 {
         let bl = super::planung::bilanz(welt, z, l);
         let ew = super::planung::erzWahl(welt, z, l, &bl);
         if ew.typ == mapCommonOreSmelter && ew.nutzen >= PAR(z.spieler).schmelzeNutzen {
@@ -108,14 +109,40 @@ pub fn arbeitErheben(welt: &mut dyn Welt, z: &Zustand, l: &mut Lage) {
             l.erzSpart = l.erz < erz;
         }
     }
+    // PAR sparFrist (2026-11-21): Sparen fuer die Schmelze haelt nur die Kampffahrzeuge an, Tuerme, Roehren und andere Bauten
+    // geben weiter Erz aus -- ml2_05 Seed 1: Eden sparte von 24 000 bis 33 000, das Erz kam nie auf 2000, die Fahrzeugfabrik
+    // wurde stillgelegt. Kommt die Schmelze nicht innerhalb sparFrist zusammen, wird das Sparen fuer sparFrist aufgegeben.
+    if PAR(z.spieler).sparFrist > 0.0 {
+        let fr = PAR(z.spieler).sparFrist as i32; let t = welt.Tick(); let sp = (z.spieler & 7) as usize;
+        let (seit, sperre) = SPAR.with(|s| s.borrow()[sp]);
+        if !l.erzSpart { SPAR.with(|s| s.borrow_mut()[sp].0 = 0); }
+        else if t < sperre { l.erzSpart = false; }
+        else if seit == 0 { SPAR.with(|s| s.borrow_mut()[sp].0 = t); }
+        else if t - seit > fr {
+            SPAR.with(|s| s.borrow_mut()[sp] = (0, t + fr));
+            l.erzSpart = false;
+            melde(welt, z, "arbeit", mapCommonOreSmelter, z.bx, z.by, &format!("Sparen fuer die Schmelze aufgegeben: nach {} Ticks erst {} Erz -- Kampffahrzeuge wieder fuer {} Ticks", t - seit, l.erz, fr));
+        }
+    }
     // vormerkungen liest nur l.geb (nicht die Ausgabefelder): Kopie der Lage als Eingabe
     let kopie = l.clone();
     let (mut ve, mut vs, mut vf) = (l.vorErz, l.vorSelten, l.vorFuer);
     vormerkungen(welt, z, &kopie, &mut ve, &mut vs, &mut vf);
     l.vorErz = ve; l.vorSelten = vs; l.vorFuer = vf;
+    // Missionsmodus: ein befohlener Aussenposten hat Vorrang -- seine Kosten sind vorgemerkt (Verteidigung unter Druck darf
+    // trotzdem darauf zugreifen, bauwahl waehle)
+    if let Some(k) = super::super::zweitbasis::postenWartet(welt, z, l) { l.vorErz += k; l.vorFuer = "Aussenposten der Mission"; }
+    // Missionsmodus: offene Roehren vormerken -- die BuildingGroup baut eine Roehre nur mit Erz, und ohne Roehre bekam die
+    // Fahrzeugfabrik kein Personal (keine Lastwagen, kein Erz: cm03 stand 200 000 Ticks still)
+    if super::super::modus::mission(z) && PAR(z.spieler).roehrenVorrang > 0.0 {
+        let n = (0..z.anzahlRoehren.max(0) as usize).filter(|&i| z.roehren[i].zustand == 1).count() as i32;
+        if n > 0 { l.vorErz += n * welt.GetOreCost(mapTube, z.spieler).max(1); if l.vorFuer.is_empty() { l.vorFuer = "offene Roehren"; } }
+    }
 }
 
-// Rust-Erweiterung: Erz, das beim Stilllegen von u verfaellt. Die Engine zaehlt nur laufende Schmelzen und
+thread_local! { static SPAR: std::cell::RefCell<[(i32, i32); 8]> = const { std::cell::RefCell::new([(0, 0); 8]) }; }
+
+// Rust-Erweiterung (neues Modell): Erz, das beim Stilllegen von u verfaellt. Die Engine zaehlt nur laufende Schmelzen und
 // Lager zur Lagergroesse (colony 0x472xxx: max = laufende Schmelzen x Lager + laufende Tanks x Lager) und kappt den Vorrat
 // darauf -- eine stillgelegte einzige Schmelze loescht den ganzen Vorrat. Anteil je laufendem Lagergebaeude gleich verteilt.
 pub fn erzVerlustBeiStill(welt: &mut dyn Welt, z: &Zustand, l: &Lage, u: Id) -> i32 {
@@ -152,22 +179,64 @@ pub fn arbeit(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     z.naechsteArbeit = t + 200;
     let sp = z.spieler;
     parkListeBereinigen(welt, z);
+    if kigaBremse(welt, z, l) { return; }
     if haengendeWecken(welt, z, l, sp) { return; }
     // Strommangel: ein wichtiges Gebaeude steht ohne Strom, ein unwichtigeres laeuft -> das unwichtigere abschalten.
     // Power shortage: idle a lesser consumer.
-    // Anschluss aus dem Roehrennetz; ein Gebaeude ausserhalb bekommt nie Personal (Arbeiter nur im Netz einer
+    // Neues Modell: Anschluss aus dem Roehrennetz; ein Gebaeude ausserhalb bekommt nie Personal (Arbeiter nur im Netz einer
     // Kommandozentrale), Stilllegen fuer es waere reiner Verlust. Lager, deren Stilllegen Erz vernichtet, sind keine Opfer.
-    let netz = netzKacheln(welt, z);
-    if stromUmverteilen(welt, z, l, sp) { return; }
-    let Personal { fehlt, opfer, fehltWiss, rFehlt, rOpfer } = personalErheben(welt, z, l, sp, &netz);
+    let neu = kampfModellNeu();
+    let netz = if neu { Some(netzKacheln(welt, z)) } else { None };
+    if stromUmverteilen(welt, z, l, sp, neu) { return; }
+    let Personal { fehlt, opfer, fehltWiss, rFehlt, rOpfer } = personalErheben(welt, z, l, sp, neu, &netz);
     if wissFuerGebaeude(welt, z, sp, fehlt, fehltWiss) { return; }
     // Arbeiter-Wunsch (z.B. Fahrzeugfabrik fuer den Seltenerz-Miner) wie ein fehlendes Gebaeude behandeln
     let wunsch = z.wunschArbeiter > 0 && welt.Tick() - z.wunschSeit < 1000 && l.arbFrei < z.wunschArbeiter;
     if wunschStilllegen(welt, z, fehlt, wunsch, opfer, rOpfer) { return; }
     if wissAlsArbeiter(welt, z, l, sp, fehlt) { return; }
     if fuerFehlendesStilllegen(welt, z, fehlt, opfer, rFehlt, rOpfer) { return; }
+    if moralStilllegen(welt, z, l, sp) { return; }
     if fehlt != 0 || wunsch || l.arbFrei <= 0 || z.anzahlGeparkt == 0 { return; }
     geparktesWecken(welt, z, l, sp);
+}
+
+/// PAR kigaBremse (Missionsmodus; Nutzer 2026-11-22: "Bei Ueberschuss einfach Kindergarten abschalten"): leben mehr als 95 %
+/// so viele Menschen wie Wohnraum da ist oder sinkt die Nahrung, werden die Kindergaerten stillgelegt (geparkt, Grund 3);
+/// unter 85 % und ohne Nahrungsverlust wieder ein. Vorher wuchs die Bevoelkerung ueber Wohnraum und Nahrung hinaus und
+/// verhungerte (cm03: 1745 Menschen bei 1400 Wohnplaetzen, Nahrung -440).
+pub(super) fn kigaBremse(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) -> bool {
+    if PAR(z.spieler).kigaBremse < 0.5 { return false; }
+    // erst, wenn die Basis steht (mindestens 100 Wohnplaetze): am Anfang gibt es keinen Wohnraum, und ohne Kindergarten waechst
+    // keine Generation nach -- die Kolonie starb aus
+    // Nutzer 2026-11-22: "Sobald mehr als 20 Arbeiter frei sind, soll der Kindergarten ausgestellt werden, und erst wieder
+    // angehen, wenn die freien Arbeiter unter 15 fallen." Dazu bleibt er aus, solange mehr Menschen als Wohnplaetze da sind
+    // oder die Nahrung sinkt und knapp wird (sonst Hungersnot).
+    let (m, w) = (l.menschen, l.wohnraum);
+    let eng = m >= w || (l.nahrungNetto < 0 && l.nahrung < m * 20);
+    let (aus, an) = super::super::modus::kigaSchwellen(z);   // Parameter kigaAus/kigaAn, im Editor per Befehl einstellbar
+    let ueber = w >= 100 && (l.arbFrei > aus || eng);
+    let unter = w < 100 || (l.arbFrei < an && !eng);
+    if ueber && (z.anzahlGeparkt as usize) < 16 {
+        if let Some(u) = welt.PlayerBuildingEnum(z.spieler, mapNursery).into_iter().find(|&u| welt.GetCurAction(u) == moDone && !welt.IsBusy(u)) {
+            welt.DoIdle(u);
+            let n = z.anzahlGeparkt as usize; z.geparkt[n] = u; z.geparktGrund[n] = 3; z.anzahlGeparkt += 1;
+            let lo = welt.Location(u); let (x, y) = (edX(welt, z, lo), edY(welt, z, lo));
+            melde(welt, z, "arbeit", mapNursery, x, y, &format!("Kindergarten stillgelegt: {} Arbeiter frei, {} Menschen bei {} Wohnplaetzen, Nahrung netto {}", l.arbFrei, m, w, l.nahrungNetto));
+            return true;
+        }
+    }
+    if unter {
+        if let Some(i) = (0..z.anzahlGeparkt as usize).find(|&i| z.geparktGrund[i] == 3) {
+            let u = z.geparkt[i];
+            welt.DoUnIdle(u);
+            let n = z.anzahlGeparkt as usize - 1;
+            z.geparkt[i] = z.geparkt[n]; z.geparktGrund[i] = z.geparktGrund[n]; z.anzahlGeparkt -= 1;
+            let lo = welt.Location(u); let (x, y) = (edX(welt, z, lo), edY(welt, z, lo));
+            melde(welt, z, "arbeit", mapNursery, x, y, &format!("Kindergarten wieder ein: {} Arbeiter frei, {} Menschen bei {} Wohnplaetzen", l.arbFrei, m, w));
+            return true;
+        }
+    }
+    false
 }
 
 /// Liste bereinigen: zerstoerte oder schon wieder laufende Gebaeude entfernen
@@ -210,7 +279,7 @@ pub(super) fn haengendeWecken(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, sp
 }
 
 /// Strommangel: ein wichtiges Gebaeude steht ohne Strom, ein unwichtigeres laeuft -> das unwichtigere abschalten
-pub(super) fn stromUmverteilen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, sp: i32) -> bool {
+pub(super) fn stromUmverteilen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, sp: i32, neu: bool) -> bool {
     if z.anzahlGeparkt < 16 {
         let (mut ohne, mut weg): (Id, Id) = (0, 0);
         let (mut rOhne, mut rWeg) = (-1, 1000);
@@ -220,7 +289,7 @@ pub(super) fn stromUmverteilen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, s
             for u in welt.PlayerBuildingEnum(sp, typ) {
                 if !welt.IsLive(u) || welt.GetCurAction(u) != moDone || welt.IsBusy(u) { continue; }
                 if !welt.HasPower(u) { if r > rOhne { rOhne = r; ohne = u; } }
-                else if r < rWeg && typ != mapGuardPost && erzVerlustBeiStill(welt, z, l, u) <= 0 { rWeg = r; weg = u; } // Tuerme halten die Kolonie, sie bleiben an
+                else if r < rWeg && typ != mapGuardPost && !(neu && erzVerlustBeiStill(welt, z, l, u) > 0) && !super::super::zweitbasis::amPosten(welt, z, u) { rWeg = r; weg = u; } // Tuerme halten die Kolonie, sie bleiben an
             }
         }
         if ohne != 0 && weg != 0 && rWeg + 5 < rOhne {
@@ -241,7 +310,7 @@ pub(super) fn stromUmverteilen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, s
 }
 
 /// Wichtigstes fertiges Gebaeude ohne Arbeiter (bzw. ohne Wissenschaftler) und unwichtigstes laufendes mit Arbeitern
-pub(super) fn personalErheben(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, sp: i32, netz: &[bool]) -> Personal {
+pub(super) fn personalErheben(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, sp: i32, neu: bool, netz: &Option<Vec<bool>>) -> Personal {
     let (mut fehlt, mut opfer, mut fehltWiss): (Id, Id, Id) = (0, 0, 0);
     let (mut rFehlt, mut rOpfer, mut rFehltWiss) = (-1, 1000, -1);
     for &typ in GEBAEUDE.iter() {
@@ -251,15 +320,23 @@ pub(super) fn personalErheben(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, sp
         let r = rang(welt, z, l, typ);
         for u in welt.PlayerBuildingEnum(sp, typ) {
             if welt.GetCurAction(u) != moDone || welt.IsBusy(u) { continue; } // im Bau, stillgelegt oder arbeitet
-            let ausserhalb = hatStutzen(welt, typ) && typ != mapCommandCenter && {
-                let lo = welt.Location(u);
-                let (ex, ey) = (edX(welt, z, lo), edY(welt, z, lo));
-                let r = rechteckUm(welt, typ, ex, ey);
-                !imNetz(z, netz, &r)
+            let ausserhalb = match netz {
+                Some(n) if hatStutzen(welt, typ) && typ != mapCommandCenter => {
+                    let lo = welt.Location(u);
+                    let (ex, ey) = (edX(welt, z, lo), edY(welt, z, lo));
+                    let r = rechteckUm(welt, typ, ex, ey);
+                    !imNetz(z, n, &r)
+                }
+                _ => false,
             };
+            // Missionsmodus: unbesetzte Gebaeude der zweiten Basis zuerst (+30), sie ist sonst nie dran (cm03 Original: ihre
+            // Fahrzeugfabrik, Strukturfabrik und Agrarkuppel standen ohne Personal, die Mine kam nie)
+            let r = if super::super::zweitbasis::amPosten(welt, z, u) { r + 30 } else { r };
             if arbN > 0 && !welt.HasWorkers(u) { if r > rFehlt && !ausserhalb { rFehlt = r; fehlt = u; } }
             else if wissN > 0 && !welt.HasScientists(u) { if r > rFehltWiss && !ausserhalb { rFehltWiss = r; fehltWiss = u; } }
-            else if arbN > 0 && r < rOpfer && typ != mapCommandCenter && erzVerlustBeiStill(welt, z, l, u) <= 0 { rOpfer = r; opfer = u; }
+            // Missionsmodus: die Gebaeude einer unabhaengigen zweiten Basis nicht stilllegen (cm03 Original: ihre Fahrzeugfabrik
+            // stand still, der Robo-Miner fuer ihre Mine kam nie)
+            else if arbN > 0 && r < rOpfer && typ != mapCommandCenter && !(neu && erzVerlustBeiStill(welt, z, l, u) > 0) && !super::super::zweitbasis::amPosten(welt, z, u) { rOpfer = r; opfer = u; }
         }
     }
     Personal { fehlt, opfer, fehltWiss, rFehlt, rOpfer }
@@ -314,10 +391,10 @@ pub(super) fn wunschStilllegen(welt: &mut dyn Welt, z: &mut Zustand, fehlt: Id, 
     false
 }
 
-/// Fehlen einem Gebaeude Arbeiter (Nutzer 2026-11-17), gibt die unwichtigste laufende Forschung
+/// Rust (PAR wissArbeit, Nutzer 2026-11-17): fehlen einem Gebaeude Arbeiter, gibt die unwichtigste laufende Forschung
 /// Wissenschaftler ab -- die Engine setzt freie Wissenschaftler selbst als Arbeiter ein. Erst danach wird stillgelegt.
 pub(super) fn wissAlsArbeiter(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, sp: i32, fehlt: Id) -> bool {
-    if fehlt != 0 {
+    if fehlt != 0 && kampfModellNeu() && PAR(sp).wissArbeit >= 0.5 {
         let ft = welt.GetType(fehlt);
         let brauche = welt.GetWorkersRequired(ft, sp) - l.arbFrei.max(0) - l.wissFrei.max(0);
         if brauche > 0 {
@@ -366,6 +443,68 @@ pub(super) fn fuerFehlendesStilllegen(welt: &mut dyn Welt, z: &mut Zustand, fehl
     false
 }
 
+/// Neues Modell (PAR moralStill): abgeschaltete Gebaeude kosten Moral -- stilllegen, und wieder ein, sobald die Engine
+/// sie besetzen kann
+pub(super) fn moralStilllegen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, sp: i32) -> bool {
+    if kampfModellNeu() && PAR(sp).moralStill >= 0.5 {
+        let mut weg: Vec<(Id, i32)> = Vec::new();
+        for &typ in GEBAEUDE.iter() {
+            if typ == mapCommandCenter || typ == mapGuardPost { continue; }
+            let arbN = welt.GetWorkersRequired(typ, sp);
+            let wissN = welt.GetScientistsRequired(typ, sp);
+            let strom = welt.GetPowerRequired(typ, sp);
+            if arbN <= 0 && wissN <= 0 && strom <= 0 { continue; }
+            let r = rang(welt, z, l, typ);
+            for u in welt.PlayerBuildingEnum(sp, typ) {
+                if !welt.IsLive(u) || welt.GetCurAction(u) != moDone || welt.IsBusy(u) { continue; }
+                if u == z.garDran || u == z.garRaus { continue; }
+                let aus = (strom > 0 && !welt.HasPower(u)) || (arbN > 0 && !welt.HasWorkers(u)) || (wissN > 0 && !welt.HasScientists(u));
+                if aus && !super::super::zweitbasis::amPosten(welt, z, u) { weg.push((u, r)); }
+            }
+        }
+        // Die Punkte gibt es nur, wenn KEINES mehr abgeschaltet ist: alle auf einmal (sofern Platz in der Liste)
+        if !weg.is_empty() && z.anzahlGeparkt as usize + weg.len() <= 16 {
+            for &(u, r) in weg.iter() {
+                welt.DoIdle(u);
+                let n = z.anzahlGeparkt as usize;
+                z.geparktGrund[n] = 2;   // Moral: wieder ein, sobald die Engine es besetzen kann
+                z.geparkt[n] = u; z.anzahlGeparkt += 1;
+                let wt = welt.GetType(u);
+                let lo = welt.Location(u);
+                let (x, y) = (edX(welt, z, lo), edY(welt, z, lo));
+                melde(welt, z, "arbeit", wt, x, y, &format!("stillgelegt (Rang {}) -- abgeschaltet kostet Moral, eingeschaltet wird es, sobald Personal frei ist", r));
+            }
+            return true;
+        }
+        // Moralhalber stillgelegte sofort wieder ein, sobald die Engine sie besetzen kann (freie Arbeiter/Wissenschaftler
+        // und Strom) -- die Engine verteilt freies Personal ohne Ruecksicht auf Vorhaben der KI, ein abgeschaltetes Gebaeude
+        // haette es ebenso bekommen.
+        let (mut arbF, mut wissF, mut stromF) = (l.arbFrei, l.wissFrei, l.stromFrei);
+        let mut i = 0usize;
+        let mut ein = false;
+        while i < z.anzahlGeparkt as usize {
+            if z.geparktGrund[i] != 2 { i += 1; continue; }
+            let u: Id = z.geparkt[i];
+            let ut = welt.GetType(u);
+            let (a, w, st) = (welt.GetWorkersRequired(ut, sp), welt.GetScientistsRequired(ut, sp), welt.GetPowerRequired(ut, sp));
+            if !welt.IsLive(u) || (a <= arbF + wissF - w.max(0) && w <= wissF && st <= stromF) {
+                if welt.IsLive(u) {
+                    welt.DoUnIdle(u); ein = true;
+                    arbF -= a; wissF -= w; stromF -= st;
+                    if arbF < 0 { wissF += arbF; arbF = 0; }
+                }
+                z.anzahlGeparkt -= 1;
+                let n = z.anzahlGeparkt as usize;
+                z.geparkt[i] = z.geparkt[n]; z.geparktGrund[i] = z.geparktGrund[n];
+                continue;
+            }
+            i += 1;
+        }
+        if ein { return true; }
+    }
+    false
+}
+
 /// Wichtigstes stillgelegtes, das mit den freien Arbeitern laufen kann, wieder einschalten
 pub(super) fn geparktesWecken(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, sp: i32) {
     let (mut beste, mut rBeste) = (-1i32, -1);
@@ -392,7 +531,7 @@ pub(super) fn geparktesWecken(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, sp
 }
 
 /// C++: bool istGeparkt(const Zustand& z, int id)  (op2_ki.hpp:2479)
-pub fn istGeparkt(_welt: &mut dyn Welt, z: &Zustand, id: i32) -> bool {
+pub fn istGeparkt(welt: &mut dyn Welt, z: &Zustand, id: i32) -> bool {
     for i in 0..z.anzahlGeparkt as usize { if z.geparkt[i] == id { return true; } }
     false
 }
@@ -452,6 +591,7 @@ pub fn leerlauf(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
                 for bay in 0..6 { let k = welt.GetFactoryCargo(u, bay); if k > 0 && k != mapNone { kits = true; } }
                 if offen || kits { continue; }
             }
+            if super::super::zweitbasis::amPosten(welt, z, u) { continue; }   // Strukturfabrik der zweiten Basis
             if typ == mapSpaceport && z.ziel == 1 && z.zielErreicht == 0 && hatTech(welt, z, TECH_RAUMFAHRT) { continue; } // gleich gebraucht
             if typ == mapSpaceport && !welt.IsEden(z.spieler) && hatTech(welt, z, 12201) { continue; } // baut EMP-Raketen
             if (typ == mapBasicLab || typ == mapStandardLab || typ == mapAdvancedLab) && welt.GetLabCurrentTopic(u) > 0 { continue; }

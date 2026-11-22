@@ -1,11 +1,16 @@
 //! EMP-Rakete bauen, Staerke an einem Ort, Reservegruppe (Eingreifen) fuehren.
 use super::*;
+use super::super::*;
+use super::{GRUPPE_MAX, SCAN_TAKT, WERT_WT, WERT_LYNX, EMP_RADIUS, EMP_FLUG, EMP_AUFMARSCH, GEBAEUDE};
 
 /// C++: void empRaketeBauen(Zustand& z, const Lage& l)  (op2_ki.hpp:4376)
 /// EMP-Rakete bauen, sobald Erz und Seltenerz reichen und sie sich gegen die jetzige Abwehr lohnt.
 pub fn empRaketeBauen(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     let t = welt.Tick();
     if !empMoeglich(welt, z) || t % 200 >= TAKT { return; }
+    // Missionsmodus ohne eigene Angriffe: die Rakete startet nur mit einem Angriff -- nicht bauen (Nutzer 2026-11-22: "Rakete
+    // wurde gebaut, aber nicht gestartet"; sie kostete 3000 Erz und 1500 Seltenerz)
+    if super::super::modus::mission(z) && !super::super::modus::eigeneAngriffe(z, t) && super::super::modus::noetig(z) == 0 { return; }
     let mut sp: Id = 0;
     for u in welt.PlayerBuildingEnum(z.spieler, mapSpaceport) { if welt.IsLive(u) && welt.GetCurAction(u) != moObjWait { sp = u; break; } }
     if sp == 0 { z.empRakete = 0; z.empAuftrag = 0; return; }   // kein (fertiger) Raumhafen: auch keine Rakete

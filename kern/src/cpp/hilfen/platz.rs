@@ -1,9 +1,70 @@
 //! Plaetze pruefen und waehlen: Hindernisse, platzFrei, Explosionsabstand, platzWaehlen.
 use super::*;
+use super::super::*;
+
+thread_local! { static WEGE: std::cell::RefCell<[Option<(i32, i32, std::rc::Rc<Vec<i32>>)>; 8]> = std::cell::RefCell::new(Default::default()); }
+
+/// Wegabstand (8 Nachbarn, Gelaende) von der eigenen Basismitte, je Spieler alle 2000 Ticks neu; -1 = nicht erreichbar
+fn wegFeld(welt: &mut dyn Welt, z: &Zustand) -> std::rc::Rc<Vec<i32>> {
+    let sp = (z.spieler & 7) as usize; let t = welt.Tick();
+    if let Some(f) = WEGE.with(|w| w.borrow()[sp].as_ref().filter(|e| t >= e.0 && t - e.0 < 2000 && e.1 == z.bx * 1024 + z.by).map(|e| e.2.clone())) { return f; }
+    let r = super::super::routen::raster(welt, z);
+    let (b, h) = (r.b, r.h);
+    let mut d = vec![-1i32; (b * h) as usize];
+    let mut q = std::collections::VecDeque::new();
+    for dy in -2..=2 { for dx in -2..=2 {
+        let (x, y) = (z.bx + dx, z.by + dy);
+        if x < 0 || y < 0 || x >= b || y >= h { continue; }
+        let i = (y * b + x) as usize; if d[i] < 0 { d[i] = 0; q.push_back((x, y)); }
+    } }
+    while let Some((x, y)) = q.pop_front() {
+        let dv = d[(y * b + x) as usize];
+        for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)] {
+            let (nx, ny) = (x + dx, y + dy);
+            if nx < 0 || ny < 0 || nx >= b || ny >= h { continue; }
+            let j = (ny * b + nx) as usize;
+            if d[j] >= 0 || !r.frei[j] { continue; }
+            if dx != 0 && dy != 0 && !r.frei[(y * b + nx) as usize] && !r.frei[(ny * b + x) as usize] { continue; }
+            d[j] = dv + 1; q.push_back((nx, ny));
+        }
+    }
+    let f = std::rc::Rc::new(d);
+    WEGE.with(|w| w.borrow_mut()[sp] = Some((t, z.bx * 1024 + z.by, f.clone())));
+    f
+}
+
+/// PAR platzErreichbar (2026-11-21): erreicht ein ConVec den Platz von der Basis aus ohne grossen Umweg? Gemessen ml4_08
+/// Seed 3: Tokamak und Universitaet auf einem Plateau hinter einer Klippenkante, der ConVec wartete in einer Sackgasse,
+/// bis der Wachhund nach 8000 Ticks abbrach -- die Eroeffnung stand so lange. Eine Randkachel muss erreichbar sein, der
+/// Weg hoechstens 2,5 x Schachbrettabstand + 12.
+/// Wegabstand (Kacheln, 8 Nachbarn) von der Basismitte zur Kachel; -1 = nicht erreichbar
+pub fn wegAbstand(welt: &mut dyn Welt, z: &Zustand, x: i32, y: i32) -> i32 {
+    let f = wegFeld(welt, z);
+    let b = z.breite.clamp(1, 512);
+    if x < 0 || y < 0 || x >= b || y >= z.hoehe { return -1; }
+    f.get((y * b + x) as usize).copied().unwrap_or(-1)
+}
+
+pub fn erreichbar(welt: &mut dyn Welt, z: &Zustand, x0: i32, y0: i32, w: i32, h: i32) -> bool {
+    if PAR(z.spieler).platzErreichbar < 0.5 || z.breite <= 0 { return true; }
+    let f = wegFeld(welt, z);
+    let b = z.breite.clamp(1, 512);
+    let luft = (x0 + w / 2 - z.bx).abs().max((y0 + h / 2 - z.by).abs());
+    let grenze = (2.5 * luft as f64) as i32 + 12;
+    for y in (y0 - 1)..=(y0 + h) {
+        for x in (x0 - 1)..=(x0 + w) {
+            if x >= x0 && x < x0 + w && y >= y0 && y < y0 + h { continue; }
+            if x < 0 || y < 0 || x >= b || y >= z.hoehe { continue; }
+            let v = f[(y * b + x) as usize];
+            if v >= 0 && v <= grenze { return true; }
+        }
+    }
+    false
+}
 
 // Gebaeude eines Typs: fertig + geplant/im Bau
 /// C++: int geplant(const Zustand& z, int typ)  (op2_ki.hpp:725)
-pub fn geplant(_welt: &mut dyn Welt, z: &Zustand, typ: i32) -> i32 {
+pub fn geplant(welt: &mut dyn Welt, z: &Zustand, typ: i32) -> i32 {
     let mut n = 0;
     for i in 0..z.anzahlPlaetze as usize {
         if z.plaetze[i].typ as i32 == typ && (z.plaetze[i].zustand == P_FAHRT || z.plaetze[i].zustand == P_BAUT) { n += 1; }
@@ -15,7 +76,7 @@ pub fn geplant(_welt: &mut dyn Welt, z: &Zustand, typ: i32) -> i32 {
 // ausser Kraftwerken und Minen). Gebaeude stehen genau 1 Kachel auseinander, Stutzen trifft die Seite des anderen.
 
 /// C++: bool hatStutzen(int typ)  (op2_ki.hpp:747)
-pub fn hatStutzen(_welt: &mut dyn Welt, typ: i32) -> bool {
+pub fn hatStutzen(welt: &mut dyn Welt, typ: i32) -> bool {
     match typ {
         mapTokamak | mapMHDGenerator | mapSolarPowerArray | mapGeothermalPlant
         | mapCommonOreMine | mapRareOreMine | mapMagmaWell
@@ -53,6 +114,8 @@ pub fn hindernisse(welt: &mut dyn Welt, z: &Zustand, out: &mut [Rechteck], max: 
         out[n as usize] = Rechteck { x0: q.x0 as i32, y0: q.y0 as i32, w: g.w, h: g.h, stutzen: st };
         n += 1;
     }
+    // Missionsmodus: reservierter Platz des Raumhafens samt Festungsrand
+    if n < max { if let Some(r) = super::super::bezirke::raumhafenReserve(welt, z) { out[n as usize] = r; n += 1; } }
     // Bebauungsplan (Rust): reservierte Plaetze sind fuer andere Gebaeude belegt (ohne Stutzen -- dort steht noch nichts)
     for q in super::vorplan::reserviert(z) {
         if n >= max { break; }
@@ -63,7 +126,7 @@ pub fn hindernisse(welt: &mut dyn Welt, z: &Zustand, out: &mut [Rechteck], max: 
 }
 
 /// C++: bool ueberlappt(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh)  (op2_ki.hpp:783)
-pub fn ueberlappt(_welt: &mut dyn Welt, ax: i32, ay: i32, aw: i32, ah: i32, bx: i32, by: i32, bw: i32, bh: i32) -> bool {
+pub fn ueberlappt(welt: &mut dyn Welt, ax: i32, ay: i32, aw: i32, ah: i32, bx: i32, by: i32, bw: i32, bh: i32) -> bool {
     ax < bx + bw && bx < ax + aw && ay < by + bh && by < ay + ah
 }
 
@@ -71,8 +134,10 @@ pub fn ueberlappt(_welt: &mut dyn Welt, ax: i32, ay: i32, aw: i32, ah: i32, bx: 
 // kein Roehrenstutzen unter der Grundflaeche.
 /// C++: bool platzFrei(const Zustand& z, int x0, int y0, int w, int h, const Rechteck* hin, int nh, const char** grund)  (op2_ki.hpp:789)
 pub fn platzFrei(welt: &mut dyn Welt, z: &Zustand, x0: i32, y0: i32, w: i32, h: i32, hin: &[Rechteck], nh: i32, grund: &mut &'static str) -> bool {
-    // aufgezeichnete, noch nicht gebaute Mauern samt Rand freihalten (sonst raeumt der Bau die Mauer ab)
+    if !erreichbar(welt, z, x0, y0, w, h) { *grund = "unerreichbar"; return false; }
+    // Rust: aufgezeichnete, noch nicht gebaute Mauern samt Rand und Tore freihalten (sonst raeumt der Bau die Mauer ab)
     if super::super::mauer::geplantIn(z, x0 - 1, y0 - 1, w + 2, h + 2) { *grund = "Mauer geplant"; return false; }
+    if super::super::mauer::torIn(z, x0, y0, w, h) { *grund = "Tor"; return false; }
     platzFreiOhneMauer(welt, z, x0, y0, w, h, hin, nh, grund)
 }
 
@@ -128,6 +193,17 @@ pub fn platzEintrag(welt: &mut dyn Welt, z: &mut Zustand, typ: i32, x0: i32, y0:
     for i in 0..z.anzahlPlaetze as usize {
         if z.plaetze[i].zustand == P_FREI && z.plaetze[i].convec == 0 { k = i as i32; break; }
     }
+    // Missionsmodus: Liste voll -- den aeltesten Eintrag eines stehenden Gebaeudes wiederverwenden (das Gebaeude selbst zaehlt in
+    // hindernisse ueber das Spiel), sonst einen seit 30000 Ticks gesperrten Platz. Vorher blieben stehende und gesperrte Plaetze
+    // fuer immer belegt: nach 48 Plaetzen baute die KI nichts mehr (cm03 ab Tick ~245 000, Hungersnot). Im Mehrspieler-Modus
+    // (noch) nicht, damit er gleich bleibt.
+    if k < 0 && z.anzahlPlaetze >= MAX_PLAETZE as i32 && super::super::modus::mission(z) {
+        let t = welt.Tick();
+        let n = z.anzahlPlaetze as usize;
+        k = (0..n).filter(|&i| z.plaetze[i].zustand == P_STEHT).min_by_key(|&i| z.plaetze[i].seit).map(|i| i as i32)
+            .or_else(|| (0..n).filter(|&i| z.plaetze[i].zustand == P_GESPERRT && t - z.plaetze[i].seit > 30000).min_by_key(|&i| z.plaetze[i].seit).map(|i| i as i32))
+            .unwrap_or(-1);
+    }
     if k < 0 {
         if z.anzahlPlaetze >= MAX_PLAETZE as i32 { return -1; }
         k = z.anzahlPlaetze;
@@ -180,11 +256,23 @@ pub fn explosionsStrafe(welt: &mut dyn Welt, z: &Zustand, typ: i32, x0: i32, y0:
 /// C++: int platzWaehlen(Zustand& z, int typ)  (op2_ki.hpp:882)
 /// Bauplatz fuer `typ` waehlen: Bebauungsplan (grosse Gebaeude), am Roehrenstutzen, fern (PAR platzFern), Plan als
 /// Rueckfall. Liefert den Platz-Eintrag oder -1. Rust 2026-11-18 aufgeteilt (Verhalten gleich).
+thread_local! { static OHNE_PLAN: std::cell::Cell<bool> = std::cell::Cell::new(false); }
+/// Aussenposten der Mission: Plaetze ohne den Bebauungsplan der Hauptbasis waehlen (sonst landet die Schmelze daheim)
+pub fn ohnePlan(an: bool) { OHNE_PLAN.with(|c| c.set(an)); }
+
 pub fn platzWaehlen(welt: &mut dyn Welt, z: &mut Zustand, typ: i32) -> i32 {
+    let planErlaubt = !OHNE_PLAN.with(|c| c.get());
+    // Missionsmodus (PAR bezirke): die Hauptbasis waechst in Bezirken (bezirke.rs); Kern, Tuerme und Minen wie bisher
+    if PAR(z.spieler).bezirke >= 0.5 && typ != mapGuardPost && typ != mapCommonOreMine && typ != mapRareOreMine {
+        if planErlaubt && typ == mapSpaceport { if let Some(i) = super::super::bezirke::raumhafenPlatz(welt, z, typ) { return i; } }
+        if planErlaubt { if let Some(i) = super::super::bezirke::platz(welt, z, typ) { return i; } }
+        // Kern (und die zweite Basis): luftig mit kurzen Roehren
+        if PAR(z.spieler).kernLuft > 0.0 { if let Some(i) = super::super::bezirke::kernPlatz(welt, z, typ) { return i; } }
+    }
     // Bebauungsplan (Rust): grosse Gebaeude zuerst auf ihren reservierten Platz; kleine nehmen weiter den besten
     // Stutzenplatz (kuerzeste Roehre, dicht an der Mitte) und weichen nur auf Planplaetze aus, wenn sonst nichts frei ist.
     let gross = { let g = grundflaeche(welt, typ); g.w * g.h > 6 };
-    if gross && typ != mapCommonOreMine && typ != mapRareOreMine && typ != mapGuardPost {
+    if planErlaubt && gross && typ != mapCommonOreMine && typ != mapRareOreMine && typ != mapGuardPost {
         if let Some((x0, y0)) = super::vorplan::ausPlan(welt, z, typ) {
             let i = platzEintrag(welt, z, typ, x0, y0);
             if i >= 0 { melde(welt, z, "plan", typ, x0, y0, &format!("Platz aus dem Bebauungsplan ({},{})", x0, y0)); }
@@ -200,14 +288,14 @@ pub fn platzWaehlen(welt: &mut dyn Welt, z: &mut Zustand, typ: i32) -> i32 {
     if !gefunden && PAR(z.spieler).platzFern > 0.0 && hatStutzen(welt, typ) && typ != mapCommandCenter {
         if let Some((x, y)) = platzFernSuchen(welt, z, typ, &hin, nh) { gefunden = true; bestX = x; bestY = y; }
     }
-    if !gefunden && !gross && !super::vorplan::ausgesetzt() && typ != mapGuardPost {
+    if planErlaubt && !gefunden && !gross && super::vorplan::an(z) && !super::vorplan::ausgesetzt() && typ != mapGuardPost {
         if let Some((x0, y0)) = super::vorplan::ausPlan(welt, z, typ) {
             let i = platzEintrag(welt, z, typ, x0, y0);
             if i >= 0 { melde(welt, z, "plan", typ, x0, y0, &format!("Platz aus dem Bebauungsplan ({},{}) -- sonst keiner frei", x0, y0)); }
             return i;
         }
     }
-    if !gefunden && !super::vorplan::ausgesetzt() {
+    if planErlaubt && !gefunden && super::vorplan::an(z) && !super::vorplan::ausgesetzt() {
         // Bebauungsplan: die Reservierungen lenken nur um, sie sperren nie ganz -- ohne sie noch einmal suchen (der Plan
         // stellt sich beim naechsten Durchlauf um das neue Gebaeude herum neu auf).
         super::vorplan::aussetzen(true);
@@ -228,7 +316,7 @@ pub fn platzWaehlen(welt: &mut dyn Welt, z: &mut Zustand, typ: i32) -> i32 {
 
 /// Am Stutzen eines vorhandenen/geplanten Gebaeudes (immer 1 Kachel Abstand); Kommandozentrale nah an der Mitte,
 /// Kraftwerke im Ring um die Mitte (Tokamak feindabgewandt). Liefert (gefunden, x, y, verworfen, letzter Grund).
-pub(super) fn platzAmStutzen(welt: &mut dyn Welt, z: &mut Zustand, typ: i32, hin: &[Rechteck; 160], nh: i32) -> (bool, i32, i32, i32, &'static str) {
+pub fn platzAmStutzen(welt: &mut dyn Welt, z: &mut Zustand, typ: i32, hin: &[Rechteck; 160], nh: i32) -> (bool, i32, i32, i32, &'static str) {
     let g = grundflaeche(welt, typ);
     let mut grund: &'static str = "";
     let mut verworfen = 0;
@@ -300,32 +388,35 @@ pub(super) fn platzAmStutzen(welt: &mut dyn Welt, z: &mut Zustand, typ: i32, hin
 }
 
 /// Erweiterung (Rust, PAR platzFern): kein Platz am Stutzen -> naechster freier Platz im Umkreis; anschluss() legt die
-/// Roehre. Jeder Platz traegt die Laenge seines Anschlusses ans Netz.
+/// Roehre. Neues Modell: jeder Platz traegt die Laenge seines Anschlusses ans Netz.
 pub(super) fn platzFernSuchen(welt: &mut dyn Welt, z: &mut Zustand, typ: i32, hin: &[Rechteck; 160], nh: i32) -> Option<(i32, i32)> {
     let g = grundflaeche(welt, typ);
     let r = PAR(z.spieler).platzFern as i32;
     let (mx, my) = (z.bx, z.by);
     let mut best = (1i32 << 30, 0, 0);
-    // Die Roehre kostet Zeit (der Earthworker legt sie Kachel fuer Kachel) -- jeder Platz traegt die Laenge seines
-    // Anschlusses ans Netz, nicht nur den Abstand zur Mitte.
-    let abst = super::bau::netzAbstand(welt, z, hin, nh);
+    // Neues Modell: die Roehre kostet Zeit (der Earthworker legt sie Kachel fuer Kachel) -- jeder Platz traegt die
+    // Laenge seines Anschlusses ans Netz, nicht nur den Abstand zur Mitte.
+    let abst = if kampfModellNeu() { Some(super::bau::netzAbstand(welt, z, hin, nh)) } else { None };
     let kachel = PAR(z.spieler).roehreKachel;
     let bb = if z.breite < 256 { z.breite } else { 256 };
     for dy in -r..=r { for dx in -r..=r {
         let d2 = dx * dx + dy * dy;
         if d2 > r * r || d2 >= best.0 { continue; }
         let (x0, y0) = (mx + dx - g.w / 2, my + dy - g.h / 2);
-        // kuerzester Anschluss ueber eine Seitenkachel der Grundflaeche
-        let rr = Rechteck { x0, y0, w: g.w, h: g.h, stutzen: true };
-        let mut m = i32::MAX;
-        for y in (y0 - 1)..=(y0 + g.h) { for x in (x0 - 1)..=(x0 + g.w) {
-            if x < 0 || y < 0 || x >= bb || y * bb + x >= abst.len() as i32 { continue; }
-            if !super::bau::anGrundflaeche(welt, &rr, x, y) { continue; }
-            let v = abst[(y * bb + x) as usize];
-            if v >= 0 && v < m { m = v; }
-        } }
-        if m == i32::MAX { continue; } // vom Netz aus nicht zu erreichen
-        let roehre = m;
+        let mut roehre = 0;
+        if let Some(a) = &abst {
+            // kuerzester Anschluss ueber eine Seitenkachel der Grundflaeche
+            let rr = Rechteck { x0, y0, w: g.w, h: g.h, stutzen: true };
+            let mut m = i32::MAX;
+            for y in (y0 - 1)..=(y0 + g.h) { for x in (x0 - 1)..=(x0 + g.w) {
+                if x < 0 || y < 0 || x >= bb || y * bb + x >= a.len() as i32 { continue; }
+                if !super::bau::anGrundflaeche(welt, &rr, x, y) { continue; }
+                let v = a[(y * bb + x) as usize];
+                if v >= 0 && v < m { m = v; }
+            } }
+            if m == i32::MAX { continue; } // vom Netz aus nicht zu erreichen
+            roehre = m;
+        }
         let vorab = d2 + (roehre as f64 * kachel) as i32;
         if vorab >= best.0 { continue; }
         let mut gr: &'static str = "";

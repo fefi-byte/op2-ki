@@ -1,5 +1,5 @@
-//! Kampf: Gruppen und Sollzahlen (fuehrung), Angriff starten, laufender Angriff, Zermuerben, Bilanz, Reserve, Kamera.
-//! Aus der C++-KI (op2_ki.hpp Zeilen 3950-4989) uebertragen und erweitert.
+//! Kampf: Gruppen und Sollzahlen (fuehrung), Angriff starten, laufender Angriff, Zermuerben (Hand/Netz), Bilanz, Reserve, Kamera.
+//! C++-KI op2_ki.hpp Zeilen 3950-4989, uebertragen nach Rust (siehe UEBERSETZUNG.md).
 use super::*;
 
 mod bilanz;
@@ -12,11 +12,12 @@ pub use bilanz::*;
 pub use lage::*;
 pub use ziel::*;
 pub use reserve::*;
-use start::*;
+pub use start::*;
 pub use kamera::*;
 
 mod fuehrung;
 mod zermuerben;
+mod marsch;
 
 const GRUPPE_MAX: i32 = 32; // FREMD aus Zeile 3934
 const SCAN_TAKT: i32 = 200; // FREMD aus Zeile 979
@@ -88,6 +89,9 @@ pub fn wachen(welt: &mut dyn Welt, g: Gruppe, warte: Rect, bewacht: &[Rect], n: 
 pub fn kampfFuehrung(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     let t = welt.Tick();
     if t % SCAN_TAKT >= TAKT { return; }                    // einmal je SCAN_TAKT
+    super::modus::drohungMerken(z, t);
+    // Missionsmodus: leichtere Stufen entscheiden seltener (schwer: jeder Durchgang)
+    if !super::modus::kampfTakt(welt, z, t, SCAN_TAKT) { return; }
     // Selbstheilung: ist der letzte Durchlauf abgestuerzt, alle Gruppen neu anlegen
     if z.kampfLaeuft != 0 {
         z.wacheAn = 0; z.sammelAn = 0; z.angriffAn = 0; z.fabrikAn = 0; z.kampfModus = 0; z.wacheAnzahl = 0;
@@ -101,3 +105,22 @@ pub fn kampfFuehrung(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     z.kampfLaeuft = 0;
 }
 
+/// Rust (PAR schwachstelle): was der Verlust eines Gebaeudes kostet -- Erz + 2 x Seltenerz; Zentrale und Strukturfabrik
+/// doppelt (Siegbedingung); Minen und Schmelzen zusaetzlich ihr Einkommen ueber den Planungshorizont (~1400 Erz je 1000
+/// Ticks je Route), Schmelzen dazu ihren Anteil am Erzlager (die Schmelze IST das Lager: faellt sie, ist ihr Vorrat weg).
+pub fn schwachZielWert(welt: &mut dyn Welt, typ: i32, p: i32) -> i32 {
+    let basis = (welt.GetOreCost(typ, p) + 2 * welt.GetRareOreCost(typ, p)).max(100) as f64;
+    let einkommen = 1400.0 * PAR(g_kraftSpieler.with(|c| c.get())).horizont / 1000.0;
+    let w = match typ {
+        mapCommandCenter | mapStructureFactory => basis * 2.0,
+        mapCommonOreMine | mapRareOreMine => basis + einkommen,
+        mapCommonOreSmelter | mapRareOreSmelter => {
+            let n = welt.PlayerBuildingEnum(p, typ).len().max(1) as f64;
+            let lager = if typ == mapCommonOreSmelter { welt.Ore(p) } else { welt.RareOre(p) } as f64;
+            basis + lager / n + einkommen
+        }
+        mapTokamak => basis * 1.5,
+        _ => basis,
+    };
+    w as i32
+}

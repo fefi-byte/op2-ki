@@ -1,6 +1,9 @@
 //! Fahrzeugproduktion: was die Fahrzeugfabrik baut (fahrzeugWahl, fahrzeuge), weitere Fabriken, sichere Gruppenwechsel.
 use super::*;
-use super::{WERT_LYNX, GEBAEUDE, ix, exy};
+use super::super::*;
+use super::{TECH_SELTENERZ, WERT_LYNX, GEBAEUDE, ix, exy};
+
+thread_local! { static LKW_LETZT: std::cell::RefCell<[i32; 8]> = const { std::cell::RefCell::new([-100000; 8]) }; }
 
 pub(super) struct K { typ: i32, wert: i32, warum: &'static str }
 
@@ -54,11 +57,13 @@ pub fn fahrzeugWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage, warum: &mut &'st
         }
         // Seltenerz-Mine, sobald die Seltenerz-Schmelze steht
         if l.geb[ix(mapRareOreSmelter)] > 0 && l.geb[ix(mapRareOreMine)] == 0 && l.fz[ix(mapRoboMiner)] == 0 {
-            let w = 50 + ((seltenVorteil(welt, z) * 50.0) as i32).clamp(0, 45);
+            let w = if PAR(z.spieler).seltenNutzen >= 0.5 { 50 + ((seltenVorteil(welt, z) * 50.0) as i32).clamp(0, 45) } else { 50 };
             fzPruefe(welt, z, l, &mut beste, mapRoboMiner, w, "Seltenerz-Mine fuer die Seltenerz-Schmelze");
         }
     }
     if l.fz[ix(mapRoboSurveyor)] == 0 && l.geb[ix(mapCommonOreMine)] < MAX_MINEN as i32 { fzPruefe(welt, z, l, &mut beste, mapRoboSurveyor, 15, "Baken vermessen"); }
+    // Missionsmodus, Rolle Kolonie: ein zweiter Vermesser erkundet die Baken der Umgebung
+    else if l.fz[ix(mapRoboSurveyor)] < 2 && super::super::modus::rolle(z) == super::super::modus::ROLLE_KOLONIE { fzPruefe(welt, z, l, &mut beste, mapRoboSurveyor, 30, "Kolonie: zweiter Vermesser erkundet die Baken"); }
     // Kampffahrzeuge: so dringend wie die Verteidigung (oder die Aussenposten/Angriffstruppe)
     {
         let fz = fahrgestellWahl(welt, z, l.selten);
@@ -102,15 +107,21 @@ pub fn fahrzeugWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage, warum: &mut &'st
             }
         }
         let rep = l.fz[ix(mapRepairVehicle)] + l.fz[ix(mapSpider)];
-        // Diese Wahl gilt der Fahrzeugfabrik -- Spinnen baut nur die Arachnid-Fabrik (Spielregel; die Engine prueft es
-        // nicht und baut sie sonst in der Fahrzeugfabrik). Plymouth repariert dann ueber ConVec und Garage.
-        let rtOk = reparaturTyp(welt, z) != mapSpider;
+        // Neues Modell: diese Wahl gilt der Fahrzeugfabrik -- Spinnen baut nur die Arachnid-Fabrik (Spielregel; die Engine
+        // prueft es nicht und baut sie sonst in der Fahrzeugfabrik). Plymouth repariert dann ueber ConVec und Garage.
+        let spinneHier = !kampfModellNeu();
+        let rtOk = reparaturTyp(welt, z) != mapSpider || spinneHier;
         if rtOk && rep == 0 && (schaden > 0 || z.feindGemeldet != 0 || z.bedrohung > 0) {
             let rt = reparaturTyp(welt, z);
             fzPruefe(welt, z, l, &mut beste, rt, 50, "Reparaturfahrzeug: Feind bekannt oder etwas beschaedigt");
         } else if rtOk && rep > 0 && rep < 1 + kampfFz / 15 {
             let rt = reparaturTyp(welt, z);
             fzPruefe(welt, z, l, &mut beste, rt, 30, "weiteres Reparaturfahrzeug: je 15 Kampffahrzeuge eins");
+        }
+        // Spinnen fuer die Uebernahme: nur Plymouth, nur wenn EMP im Einsatz ist (Truppe oder Rakete)
+        if spinneHier && !welt.IsEden(z.spieler) && (z.zielEmp > 0 || z.empRakete != 0)
+            && l.fz[ix(mapSpider)] < 1 + (if z.zielEmp > 0 { z.zielEmp } else { 2 }) / 2 + 1 {
+            fzPruefe(welt, z, l, &mut beste, mapSpider, 35, "Spinnen: uebernehmen betaeubte Feindfahrzeuge");
         }
     }
     *warum = beste.warum;
@@ -159,24 +170,22 @@ pub fn weitereFabriken(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     }
 }
 
-/// Fahrzeugfabrik fuer Wirtschaftsfahrzeuge: die des laufenden Auftrags; sonst eine, die laeuft (Strom und Arbeiter),
-/// lieber eine freie; sonst die stillgelegte (zum Wiedereinschalten); sonst die erste. Eine Fabrik ohne Roehrenanschluss
-/// bekam sonst alle Auftraege und baute nie.
-pub(super) fn fabrikWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> Id {
-    if z.fzTyp != 0 && z.fzVf != 0 && welt.IsLive(z.fzVf) { return z.fzVf; }
-    let alle: Vec<Id> = (0..l.vfAnzahl.max(0) as usize).map(|i| l.vfs[i]).filter(|&v| v != 0 && welt.IsLive(v)).collect();
-    let laeuft = |welt: &mut dyn Welt, v: Id| welt.HasPower(v) && welt.HasWorkers(v);
-    if let Some(&v) = alle.iter().find(|&&v| laeuft(welt, v) && !welt.IsBusy(v)) { return v; }
-    if let Some(&v) = alle.iter().find(|&&v| laeuft(welt, v)) { return v; }
-    if z.fabrikStill != 0 && alle.contains(&z.fabrikStill) { return z.fabrikStill; }
-    l.vf
-}
-
 /// C++: void fahrzeuge(Zustand& z, const Lage& l)  (op2_ki.hpp:3846)
 pub fn fahrzeuge(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     if l.vf == 0 { return; }
+    // Die erste Fabrik der Liste, als "weitere" stillgelegt (die Reihenfolge der Fabriken hat sich geaendert -- Nutzer-Partie
+    // cm03: die Fabrik der zweiten Basis stand kurz vorn, die Hauptfabrik wurde als weitere stillgelegt und nie mehr geweckt,
+    // denn weitereFabriken weckt nur ab der zweiten und fahrzeuge nur fabrikStill): an fabrikStill uebergeben
+    let eigene = &l.vfs[..l.vfAnzahl.max(0) as usize];
+    if z.fabrikStill != 0 && !eigene.contains(&z.fabrikStill) { z.fabrikStill = 0; }   // gehoert nicht mehr dazu (zweite Basis, zerstoert)
+    for i in 0..MAX_VF {
+        if z.fabrikStillW[i] != 0 && z.fabrikStillW[i] == l.vfs[0] {
+            z.fabrikStillW[i] = 0;
+            if z.fabrikStill == 0 { z.fabrikStill = l.vfs[0]; }
+        }
+    }
     weitereFabriken(welt, z, l);
-    let vf: Id = fabrikWahl(welt, z, l);
+    let vf: Id = if PAR(z.spieler).fabrikLaeuft >= 0.5 { fabrikWahl(welt, z, l) } else { l.vf };
     let t = welt.Tick();
     let vl = welt.Location(vf);
     let (vx, vy) = exy(welt, z, vl);
@@ -198,10 +207,13 @@ pub fn fahrzeuge(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     let mut typ = fahrzeugWahl(welt, z, l, &mut warum);
     // Kampffahrzeuge baut die Fabrikgruppe fuer Wache und Sammelgruppe -- hier nur die Wirtschaftsfahrzeuge.
     if istKampfFz(welt, typ) { typ = mapNone; }
+    // Missionsmodus: die zweite Basis wartet auf ConVecs (zweitbasis::kitLaden bestellt sie selbst) -- Fabrik nicht stilllegen
+    let zbWartet = super::super::modus::mission(z) && super::super::zweitbasis::wartetAufFahrzeug(z);
     // Keine neuen Fahrzeuge noetig: Fabrik stilllegen (gibt 3 Arbeiter frei), bei Bedarf wieder einschalten.
     if z.fabrikStill == vf {
-        if typ == mapNone && z.gruppenBedarf == 0 { return; }
-        if typ == mapNone { warum = "Kampfgruppen brauchen Fahrzeuge (Fabrikgruppe)"; }
+        if typ == mapNone && z.gruppenBedarf == 0 && !zbWartet { return; }
+        if typ == mapNone && zbWartet { typ = mapConVec; warum = "ConVecs fuer die zweite Basis"; }   // nur zum Wecken
+        if typ == mapNone { typ = mapLynx; warum = "Kampfgruppen brauchen Fahrzeuge (Fabrikgruppe)"; }   // nur zum Wecken
         if !welt.IsBusy(vf) { z.fabrikStill = 0; return; }           // laeuft wieder -- naechster Schritt produziert
         let braucht = welt.GetWorkersRequired(mapVehicleFactory, z.spieler);
         if l.arbFrei < braucht {
@@ -222,13 +234,29 @@ pub fn fahrzeuge(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
         melde(welt, z, "arbeit", mapVehicleFactory, vx, vy, &txt);
         return;
     }
-    wirtschaftVorrang(welt, z, vf, typ, warum, t);
+    // PAR lkwWechsel (2026-11-21): unter dem Armee-Soll hoechstens alle lkwWechsel Ticks ein weiterer Lastwagen, sobald jede
+    // Route einen hat -- dazwischen baut die Fabrikgruppe Kampffahrzeuge. Gemessen ml2_11: Eden baute nach der zweiten Schmelze
+    // 6 Lastwagen am Stueck, die Kampf-Sollzahlen ruhten, beim ersten Plymouth-Angriff hatte Eden 0 Lynx.
+    if typ == mapCargoTruck && PAR(z.spieler).lkwWechsel > 0.0 && z.eigeneArmee + z.eigeneWTWert < z.sollArmee
+        && l.fz[ix(mapCargoTruck)] >= l.geb[ix(mapCommonOreSmelter)].max(1) {
+        let sp = (z.spieler & 7) as usize;
+        let letzt = LKW_LETZT.with(|v| v.borrow()[sp]);
+        if t - letzt < PAR(z.spieler).lkwWechsel as i32 && t >= letzt {
+            typ = mapNone;
+            if selten(welt, z, 31, 2000) {
+                melde(welt, z, "fahrzeug", mapCargoTruck, vx, vy, &format!("Lastwagen wartet: Armee {} unter Soll {} -- erst Kampffahrzeuge (letzter Lastwagen vor {} Ticks)",
+                      z.eigeneArmee + z.eigeneWTWert, z.sollArmee, t - letzt));
+            }
+        }
+    }
+    if PAR(z.spieler).fabrikWirtschaft >= 0.5 { wirtschaftVorrang(welt, z, vf, typ, warum, t); }
     if welt.IsBusy(vf) || t < z.fzPauseBis { return; }
     if typ == mapNone {
-        if z.gruppenBedarf != 0 { return; }                          // Fabrikgruppe soll Kampffahrzeuge bauen
-        // nicht stilllegen, solange die mobile Armee unter ihrem Soll liegt (Nutzer 2026-11-20) -- stillgelegt gab sie ihre
-        // Arbeiter ab und bekam sie lange nicht zurueck
-        if !standardVolk(welt, l) && welt.GetCurAction(vf) == moDone && welt.HasWorkers(vf) && z.eigeneMobil >= mobilSoll(welt, z, true) {
+        if z.gruppenBedarf != 0 || zbWartet { return; }              // Fabrikgruppe soll Kampffahrzeuge bauen / zweite Basis
+        // Nutzer 2026-11-20: nicht stilllegen, solange die mobile Armee unter ihrem Soll liegt -- auch bevor ein
+        // Kampffahrzeug erforscht ist: stillgelegt gab sie ihre Arbeiter ab und bekam sie lange nicht zurueck
+        if !standardVolk(welt, l) && welt.GetCurAction(vf) == moDone && welt.HasWorkers(vf) && z.eigeneMobil >= mobilSoll(welt, z, true)
+            && !super::super::zweitbasis::gehoertBasis(z, vf) && !(super::super::modus::mission(z) && super::super::zweitbasis::amPosten(welt, z, vf)) {
             welt.DoIdle(vf);
             z.fabrikStill = vf;
             melde(welt, z, "arbeit", mapVehicleFactory, vx, vy, "Fahrzeugfabrik stillgelegt -- keine neuen Fahrzeuge noetig");
@@ -252,6 +280,7 @@ pub fn fahrzeuge(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
         return;
     }
     welt.DoProduce(vf, typ, waffe);
+    if typ == mapCargoTruck { let sp = (z.spieler & 7) as usize; LKW_LETZT.with(|v| v.borrow_mut()[sp] = t); }
     z.fzVf = vf;
     if !istKampfFz(welt, typ) { z.wirtVorrang = 0; }
     z.fzTyp = typ; z.fzSeit = t;
@@ -270,7 +299,7 @@ pub fn fahrzeuge(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
 
 /// C++: bool sicherNehmen(const Zustand& z, ScGroup& g, Unit u)  (op2_ki.hpp:3935)
 // Eine Gruppe fasst hoechstens 32 Einheiten; TakeUnit in eine volle Gruppe loescht den Ueberschuss aus dem Spiel.
-pub fn sicherNehmen(welt: &mut dyn Welt, _z: &Zustand, g: Gruppe, u: Id) -> bool {
+pub fn sicherNehmen(welt: &mut dyn Welt, z: &Zustand, g: Gruppe, u: Id) -> bool {
     if welt.TotalUnitCount(g) >= GRUPPE_MAX { return false; }
     welt.TakeUnit(g, u);
     true
@@ -287,7 +316,7 @@ pub(super) fn takeAllUnits(welt: &mut dyn Welt, ziel: Gruppe, quelle: Gruppe) {
 
 /// C++: int sicherAlle(const Zustand& z, ScGroup& ziel, ScGroup& quelle)  (op2_ki.hpp:3941)
 // Alles aus quelle, soweit Platz ist; der Rest bleibt in quelle. Liefert, wie viele dort bleiben.
-pub fn sicherAlle(welt: &mut dyn Welt, _z: &Zustand, ziel: Gruppe, quelle: Gruppe) -> i32 {
+pub fn sicherAlle(welt: &mut dyn Welt, z: &Zustand, ziel: Gruppe, quelle: Gruppe) -> i32 {
     if welt.TotalUnitCount(ziel) + welt.TotalUnitCount(quelle) <= GRUPPE_MAX { takeAllUnits(welt, ziel, quelle); return 0; }
     let mut v: Vec<Id> = Vec::new();
     for u in welt.GroupEnumerator(quelle) {
@@ -312,4 +341,16 @@ pub(super) fn wirtschaftVorrang(welt: &mut dyn Welt, z: &mut Zustand, vf: Id, ty
         let nm = name(welt, typ);
         melde(welt, z, "fahrzeug", typ, vx, vy, &format!("Fabrik nach dem laufenden Kampffahrzeug fuer {}: {} (Kampf-Sollzahlen ruhen)", nm, warum));
     }
+}
+
+/// fabrikLaeuft: Fahrzeugfabrik fuer Wirtschaftsfahrzeuge -- die des laufenden Auftrags; sonst eine, die laeuft (Strom und
+/// Arbeiter), lieber eine freie; sonst die stillgelegte (zum Wiedereinschalten); sonst die erste
+pub(super) fn fabrikWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage) -> Id {
+    if z.fzTyp != 0 && z.fzVf != 0 && welt.IsLive(z.fzVf) { return z.fzVf; }
+    let alle: Vec<Id> = (0..l.vfAnzahl.max(0) as usize).map(|i| l.vfs[i]).filter(|&v| v != 0 && welt.IsLive(v)).collect();
+    let laeuft = |welt: &mut dyn Welt, v: Id| welt.HasPower(v) && welt.HasWorkers(v);
+    if let Some(&v) = alle.iter().find(|&&v| laeuft(welt, v) && !welt.IsBusy(v)) { return v; }
+    if let Some(&v) = alle.iter().find(|&&v| laeuft(welt, v)) { return v; }
+    if z.fabrikStill != 0 && alle.contains(&z.fabrikStill) { return z.fabrikStill; }
+    l.vf
 }

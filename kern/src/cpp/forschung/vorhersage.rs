@@ -1,21 +1,22 @@
 //! Techbaum-Vorhersage: Nutzen je Technik (Kampf, Wirtschaft, Kolonie, Raum), Einheitswerte, Ziele je Bereich, Laborbedarf.
 use super::*;
-use super::{WERT_WT, WERT_LYNX};
+use super::super::*;
+use super::{TECH_RAUMFAHRT, WERT_WT, WERT_LYNX, EMP_TECH, GEBAEUDE};
 
 /// C++: bool istWaffe(int typ)  (op2_ki.hpp:5350)
-pub fn istWaffe(_welt: &mut dyn Welt, typ: i32) -> bool {
+pub fn istWaffe(welt: &mut dyn Welt, typ: i32) -> bool {
     matches!(typ, mapLaser | mapMicrowave | mapStickyfoam | mapRailGun | mapEMP | mapRPG | mapStarflare
         | mapStarflare2 | mapESG | mapSupernova | mapSupernova2 | mapAcidCloud | mapThorsHammer | mapEnergyCannon)
 }
 
 /// C++: bool istFahrgestell(int typ)  (op2_ki.hpp:5358)
-pub fn istFahrgestell(_welt: &mut dyn Welt, typ: i32) -> bool {
+pub fn istFahrgestell(welt: &mut dyn Welt, typ: i32) -> bool {
     typ == mapLynx || typ == mapPanther || typ == mapTiger || typ == mapScorpion
 }
 
 /// C++: int sdkWert(int traeger, int waffe)  (op2_ki.hpp:5361)
 // SDK-Wert fuer Fahrgestell/Turm + Waffe (wie kampfWert, aber ohne Einheit)
-pub fn sdkWert(_welt: &mut dyn Welt, traeger: i32, waffe: i32) -> i32 {
+pub fn sdkWert(welt: &mut dyn Welt, traeger: i32, waffe: i32) -> i32 {
     let stufe = if waffe == mapThorsHammer { 2 } else if waffe == mapLaser || waffe == mapMicrowave || waffe == mapNone { 0 } else { 1 };
     match traeger {
         mapSpider | mapScorpion => 4,
@@ -27,16 +28,16 @@ pub fn sdkWert(_welt: &mut dyn Welt, traeger: i32, waffe: i32) -> i32 {
     }
 }
 
-/// Wert einer Einheit fuer die Forschungsbewertung aus dem Arena-8-Modell (gegenwert mit den SDK-Werten des Spielers,
-/// also mit Erforschtem); ohne Traeger die Punkttabelle.
+/// Rust (kampfModell): Wert einer Einheit fuer die Forschungsbewertung -- neu aus dem Arena-8-Modell (gegenwert mit den
+/// SDK-Werten des Spielers, also mit Erforschtem), sonst die alte Punkttabelle.
 pub fn einheitWertF(welt: &mut dyn Welt, z: &Zustand, traeger: i32, waffe: i32) -> f64 {
-    if traeger == 0 { return sdkWert(welt, traeger, waffe) as f64; }
+    if !kampfModellNeu() || traeger == 0 { return sdkWert(welt, traeger, waffe) as f64; }
     if traeger == mapSpider { return 1.0; }
     let w = if waffe == mapNone || waffe <= 0 { if traeger == mapScorpion { mapEnergyCannon } else { mapLaser } } else { waffe };
     gegenwert(welt, z.spieler, traeger, w, 1.0) * super::paarung::paarFaktor(welt, z, traeger, w)   // Rust (PAR paarung)
 }
 
-/// Staerke je Erz der besten EMP-Beimischung relativ zur reinen Truppe (>= 1), wie in kampfFuehrung.
+/// Rust (kampfModell): Staerke je Erz der besten EMP-Beimischung relativ zur reinen Truppe (>= 1), wie in kampfFuehrung.
 pub fn empMischFaktor(welt: &mut dyn Welt, z: &Zustand, traeger: i32, waffe: i32) -> f64 {
     let s = z.spieler;
     let kosten = |welt: &mut dyn Welt, f: i32, w: i32| (welt.GetOreCost(f, s) + welt.GetOreCost(w, s) + 2 * (welt.GetRareOreCost(f, s) + welt.GetRareOreCost(w, s))).max(1) as f64;
@@ -88,10 +89,11 @@ fn grundTempo(typ: i32) -> i32 {
     if typ == mapLynx { 3 } else if typ == mapPanther { 4 } else if typ == mapTiger { 5 } else { 0 }
 }
 
-/// Panzerung zaehlt fuer Eden frueh mehr (gegen die Microwave der Plymouth-Lynx): Zuschlag 3, faellt bis Tick 80000 auf 0
+/// Zuschlag PAR panzerFrueh auf Panzerungs-Nutzen, faellt bis Tick PAR panzerBis linear auf 0 (1 = kein Zuschlag)
 fn panzerFruehFaktor(welt: &mut dyn Welt, z: &Zustand) -> f64 {
-    if !welt.IsEden(z.spieler) { return 1.0; }
-    1.0 + 3.0 * (1.0 - welt.Tick() as f64 / 80000.0).max(0.0)
+    let (pf, bis) = (PAR(z.spieler).panzerFrueh, PAR(z.spieler).panzerBis);
+    if pf <= 0.0 || bis <= 0.0 { return 1.0; }
+    1.0 + pf * (1.0 - welt.Tick() as f64 / bis).max(0.0)
 }
 
 /// C++: Kraftwerte werteJetzt(const Zustand& z, int traeger, int waffe)  (op2_ki.hpp:5396)
@@ -115,18 +117,18 @@ pub fn kampfNutzen(welt: &mut dyn Welt, z: &Zustand, t: &tb::Tech, tr: &[Trupp],
         for k in 0..nt_u {
             if w.typ != tr[k].traeger && w.typ != tr[k].waffe { continue; }
             if w.eig == tb::E_MOVE_SPEED {
-                // schnellere Kampffahrzeuge (kleinerer Wert = schneller, z.B. Lynx 3 -> 2 = +50 %): +100 % Tempo = ein Einheitwert
+                // PAR tempoWert: schnellere Kampffahrzeuge (kleinerer Wert = schneller, z.B. Lynx 3 -> 2 = +50 %)
                 let alt = grundTempo(tr[k].traeger);
-                if w.typ == tr[k].traeger && w.wert > 0 && alt > w.wert {
-                    g += tr[k].anzahl as f64 * einheitWertF(welt, z, tr[k].traeger, tr[k].waffe) * (alt as f64 / w.wert as f64 - 1.0);
+                if w.typ == tr[k].traeger && PAR(z.spieler).tempoWert > 0.0 && w.wert > 0 && alt > w.wert {
+                    g += tr[k].anzahl as f64 * einheitWertF(welt, z, tr[k].traeger, tr[k].waffe) * PAR(z.spieler).tempoWert * (alt as f64 / w.wert as f64 - 1.0);
                 }
                 continue;
             }
             let vor = werteJetzt(welt, z, tr[k].traeger, tr[k].waffe);
-            if w.typ == tr[k].traeger && w.eig == tb::E_ARMOR {
-                // Die Forschung setzt die Panzerklasse (0..5), die Welt meldet den Panzerwert (256..40). Nutzen = laengeres
-                // Ueberleben gegen die Waffen der Feinde (Schaden je Treffer = Panzerwert * Erschuetterung / 256 + Durchschlag),
-                // Kraft ~ Wurzel.
+            if w.typ == tr[k].traeger && w.eig == tb::E_ARMOR && PAR(z.spieler).panzerKlasse >= 0.5 {
+                // PAR panzerKlasse: die Forschung setzt die Panzerklasse (0..5), die Welt meldet den Panzerwert (256..40) --
+                // der alte Vergleich (2 gegen 180) hielt jede Panzerung fuer wertlos. Nutzen = laengeres Ueberleben gegen die
+                // Waffen der Feinde (Schaden je Treffer = Panzerwert * Erschuetterung / 256 + Durchschlag), Kraft ~ Wurzel.
                 let (neu, alt) = (panzerWert(w.wert), panzerJetzt(welt, tr[k].traeger, z.spieler));
                 if neu < alt {
                     let (a, b) = (feindTreffer(welt, z.spieler, alt), feindTreffer(welt, z.spieler, neu));
@@ -139,6 +141,7 @@ pub fn kampfNutzen(welt: &mut dyn Welt, z: &Zustand, t: &tb::Tech, tr: &[Trupp],
             }
             let mut nach = vor;
             if w.typ == tr[k].traeger && w.eig == tb::E_HIT_POINTS { nach.hp = w.wert; }
+            else if w.typ == tr[k].traeger && w.eig == tb::E_ARMOR { nach.panzer = w.wert; }
             else if w.typ == tr[k].waffe && w.eig == tb::E_RATE_OF_FIRE { nach.reload = w.wert; }
             else if w.typ == tr[k].waffe && w.eig == tb::E_PENETRATION_DAMAGE { nach.pen = w.wert; }
             else if w.typ == tr[k].waffe && w.eig == tb::E_CONCUSSION_DAMAGE { nach.kon = w.wert; }
@@ -147,7 +150,10 @@ pub fn kampfNutzen(welt: &mut dyn Welt, z: &Zustand, t: &tb::Tech, tr: &[Trupp],
             let b = kraft(welt, &nach, tr[k].waffe);
             if a > 0.0 && b > a {
                 let s = einheitWertF(welt, z, tr[k].traeger, tr[k].waffe);
-                g += tr[k].anzahl as f64 * s * (b / a - 1.0);
+                // PAR panzerFrueh (Nutzer 2026-11-20): gegen die schwachen fruehen Waffen (Lynx mit Laser/Microwave) zaehlt eine
+                // Panzerstufe deutlich mehr als im Kraftmodell -- Zuschlag faellt bis Tick PAR panzerBis linear auf 0.
+                let f = if w.eig == tb::E_ARMOR { panzerFruehFaktor(welt, z) } else { 1.0 };
+                g += tr[k].anzahl as f64 * s * (b / a - 1.0) * f;
             }
         }
     }
@@ -163,8 +169,15 @@ pub fn kampfNutzen(welt: &mut dyn Welt, z: &Zustand, t: &tb::Tech, tr: &[Trupp],
     for k in 0..nt_u { if tr[k].traeger == mapGuardPost { wt += tr[k].anzahl; } else { fz += tr[k].anzahl; } }
     for i in 0..t.nf {
         let u = tb::FREI[(t.f0 + i) as usize];
-        if u == mapEMP {
-            // EMP toetet nicht, es verstaerkt die Truppe -- Nutzen = Gewinn der besten Beimischung.
+        if u == mapStickyfoam && kampfModellNeu() && PAR(z.spieler).schaumAnteil > 0.0 {
+            // Rust: Stickyfoam haelt Nachruecker fest (Gefechtsfuehrung); Nutzen = Wert des Truppenanteils, den er besetzt
+            // (Stellschraube schaumAnteil -- im Duell zu messen, Arena 8 hatte ihn ohne gezielte Fuehrung)
+            for k in 0..nt_u {
+                if tr[k].traeger == mapGuardPost { continue; }
+                g += tr[k].anzahl as f64 * einheitWertF(welt, z, tr[k].traeger, tr[k].waffe) * PAR(z.spieler).schaumAnteil;
+            }
+        } else if u == mapEMP && kampfModellNeu() {
+            // Rust (kampfModell): EMP toetet nicht, es verstaerkt die Truppe -- Nutzen = Gewinn der besten Beimischung.
             for k in 0..nt_u {
                 if tr[k].traeger == mapGuardPost { continue; }
                 let gw = einheitWertF(welt, z, tr[k].traeger, tr[k].waffe);
@@ -263,8 +276,8 @@ pub fn kolonieNutzen(welt: &mut dyn Welt, z: &Zustand, l: &Lage, t: &tb::Tech) -
             g += plus as f64 * 0.1;
         }
     }
-    // Warntechs heben Summe und Teiler der Engine-Moral um je 2 -- Gewinn aus dem Moralmodell
-    if WARNTECHS.contains(&t.id) {
+    // Neues Modell: Warntechs heben Summe und Teiler der Engine-Moral um je 2 -- Gewinn aus dem Moralmodell
+    if kampfModellNeu() && WARNTECHS.contains(&t.id) {
         let (ms, mt) = moralSummeTeiler(welt, z, l);
         let fak = if welt.IsEden(z.spieler) { 0.92 } else { 1.0 };   // morale.txt DIFF_MED / DIFF_MED_PLY
         let vorher = (100.0 * ms as f64 / mt as f64 * fak).clamp(0.0, 99.0);   // die Engine haelt die Moral in 0..99
@@ -277,7 +290,7 @@ pub fn kolonieNutzen(welt: &mut dyn Welt, z: &Zustand, l: &Lage, t: &tb::Tech) -
 
 /// C++: double spaceNutzen(const Zustand& z, const Lage& l, const tb::Tech& t)  (op2_ki.hpp:5513)
 // Space-Nutzen: was das Ziel noch freischalten muss (Spaceport, SULV, EDWARD)
-pub fn spaceNutzen(_welt: &mut dyn Welt, z: &Zustand, l: &Lage, t: &tb::Tech) -> f64 {
+pub fn spaceNutzen(welt: &mut dyn Welt, z: &Zustand, l: &Lage, t: &tb::Tech) -> f64 {
     if z.ziel != 1 || z.zielErreicht != 0 { return 0.0; }
     let mut g = 0.0f64;
     for i in 0..t.nf {
@@ -314,8 +327,10 @@ pub fn bereichZiele(welt: &mut dyn Welt, z: &Zustand, l: &Lage, bereich: i32, ou
         let eigen = eigeneKosten(welt, z, t);
         if eigen < 0 { continue; }
         if wegVerteuert(welt, z, t.id, 0) { continue; } // wartet auf die Seltenerz-Mine
-        // Was nur mit Seltenerz gebaut werden kann (Acid Weaponry, Panther, Thor's Hammer), zaehlt als eigenes Ziel nur zu 30 %,
-        // solange kein Seltenerz da ist (keine Schmelze, Lager leer) -- als Voraussetzung (Panther fuer die Railgun) voll.
+        // Nutzer 2026-11-20: was nur mit Seltenerz gebaut werden kann (alle Einheiten dieser Technik kosten Seltenerz, z.B.
+        // Acid Weaponry, Panther, Thor's Hammer), zaehlt als eigenes Ziel nur mit PAR seltenOhne, solange kein Seltenerz da
+        // ist (keine Schmelze, Lager leer) -- sonst bremsen es und sein Weg (Seismologie, Vulkanologie) Wichtigeres aus.
+        // Nicht ausgeschlossen: als Voraussetzung (Panther fuer die Railgun) zieht es das eigentliche Ziel voll nach vorn.
         let seltenFehlt = braeuchteSelten(t.id) && l.selten <= 0 && l.geb[mapRareOreSmelter as usize] == 0;
         let mut v = bereichNutzen(welt, z, l, bereich, t, &tr, nt);
         // Freie Folgetechniken (Kosten 0), die mit dieser fertig werden, zaehlen mit (z.B. 3407 -> Laser, Wachturm)
@@ -340,8 +355,8 @@ pub fn bereichZiele(welt: &mut dyn Welt, z: &Zustand, l: &Lage, bereich: i32, ou
             }
             if braucht && rest { v += bereichNutzen(welt, z, l, bereich, f, &tr, nt); }
         }
-        // Forschung fuer Forschung (Spieler): ein Teil (freischaltWert) des Nutzens der Techniken, die diese direkt
-        // voraussetzen -- schaltet die Folgetechnik eine Einheit frei (Railgun), zaehlt ihr Nutzen voll (Panther).
+        // Forschung fuer Forschung (Spieler): 30 % des Nutzens der Techniken, die diese direkt voraussetzen.
+        let vb = PAR(z.spieler).vorausBau;
         let mut folge = 0.0f64;
         for j in 0..tb::ANZ_TECH as usize {
             let f = &tb::TECH[j];
@@ -351,19 +366,22 @@ pub fn bereichZiele(welt: &mut dyn Welt, z: &Zustand, l: &Lage, bereich: i32, ou
             let ti = techInfo(welt, fi);
             for r in 0..ti.required.len() {
                 if techInfo(welt, ti.required[r]).id == t.id {
-                    let gw = if f.nf > 0 { 1.0 } else { PAR(z.spieler).freischaltWert };
-                    folge += gw * bereichNutzen(welt, z, l, bereich, f, &tr, nt);
+                    if vb > 0.0 {
+                        // PAR vorausBau: was eine Einheit freischaltet (Railgun) zieht seine Voraussetzung (Panther) staerker
+                        let gw = if f.nf > 0 { vb } else { PAR(z.spieler).freischaltWert };
+                        folge += gw * bereichNutzen(welt, z, l, bereich, f, &tr, nt);
+                    } else {
+                        v += PAR(z.spieler).freischaltWert * bereichNutzen(welt, z, l, bereich, f, &tr, nt);
+                    }
                     break;
                 }
             }
         }
-        // Eden: das Reparaturfahrzeug (5401) ist kein eigenes Ziel (Spiegelpartien: es kostete Eden Siege)
-        let tf = if t.id == 5401 && welt.IsEden(z.spieler) { 0.3 } else { 1.0 };
-        v *= tf;
-        if seltenFehlt { v *= 0.3; }
-        v += folge * tf;   // die Rolle als Voraussetzung ohne Seltenerz-Abschlag
-        // eine Linie halten: das zuletzt beste Ziel des Bereichs bleibt vorn, bis ein anderes klar besser ist
-        if t.id == linieZiel(z.spieler, bereich) { v *= 1.5; }
+        v *= techFaktor(z.spieler, t.id);   // gelernter Faktor je Forschung (tf_<id>, Standard 1)
+        if seltenFehlt { v *= PAR(z.spieler).seltenOhne; }
+        v += folge * techFaktor(z.spieler, t.id);   // (vorausBau) die Rolle als Voraussetzung ohne Seltenerz-Abschlag
+        // PAR zielTreue: eine Linie halten -- das zuletzt beste Ziel des Bereichs bleibt vorn, bis ein anderes klar besser ist
+        if PAR(z.spieler).zielTreue > 1.0 && t.id == linieZiel(z.spieler, bereich) { v *= PAR(z.spieler).zielTreue; }
         if v <= 0.5 { continue; }
         let k = wegKosten(welt, z, t.id);
         if k <= 0 { continue; }
@@ -470,11 +488,11 @@ pub fn laborBedarf(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
         }
     }
     // Eroeffnung: ein Labor, das eines ihrer offenen Themen braucht, geht vor -- vorausschauend, damit das Advanced Lab
-    // fuer den Lynx steht, wenn seine Vorstufen fertig sind (Dringlichkeit 80)
+    // fuer den Lynx steht, wenn seine Vorstufen fertig sind; Dringlichkeit PAR eroeffLabor
     for id in super::labore::eroeffnungOffen(welt, z) {
         let lab = laborImWeg(welt, z, l, id);
         if lab != 0 {
-            if 80 > wert { wunsch = lab; wert = 80; fuer = id; }
+            if PAR(z.spieler).eroeffLabor as i32 > wert { wunsch = lab; wert = PAR(z.spieler).eroeffLabor as i32; fuer = id; }
             break;
         }
     }

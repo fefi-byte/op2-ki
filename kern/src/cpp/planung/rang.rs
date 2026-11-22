@@ -1,6 +1,7 @@
 //! Rang der Gebaeude fuer die Arbeiter-Rangliste; Vormerkungen von Erz.
 use super::*;
-use super::ix;
+use super::super::*;
+use super::{SCAN_TAKT, WERTUNG_TICK, WERT_WT, WERT_LYNX, MAX_WT, AUSSEN_R, B_KOLONIE, B_ZIEL, B_WIRTSCHAFT, B_VERTEIDIGUNG, B_ANZAHL, BEREICH, TECH_SELTENERZ, GEBAEUDE, snp, ix};
 
 /// C++: int rang(const Zustand& z, const Lage& l, int typ)  (op2_ki.hpp:1656)
 pub fn rang(welt: &mut dyn Welt, z: &Zustand, l: &Lage, typ: i32) -> i32 {
@@ -16,9 +17,9 @@ pub fn rang(welt: &mut dyn Welt, z: &Zustand, l: &Lage, typ: i32) -> i32 {
         mapCommonOreSmelter | mapCommonOreMine => 80,
         mapNursery => 78,
         mapUniversity => 74,
-        // Das erste Medical Center ueber den Schmelzen -- ohne es sterben die Leute, und Erz-Ansprueche mit Rang 80 hielten es
-        // zehntausende Ticks zurueck (Personal-Engpass frueh)
-        mapMedicalCenter => if l.medKap == 0 && l.menschen >= 40 { 84 } else { 70 },
+        // PAR medVorrang (2026-11-20): das erste Medical Center ueber den Schmelzen -- ohne es sterben die Leute, und Erz-Ansprueche
+        // mit Rang 80 hielten es zehntausende Ticks zurueck (Personal-Engpass frueh)
+        mapMedicalCenter => if PAR(z.spieler).medVorrang >= 0.5 && l.medKap == 0 && l.menschen >= 40 { 84 } else { 70 },
         // Labore: so wichtig, wie die Forschung sie gerade braucht (laborBedarf)
         mapAdvancedLab => { let r = 30 + z.laborNutzen[3] * 6 / 10; if ziel && r < 66 { 66 } else { r } }
         mapStandardLab => { let r = 30 + z.laborNutzen[2] * 6 / 10; if r < 64 { 64 } else { r } }
@@ -29,6 +30,10 @@ pub fn rang(welt: &mut dyn Welt, z: &Zustand, l: &Lage, typ: i32) -> i32 {
         mapSpaceport => if ziel { 62 } else if !welt.IsEden(z.spieler) && hatTech(welt, z, 12201) { 78 } else { 30 }, // EMP-Rakete
         mapVehicleFactory => {
             // Fehlt Kampfwert gegen einen bekannten Feind, steht sie ueber GORF, Freizeit und Laboren (unter Medizin 70).
+            if super::super::modus::mission(z) && super::super::zweitbasis::wartetAufFahrzeug(z) { return 82; }   // ConVecs der zweiten Basis
+            // Missionsmodus: Armee zerstoert (Nutzer 2026-11-22: "Gebaeude wurden wieder errichtet, aber keine Panzer") -- die
+            // Fabrik blieb stillgelegt, Rang 75 bekam kein Personal; unter einem Viertel des Solls geht sie vor (ueber Agridome 85)
+            if super::super::modus::mission(z) && z.sollArmee > 0 && (z.eigeneArmee + z.eigeneWTWert) * 4 < z.sollArmee { return 88; }
             if l.vfLaeuft == 0 { return if z.bedrohung >= 50 { 75 } else { 71 }; } // erste Fabrik vor Laboren und Medizin, unter Wohnraum
             if z.bedrohung >= 50 { 75 } else { 55 } // Panzernachschub unter Druck
         }

@@ -1,4 +1,4 @@
-//! Lernbare Gefechtsfuehrung (Rust): fuer jede eigene Einheit im Nahkampf werden alle Moeglichkeiten
+//! Lernbare Gefechtsfuehrung (Rust, PAR.gefecht >= 1.5): fuer jede eigene Einheit im Nahkampf werden alle Moeglichkeiten
 //! bewertet -- jedes Ziel in Reichweite (Angriff) und jedes Feld bis 2 Kacheln (Stellung, das eigene Feld = halten) -- und
 //! die beste ausgefuehrt. Die Bewertung ist ein kleines Netz: linearer Teil (Zwischenstufe "lernbare Formel") plus eine
 //! versteckte Schicht (tanh). Gewichte lernt die Gefechts-Arena per Evolutionsstrategie (op2ki-sim --gefecht-lernen).
@@ -10,6 +10,12 @@ use super::*;
 
 /// Merkmale je (Einheit, Moeglichkeit). Reihenfolge = Bedeutung der Gewichte, nicht aendern ohne neues Training.
 pub const M: usize = 24;
+pub const MERKMALE: [&str; M] = [
+    "eins", "istEMP", "istSchaum", "istSchaden", "eigeneHP", "eigeneBedrohung", "istZug",
+    "zielHP", "zielWert", "zielBetaeubt", "zielVerklebt", "zielAbstand", "zielVorne", "zielHaufen", "zielSchonBedient",
+    "zielTurm", "zielTrifftMich", "feldBedrohung", "feldHaeltZiel", "feldWeg", "feldFeindAbstand",
+    "EMPxHaufen", "SchaumxHinten", "SchadenxGelaehmt",
+];
 
 #[derive(Clone, Debug)]
 pub struct Netz {

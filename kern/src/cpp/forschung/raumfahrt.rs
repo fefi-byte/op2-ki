@@ -1,6 +1,7 @@
 //! Raumfahrt: Spaceport-Auftraege (Satellit, EMP-Rakete).
 use super::*;
-use super::TECH_RAUMFAHRT;
+use super::super::*;
+use super::{TECH_RAUMFAHRT, WERT_WT, WERT_LYNX, EMP_TECH, GEBAEUDE};
 
 // ---------------------------------------------------------------------------------------------------
 // Raumfahrt / space: EDWARD-Satellit auf einer SULV-Rakete starten (schrittweise, jeder Zustand in der Spur).
@@ -37,7 +38,32 @@ pub fn raumfahrt(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
         welt.logZeile(&format!("Aufbau-KI Spieler {}: ZIEL ERREICHT -- EDWARD-Satellit im All (Tick {})", p, t));
         return;
     }
-    if !hatTech(welt, z, TECH_RAUMFAHRT) { return; }
+    raumStart(welt, z, l, mapEDWARDSatellite, TECH_RAUMFAHRT);
+}
+
+/// Missionsmodus (PAR solar, Nutzer 2026-11-22: "teste auch mal, ob ein Solarkraftwerk moeglich ist, dazu braucht es einen
+/// Satelliten"): einen Solarsatelliten auf einer SULV starten, wie den EDWARD; danach baut bauwahl das Solarkraftwerk.
+pub fn solarSatellit(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
+    if PAR(z.spieler).solar < 0.5 || !super::super::modus::mission(z) || PAR(z.spieler).raumhafen < 0.5 { return; }
+    if z.ziel == 1 && z.zielErreicht == 0 { return; }   // der Spaceport gehoert dem EDWARD
+    let p = z.spieler;
+    if welt.GetSatelliteCount(p, mapSolarSatellite) > 0 {
+        if z.raumSchritt != 9 {
+            z.raumSchritt = 9;
+            melde(welt, z, "raum", mapSolarSatellite, z.bx, z.by, &format!("Solarsatellit im All (Startversuch {}) -- Solarkraftwerk moeglich", z.raumVersuche));
+        }
+        return;
+    }
+    if !hatTech(welt, z, 10204) || !hatTech(welt, z, 5503) { return; }
+    raumStart(welt, z, l, mapSolarSatellite, 10204);
+}
+
+/// Satellit herstellen, mit SULV auf die Rampe und starten (schrittweise, jeder Zustand in der Spur).
+fn raumStart(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage, sat: i32, tech: i32) {
+    let p = z.spieler;
+    let t = welt.Tick();
+    let sats = welt.GetSatelliteCount(p, sat);
+    if !hatTech(welt, z, tech) { return; }
     let mut sp: Id = welt.PlayerBuildingEnum(p, mapSpaceport).first().copied().unwrap_or(0);
     if sp == 0 { return; }
     if istGeparkt(welt, z, sp) { leerlaufWecken(welt, z, sp, "Ziel Satellit braucht den Spaceport"); return; }
@@ -49,7 +75,7 @@ pub fn raumfahrt(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     let mut buchten = String::new();
     for bay in 0..6 {
         let k = welt.GetFactoryCargo(sp, bay);
-        if k == mapEDWARDSatellite && buchtEdward < 0 { buchtEdward = bay; }
+        if k == sat && buchtEdward < 0 { buchtEdward = bay; }
         let nm = if k > 0 && k != mapNone { name(welt, k) } else { "-" };
         buchten.push_str(if bay != 0 { "," } else { "" });
         buchten.push_str(nm);
@@ -82,25 +108,25 @@ pub fn raumfahrt(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
         if selten(welt, z, 17, 1500) { melde(welt, z, "warte", mapSpaceport, sx, sy, "Spaceport ohne Strom oder Arbeiter"); }
         return;
     }
-    let edwardDa = buchtEdward >= 0 || rampe == mapEDWARDSatellite;
+    let edwardDa = buchtEdward >= 0 || rampe == sat;
     match z.raumSchritt {
-        0 => { // EDWARD herstellen
-            if edwardDa { z.raumSchritt = 1; } else { raumAuftrag(welt, z, &mut sp, l, mapEDWARDSatellite, 0); }
+        0 => { // Satellit herstellen
+            if edwardDa { z.raumSchritt = 1; } else { raumAuftrag(welt, z, &mut sp, l, sat, 0); }
         }
         1 => { // SULV herstellen
             if !edwardDa { z.raumSchritt = 0; } else { raumAuftrag(welt, z, &mut sp, l, mapSULV, 2); }
         }
-        2 => { // EDWARD auf die Startrampe
-            if rampe == mapEDWARDSatellite || buchtEdward < 0 { z.raumSchritt = 3; z.raumSeit = t; }
+        2 => { // Satellit auf die Startrampe
+            if rampe == sat || buchtEdward < 0 { z.raumSchritt = 3; z.raumSeit = t; }
             else if t - z.raumSeit < 200 {
                 welt.DoTransferCargo(sp, buchtEdward);
                 if selten(welt, z, 18, 200) {
-                    melde(welt, z, "raum", mapEDWARDSatellite, sx, sy, &format!("EDWARD aus Bucht {} auf die Startrampe (TransferCargo)", buchtEdward));
+                    melde(welt, z, "raum", sat, sx, sy, &format!("Satellit aus Bucht {} auf die Startrampe (TransferCargo)", buchtEdward));
                 }
             } else {
-                welt.SetLaunchPadCargo(sp, mapEDWARDSatellite);
+                welt.SetLaunchPadCargo(sp, sat);
                 welt.SetFactoryCargo(sp, buchtEdward, mapNone, mapNone);
-                melde(welt, z, "raum", mapEDWARDSatellite, sx, sy, &format!("TransferCargo greift nicht -- EDWARD aus Bucht {} direkt auf die Rampe gesetzt", buchtEdward));
+                melde(welt, z, "raum", sat, sx, sy, &format!("TransferCargo greift nicht -- Satellit aus Bucht {} direkt auf die Rampe gesetzt", buchtEdward));
                 z.raumSchritt = 3; z.raumSeit = t;
             }
         }
@@ -118,8 +144,8 @@ pub fn raumfahrt(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
             if t - z.raumSeit > 600 {
                 let rn = rampeName(welt);
                 melde(welt, z, "fehler", mapSULV, sx, sy, &format!("nach 600 Ticks kein Satellit im All -- Rampe {}, Buchten [{}]", rn, buchten));
-                // Rakete noch da (EDWARD auf der Rampe)? Erneut starten, sonst von vorn.
-                z.raumSchritt = if rampe == mapEDWARDSatellite && z.raumVersuche < 6 { 3 } else { 0 };
+                // Rakete noch da (Satellit auf der Rampe)? Erneut starten, sonst von vorn.
+                z.raumSchritt = if rampe == sat && z.raumVersuche < 6 { 3 } else { 0 };
             }
         }
         _ => {}

@@ -1,6 +1,7 @@
 //! Erzbaken: Minen und Baken finden, Balken (Ertrag), beste freie Bake suchen.
 use super::*;
-use super::exy;
+use super::super::*;
+use super::{TECH_SELTENERZ, WERT_LYNX, GEBAEUDE, ix, exy};
 
 /// C++: int hoechsteEinheit()  (op2_ki.hpp:3229)
 pub fn hoechsteEinheit(welt: &mut dyn Welt) -> i32 {
@@ -46,6 +47,20 @@ pub(super) fn bakePruefe(welt: &mut dyn Welt, z: &Zustand, erzTyp: i32, s: &mut 
     let l = welt.Location(u);
     if mineAuf(welt, l) { return; }
     for i in 0..8 { if z.sperrBake[i] == u && welt.Tick() < z.sperrBis[i] { return; } }
+    // Missionsmodus: Minen nur im Umkreis minenUmkreis der Basis und hoechstens minenJeSorte je Sorte (die zweite Basis
+    // erschliesst ihre Baken selbst, zweitbasis.rs)
+    let pm = PAR(z.spieler);
+    if pm.minenUmkreis > 0.0 || pm.minenJeSorte > 0.0 {
+        let (bx, by) = exy(welt, z, l);
+        let r2 = (pm.minenUmkreis * pm.minenUmkreis) as i32;
+        if pm.minenUmkreis > 0.0 && abstand2(welt, bx, by, z.bx, z.by) > r2 { return; }
+        if pm.minenJeSorte > 0.0 {
+            let typ = if erzTyp == 1 { mapRareOreMine } else { mapCommonOreMine };
+            let umkreis = if pm.minenUmkreis > 0.0 { r2 } else { 35 * 35 };
+            let n = welt.PlayerBuildingEnum(z.spieler, typ).into_iter().filter(|&m| { let ml = welt.Location(m); let (mx, my) = exy(welt, z, ml); abstand2(welt, mx, my, z.bx, z.by) <= umkreis }).count();
+            if n as f64 >= pm.minenJeSorte { return; }
+        }
+    }
     s.f.frei += 1;
     let mut bekannt = false;
     let mut uu = u;

@@ -1,6 +1,7 @@
 //! Angriffsziel waehlen und setzen (Zielstufen), Gruppenwert.
 use super::*;
-use super::GEBAEUDE;
+use super::super::*;
+use super::{GRUPPE_MAX, SCAN_TAKT, WERT_WT, WERT_LYNX, EMP_RADIUS, EMP_FLUG, EMP_AUFMARSCH, GEBAEUDE};
 
 /// C++: int gruppenWert(ScGroup& g, int& n)  (op2_ki.hpp:4219)
 pub fn gruppenWert(welt: &mut dyn Welt, g: Gruppe, n: &mut i32) -> i32 {

@@ -1,5 +1,5 @@
 //! Planung: Kartenscan (Feindbild), Bauwahl nach Bereichen, Dringlichkeit, Rang, Rohstoff-Bilanz, Aussenposten.
-//! C++-KI op2_ki.hpp Zeilen 1206-2265, nach Rust uebertragen.
+//! C++-KI op2_ki.hpp Zeilen 1206-2265, uebertragen nach Rust (siehe UEBERSETZUNG.md).
 use super::*;
 
 mod scan;
@@ -39,6 +39,8 @@ const GEBAEUDE: [i32; 38] = [ // FREMD aus Zeile 577
 ];
 
 // ---------------------------------------------------------------- eigene Konstanten dieses Abschnitts
+/// grob: Bausatz, Fahrt und Aufbau einer Fahrzeugfabrik
+pub const BAU_FABRIK: i32 = 3000;
 /// gemessen: ~500-600 Ticks je Fahrzeug bei Dauerproduktion einer Fabrik
 pub const BAU_FZ: i32 = 600;
 

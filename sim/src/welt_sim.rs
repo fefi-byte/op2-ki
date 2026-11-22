@@ -132,6 +132,10 @@ fn aktion_wert(a: Action) -> i32 {
 }
 
 impl Welt for SimWelt {
+    fn GetRand(&mut self, range: i32) -> i32 { if range <= 0 { 0 } else { self.sim.game_rand(range as u32) as i32 } }
+    fn Schwierigkeit(&self, _p: i32) -> i32 { self.sim.difficulty as i32 }
+    fn DoSelfDestruct(&mut self, u: Id) { op2ki::cpp::hilfen::befehl_log2(self.Tick(), "DoSelfDestruct", &[u]); self.sim.command(self.uid(u), Command::SelfDestruct); }
+    fn DoPoof(&mut self, u: Id) { op2ki::cpp::hilfen::befehl_log2(self.Tick(), "DoPoof", &[u]); self.sim.command(self.uid(u), Command::SelfDestruct); }
     fn RecalculateValues(&mut self, p: i32) { if p >= 0 { self.sim.colony_mut(p as u8).recalc = true; } }
     fn Tick(&self) -> i32 { self.sim.tick() as i32 }
     fn NoPlayers(&self) -> i32 { (1..8).rev().find(|&p| self.sim.colony(p as u8).is_some()).map(|p| p + 1).unwrap_or(1) }
@@ -186,6 +190,7 @@ impl Welt for SimWelt {
         }
         x.weapon.and_then(|w| self.waffe_map.get(&w).copied()).unwrap_or(mapNone)
     }
+    fn GetConVecCargoTurret(&self, u: Id) -> i32 { self.unit(u).map(|x| self.produkt(x.eco.kit).1).unwrap_or(0) }
     fn GetCargo(&self, u: Id) -> i32 { self.unit(u).map(|x| self.produkt(x.eco.kit).0).unwrap_or(0) }
     fn GetCurAction(&self, u: Id) -> i32 {
         // Das Aktionsbyte wie gelesen (HFL curAction, +0x22). op2-sim fuehrt den Aufbau selbst als ObjWait-Takt mit einem
@@ -200,6 +205,7 @@ impl Welt for SimWelt {
     fn HasScientists(&self, u: Id) -> bool { self.unit(u).is_some_and(|x| x.eco.flags & F_SCIENTISTS != 0) }
     fn GetLabCurrentTopic(&self, u: Id) -> i32 { self.unit(u).filter(|x| x.cmd == CommandKind::Research).map(|x| self.tech_rv.get(x.eco.lab_tech()).copied().unwrap_or(0) as i32).unwrap_or(0) }
     fn GetLabScientistCount(&self, u: Id) -> i32 { self.unit(u).filter(|x| x.cmd == CommandKind::Research).map(|x| x.eco.lab_team()).unwrap_or(0) }
+    fn GetFactoryCargoWeapon(&self, u: Id, bay: i32) -> i32 { self.unit(u).and_then(|x| x.eco.bays.get(bay as usize).copied()).map(|p| self.produkt(p).1).unwrap_or(0) }
     fn GetFactoryCargo(&self, u: Id, bay: i32) -> i32 { self.unit(u).and_then(|x| x.eco.bays.get(bay as usize).copied()).map(|p| self.produkt(p).0).unwrap_or(0) }
     fn GetDockLocation(&self, u: Id) -> Loc { self.sim.dock_tile_of(self.uid(u)).map(Self::loc).unwrap_or_default() }
     fn GetCargoAmount(&self, u: Id) -> i32 { self.unit(u).map(|x| x.eco.cargo.1).unwrap_or(0) }
