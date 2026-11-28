@@ -39,7 +39,8 @@ pub fn bauGruppe(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
     }
     let mut getragen = [0i32; 128];
     for u in welt.PlayerVehicleEnum(p) {
-        if super::super::zweitbasis::gehoertBasis(z, u) || super::super::zweitbasis::reserviert(welt, z, u) { continue; }   // Missionsmodus: Einheit der zweiten Basis
+        if super::super::zweitbasis::gehoertBasis(z, u) || super::super::zweitbasis::reserviert(welt, z, u) { continue; }
+        if z.vorratCv > 0 && u == z.vorratCv { continue; }   // baut die Startbausaetze daneben   // Missionsmodus: Einheit der zweiten Basis
         if welt.GetType(u) == mapEarthworker && !inGruppe(welt, z.bau, u) { welt.TakeUnit(z.bau, u); continue; } // baut die Roehren
         if welt.GetType(u) != mapConVec { continue; }
         if !inGruppe(welt, z.bau, u) { welt.TakeUnit(z.bau, u); }
@@ -59,6 +60,7 @@ pub fn bauGruppe(welt: &mut dyn Welt, z: &mut Zustand, l: &Lage) {
             continue;
         }
         if !eigen { continue; }   // baut die Gruppe der zweiten Basis
+        if z.vorratPlatz == i as i32 + 1 { continue; }   // baut der Vorrat-ConVec
         offen += 1;
         if t - q.seit > GEDULD_GRUPPE && selten(welt, z, 1, 3000) {
             melde(welt, z, "warte", q.typ as i32, q.x0 as i32, q.y0 as i32,

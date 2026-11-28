@@ -381,6 +381,14 @@ pub struct Zustand {
     pub missKwStart: [i32; 8],
     pub missLernIst: [f64; 8],
     pub missLernErw: [f64; 8],
+    /// Bausaetze zu Spielbeginn in den Buchten der Strukturfabriken: 0 noch nicht geprueft, 1 ja, 2 nein (Rust 2026-11-26).
+    /// Kits in the Structure Factories' bays at the start: 0 not checked yet, 1 yes, 2 no.
+    pub vorratStart: i32,
+    /// ConVec, der die Startbausaetze neben der BuildingGroup aufstellt (0 keiner, -1 fertig), sein Platz (Index + 1),
+    /// Zeit des letzten Befehls. ConVec that sets up the starting kits beside the BuildingGroup, its site, last order.
+    pub vorratCv: i32,
+    pub vorratPlatz: i32,
+    pub vorratSeit: i32,
 }
 impl Zustand {
     /// Alles 0 (wie die statische Speicherung in der Mission).

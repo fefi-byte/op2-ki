@@ -36,7 +36,22 @@ pub fn fahrzeugWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage, warum: &mut &'st
         // Soll je angelegter Erzroute nach Entfernung, sonst zwei
         let mut soll = 0;
         let mut angelegt = 0;
-        for i in 0..MAX_MINEN { if z.minenId[i] != 0 { soll += lastwagenSoll(welt, z, i as i32); angelegt += 1; } }
+        if PAR(z.spieler).lkwJeMine >= 0.5 {
+            // je Mine: laengste Route voll, jede weitere Route derselben Mine einen Wagen mehr
+            let mut minen: Vec<(Id, i32, i32)> = Vec::new();   // (Mine, groesstes Soll, Routen)
+            for i in 0..MAX_MINEN {
+                if z.minenId[i] == 0 { continue; }
+                angelegt += 1;
+                let s = lastwagenSoll(welt, z, i as i32);
+                match minen.iter_mut().find(|m| m.0 == z.minenId[i]) {
+                    Some(m) => { m.1 = m.1.max(s); m.2 += 1; }
+                    None => minen.push((z.minenId[i], s, 1)),
+                }
+            }
+            for m in &minen { soll += m.1 + (m.2 - 1); }
+        } else {
+            for i in 0..MAX_MINEN { if z.minenId[i] != 0 { soll += lastwagenSoll(welt, z, i as i32); angelegt += 1; } }
+        }
         soll += 2 * (if routen > angelegt { routen - angelegt } else { 0 });
         let fehlen = soll - l.fz[ix(mapCargoTruck)];
         if fehlen > 0 {
@@ -52,7 +67,10 @@ pub fn fahrzeugWahl(welt: &mut dyn Welt, z: &Zustand, l: &Lage, warum: &mut &'st
         if l.fz[ix(mapRoboMiner)] == 0 && gm < MAX_MINEN as i32 && (gs as f64) >= PAR(z.spieler).schmelzenJeMine * gm as f64
             && bl.engpassErz > 0 && bl.bedarfErz > 0 {
             let q = bl.engpassErz * 100 / bl.bedarfErz;
-            fzPruefe(welt, z, l, &mut beste, mapRoboMiner, 30 + (if q > 100 { 100 } else { q }) / 2,
+            // Mehrspieler-Start (Startbausaetze): zweite Mine vor weiteren Lastwagen; sonst nur mit PAR minerVorrang.
+            let mv = if PAR(z.spieler).minerVorrang > 0.0 { PAR(z.spieler).minerVorrang } else if z.vorratStart == 1 { 40.0 } else { 0.0 };
+            let vorrang = if l.fz[ix(mapCargoTruck)] >= 2 * gm.max(1) { mv as i32 } else { 0 };
+            fzPruefe(welt, z, l, &mut beste, mapRoboMiner, 30 + (if q > 100 { 100 } else { q }) / 2 + vorrang,
                      "neue Mine -- Bilanz: Erz fehlt, Minen ausgelastet");
         }
         // Seltenerz-Mine, sobald die Seltenerz-Schmelze steht

@@ -287,6 +287,9 @@ pub fn mauerNeben(welt: &mut dyn Welt, z: &mut Zustand, tx: i32, ty: i32) {
 
 /// C++: bool bauAufzeichnen(Zustand& z, int typ, const char* warum)  (op2_ki.hpp:2818)
 pub fn bauAufzeichnen(welt: &mut dyn Welt, z: &mut Zustand, typ: i32, warum: &str) -> bool {
+    // Ohne freie Bucht und ohne passenden Bausatz bliebe die BuildingGroup an diesem Auftrag haengen.
+    // Without a free bay and no matching kit the BuildingGroup would hang on this order.
+    if vorratAktiv(z) && !bausatzMoeglich(welt, z, typ) { return false; }
     let i = if let Some(i) = super::super::befehl::platzWunsch(welt, z, typ) { i }
             else if typ == mapGuardPost { wachtPlatz(welt, z) } else { platzWaehlen(welt, z, typ) };
     if i < 0 { return false; }
@@ -390,3 +393,163 @@ pub fn freierWarteplatz(welt: &mut dyn Welt, z: &Zustand, x: &mut i32, y: &mut i
 }
 
 // Gemerkte Platzmitten je Spieler (g_platz in globale.rs): 0 Wache, 1 Sammelgruppe, 2 Reserve daheim, 3 Baugruppe, 4 Fabrikgruppe.
+
+
+/// Kann eine Strukturfabrik den Bausatz `typ` liefern: liegt er schon in einer Bucht, oder ist eine Bucht frei?
+/// Ohne Strukturfabrik: ja (dann entscheidet anderes). Rust 2026-11-26 (Savant in op2-rs: volle Buchten der Mission).
+/// Can a Structure Factory deliver kit `typ`: is it in a bay already, or is a bay free?
+pub fn bausatzMoeglich(welt: &mut dyn Welt, z: &Zustand, typ: i32) -> bool {
+    let sfs: Vec<Id> = welt.PlayerBuildingEnum(z.spieler, mapStructureFactory).into_iter().filter(|&f| welt.IsLive(f)).collect();
+    if sfs.is_empty() { return true; }
+    sfs.iter().any(|&f| (0..6).any(|b| { let k = welt.GetFactoryCargo(f, b); k == typ || k == mapNone }))
+}
+
+/// Bausaetze aus dem Vorrat: was schon in den Buchten der Strukturfabriken liegt (eine Mission kann sie gefuellt
+/// haben), wird zuerst aufgebaut -- es kostet nichts mehr, und volle Buchten halten sonst jeden neuen Bausatz auf.
+/// Rust 2026-11-26. Kits in stock: what is already in the Structure Factories' bays is built first.
+/// Vorrat beachten: wenn die Strukturfabriken zu Spielbeginn Bausaetze hatten (eine Mehrspielerkarte stattet sie aus), oder
+/// mit PAR vorrat auch fuer spaeter liegengebliebene. Use the stock: if the factories had kits at the start, or with PAR vorrat.
+pub fn vorratAktiv(z: &Zustand) -> bool { z.vorratStart == 1 || PAR(z.spieler).vorrat >= 0.5 }
+
+/// Beim ersten Schritt, vor dem ersten Bauauftrag: lagen zu Spielbeginn Bausaetze in den Buchten?
+/// At the first step, before the first build order: were there kits in the bays at the start?
+pub fn vorratPruefen(welt: &mut dyn Welt, z: &mut Zustand) {
+    if z.vorratStart == 0 {
+        let sfs: Vec<Id> = welt.PlayerBuildingEnum(z.spieler, mapStructureFactory).into_iter().filter(|&f| welt.IsLive(f)).collect();
+        let mut typen: Vec<i32> = Vec::new();
+        for &f in &sfs { for b in 0..6 { let k = welt.GetFactoryCargo(f, b); if k != mapNone { typen.push(k); } } }
+        let kits: Vec<String> = typen.iter().map(|&k| name(welt, k).to_string()).collect();
+        z.vorratStart = if kits.is_empty() { 2 } else { 1 };
+        // Ein ConVec stellt die Startbausaetze auf, waehrend die BuildingGroup mit den anderen baut (sie nutzt immer nur
+        // einen). Jetzt reservieren, bevor die Gruppe ihn aufnimmt -- aus der Gruppe holen liess das Original abstuerzen.
+        // One ConVec sets up the starting kits while the BuildingGroup builds with the others; reserved before the
+        // group takes it (taking units out of the group crashed the original).
+        if !kits.is_empty() {
+            let cvs: Vec<Id> = welt.PlayerVehicleEnum(z.spieler).into_iter().filter(|&u| welt.IsLive(u) && welt.GetType(u) == mapConVec).collect();
+            if cvs.len() >= 2 { z.vorratCv = *cvs.iter().max().unwrap(); }
+        }
+        if !kits.is_empty() {
+            melde(welt, z, "info", mapStructureFactory, z.bx, z.by, &format!("Bausaetze zu Spielbeginn in der Strukturfabrik: {} -- werden zuerst gebaut", kits.join(", ")));
+        }
+    }
+}
+
+/// Der Vorrat-ConVec: Bausatz aus der Bucht laden (Fahrzeugfabrik zuerst), selbst aufstellen, naechster; am Ende geht er in
+/// die BuildingGroup. The stock ConVec: load a kit from a bay (vehicle factory first), set it up, next one; at the end it
+/// joins the BuildingGroup.
+fn vorratConVec(welt: &mut dyn Welt, z: &mut Zustand) {
+    if z.vorratCv <= 0 { return; }
+    let c = z.vorratCv;
+    let t = welt.Tick();
+    if !welt.IsLive(c) { z.vorratCv = -1; z.vorratPlatz = 0; return; }
+    if z.vorratPlatz > 0 {
+        let i = (z.vorratPlatz - 1) as usize;
+        let q = z.plaetze[i];
+        if q.zustand == P_STEHT || stehtDa(welt, z, &q) {
+            z.plaetze[i].zustand = P_STEHT; z.plaetze[i].seit = t;
+            melde(welt, z, "fertig", q.typ as i32, q.x0 as i32, q.y0 as i32, "Gebaeude steht (Vorrat-ConVec)");
+            z.vorratPlatz = 0;
+        } else if t - z.vorratSeit > 6000 {
+            z.plaetze[i].zustand = P_GESPERRT;
+            melde(welt, z, "warte", q.typ as i32, q.x0 as i32, q.y0 as i32, "Vorrat-ConVec: Bau kommt nicht zustande, Platz gesperrt");
+            z.vorratPlatz = 0;
+        } else if welt.GetCurAction(c) == moDone && !welt.IsBusy(c) && t - z.vorratSeit > 200 && welt.GetCargo(c) > 0 && welt.GetCargo(c) != mapNone {
+            // noch beladen und untaetig: Bauauftrag erneuern. Still loaded and idle: repeat the order.
+            let g = grundflaeche(welt, q.typ as i32);
+            let ecke = engine(welt, z, q.x0 as i32 + g.w, q.y0 as i32 + g.h);
+            welt.DoBuild(c, q.typ as i32, ecke);
+            z.vorratSeit = t;
+        }
+        return;
+    }
+    let kit = welt.GetCargo(c);
+    if kit > 0 && kit != mapNone && GEBAEUDE.contains(&kit) {
+        if welt.GetCurAction(c) != moDone || welt.IsBusy(c) { return; }
+        let i = platzWaehlen(welt, z, kit);
+        if i < 0 { return; }
+        let iu = i as usize;
+        z.plaetze[iu].zustand = P_FAHRT; z.plaetze[iu].seit = t; z.plaetze[iu].convec = c;
+        let (x0, y0) = (z.plaetze[iu].x0 as i32, z.plaetze[iu].y0 as i32);
+        let g = grundflaeche(welt, kit);
+        let ecke = engine(welt, z, x0 + g.w, y0 + g.h);
+        welt.DoBuild(c, kit, ecke);
+        z.vorratPlatz = i + 1; z.vorratSeit = t;
+        melde(welt, z, "bau", kit, x0, y0, &format!("Vorrat-ConVec {} stellt den Startbausatz auf (Platz {}x{})", c, g.w, g.h));
+        return;
+    }
+    // Leer: naechsten Bausatz aus einer Bucht holen. Empty: fetch the next kit from a bay.
+    const REIHE: [i32; 6] = [mapVehicleFactory, mapTokamak, mapResidence, mapNursery, mapUniversity, mapRobotCommand];
+    let sfs: Vec<Id> = welt.PlayerBuildingEnum(z.spieler, mapStructureFactory).into_iter().filter(|&f| welt.IsLive(f)).collect();
+    let mut wahl: Option<(usize, Id, i32)> = None;
+    let mut irgendeiner = false;   // liegt ueberhaupt noch ein Startbausatz? any kit left at all?
+    for &f in &sfs {
+        for b in 0..6 {
+            let k = welt.GetFactoryCargo(f, b);
+            if k == mapNone || !GEBAEUDE.contains(&k) { continue; }
+            irgendeiner = true;
+            if welt.GetCurAction(f) != moDone { continue; }   // Fabrik beschaeftigt: spaeter. Factory busy: later.
+            // nicht, wofuer die BuildingGroup schon einen Auftrag hat. Not what the group already has an order for.
+            if z.plaetze.iter().any(|p| p.typ as i32 == k && p.zustand == P_FAHRT) { continue; }
+            let r = REIHE.iter().position(|&x| x == k).unwrap_or(REIHE.len());
+            if wahl.map_or(true, |w| r < w.0) { wahl = Some((r, f, b)); }
+        }
+    }
+    let Some((_r, f, b)) = wahl else {
+        if irgendeiner { return; }
+        // Vorrat leer: der ConVec geht in die BuildingGroup. Stock empty: the ConVec joins the group.
+        if z.bauAn != 0 && welt.GetCurAction(c) == moDone { welt.TakeUnit(z.bau, c); z.vorratCv = -1;
+            melde(welt, z, "info", mapConVec, z.bx, z.by, "Vorrat-ConVec: alle Startbausaetze aufgestellt, er geht in die BuildingGroup"); }
+        return;
+    };
+    let dock = welt.GetDockLocation(f);
+    let cl = welt.Location(c);
+    if cl.x == dock.x && cl.y == dock.y {
+        if t - z.vorratSeit > 500 { welt.DoTransferCargo(f, b); z.vorratSeit = t; }
+    } else if welt.GetCurAction(c) == moDone || t - z.vorratSeit > 3000 {
+        welt.DoDock(c, dock); z.vorratSeit = t;
+    }
+}
+
+pub fn vorratAufbauen(welt: &mut dyn Welt, z: &mut Zustand) {
+    vorratPruefen(welt, z);
+    if !vorratAktiv(z) { return; }
+    vorratConVec(welt, z);
+    let sfs: Vec<Id> = welt.PlayerBuildingEnum(z.spieler, mapStructureFactory).into_iter().filter(|&f| welt.IsLive(f)).collect();
+    let mut im_vorrat: Vec<i32> = Vec::new();
+    for &f in &sfs {
+        for b in 0..6 {
+            let k = welt.GetFactoryCargo(f, b);
+            if k != mapNone && GEBAEUDE.contains(&k) { im_vorrat.push(k); }
+        }
+    }
+    // Immer nur ein Vorrat-Bausatz unterwegs: die BuildingGroup baut der Reihe nach, und eigene Vorhaben (Labor fuer
+    // die Kampfforschung) reihen sich so abwechselnd ein, sobald eine Bucht frei ist.
+    // Only one stock kit under way at a time, so the AI's own plans (the lab for combat research) take turns.
+    // Labor zuerst: solange es kein AdvancedLab gibt und keins unterwegs ist, nur einen Bausatz nehmen, damit eine
+    // Bucht frei wird -- die Kampfforschung (Lynx) braucht das Labor. Danach der Rest, einzeln.
+    // Lab first: until an Advanced Lab stands or is on its way, take only one kit so a bay frees up.
+    let labor = welt.PlayerBuildingEnum(z.spieler, mapAdvancedLab).into_iter().any(|u| welt.IsLive(u))
+        || z.plaetze.iter().any(|p| p.typ as i32 == mapAdvancedLab && p.zustand != P_FREI);
+    let unterwegs = z.plaetze.iter().filter(|p| p.zustand == P_FAHRT && im_vorrat.contains(&(p.typ as i32))).count();
+    // Ist eine Bucht frei, kommt das Labor vor allen weiteren Bausaetzen. A free bay: the lab goes first.
+    if !labor && bausatzMoeglich(welt, z, mapAdvancedLab) && !im_vorrat.contains(&mapAdvancedLab) {
+        if bauAufzeichnen(welt, z, mapAdvancedLab, "Labor zuerst: AdvancedLab fuer die Kampfforschung vor den uebrigen Startbausaetzen") {
+            return;
+        }
+    }
+    if unterwegs > 0 || z.vorratCv > 0 { return; }
+    const REIHE: [i32; 6] = [mapTokamak, mapVehicleFactory, mapResidence, mapNursery, mapUniversity, mapRobotCommand];
+    let rang = |k: i32| REIHE.iter().position(|&r| r == k).unwrap_or(REIHE.len());
+    let mut wahl = im_vorrat.clone();
+    wahl.sort_by_key(|&k| rang(k));
+    wahl.dedup();
+    // Nur Bausaetze, fuer die noch kein Auftrag laeuft. Only kits without an order yet.
+    let frei = wahl.into_iter().find(|&k| {
+        let vorrat = im_vorrat.iter().filter(|&&x| x == k).count();
+        let unterwegs = z.plaetze.iter().filter(|p| p.typ as i32 == k && p.zustand == P_FAHRT).count();
+        vorrat > unterwegs
+    });
+    if let Some(k) = frei {
+        bauAufzeichnen(welt, z, k, "Bausatz aus dem Vorrat der Strukturfabrik");
+    }
+}

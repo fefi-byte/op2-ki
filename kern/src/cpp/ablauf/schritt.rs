@@ -165,7 +165,9 @@ pub fn schritt(welt: &mut dyn Welt, z: &mut Zustand) {
     hinweis(welt, z, "ki::arbeitErheben"); arbeitErheben(welt, z, &mut l);      // nach dem letzten erhebe(): Arbeiter-Rangliste und Vormerkungen
     z.erzUeberschuss = if bilanz(welt, z, &l).engpassErz <= 0 { 1 } else { 0 };
     // Ohne Kommandozentrale: der ConVec mit dem CC-Bausatz baut auf dem Mittelplatz.
+    super::bau::vorratPruefen(welt, z);   // Bausaetze zu Spielbeginn? vor dem ersten Bauauftrag
     hinweis(welt, z, "ki::bauGruppe"); bauGruppe(welt, z, &l);
+    hinweis(welt, z, "ki::vorrat"); super::bau::vorratAufbauen(welt, z);   // Bausaetze, die schon in den Buchten liegen
     hinweis(welt, z, "ki::arbeit"); arbeit(welt, z, &l);            // Arbeiter-Rangliste: stilllegen / einschalten
     if t % 200 < TAKT { hinweis(welt, z, "ki::leerlauf"); leerlauf(welt, z, &l); }   // untaetige Gebaeude bei Personalmangel stilllegen
     hinweis(welt, z, "ki::fahrzeuge"); fahrzeuge(welt, z, &l);

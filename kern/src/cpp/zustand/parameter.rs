@@ -276,6 +276,14 @@ pub struct Parameter {
     pub schonfrist: f64,
     /// Nur die feste Moral der Mission behalten (75), Kolonie wie sonst -- Vergleichsbasis fuer moralFest (0 = aus)
     pub moralHalten: f64,
+    /// Bausaetze aus dem Vorrat der Strukturfabriken zuerst bauen, neue nur mit freier Bucht (Savant in op2-rs:
+    /// Missionen fuellen die Buchten). 0 = aus (Standard, Mehrspieler unveraendert). Rust 2026-11-26.
+    pub vorrat: f64,
+    /// Lastwagen je Mine deckeln (Bedarf der laengsten Route + 1 je weitere Route derselben Mine) statt je Route;
+    /// eine Mine liefert nicht mehr, nur weil zwei Schmelzen an ihr haengen. 0 = alt. Rust 2026-11-27.
+    pub lkwJeMine: f64,
+    /// Zweite Mine vor weiteren Lastwagen: Robo-Miner-Wert + minerVorrang, sobald jede Route mindestens zwei Wagen hat (0 = alt).
+    pub minerVorrang: f64,
     /// Stabile Moral (Mehrspieler 75): Moral nicht freigeben, keine Gebaeude und Dringlichkeiten fuer Wohnraum, Medizin, Freizeit (0 = aus)
     pub moralFest: f64,
     /// Eroeffnung Universitaet, AdvancedLab, dann Kindergarten (Forschung und Bau; forschung/labore.rs, planung/bauwahl.rs; 0 = aus)
@@ -561,6 +569,9 @@ impl Default for Parameter {
             eroeffFolge: 0.0,
             moralFest: 0.0,
             moralHalten: 0.0,
+            vorrat: 0.0,
+            lkwJeMine: 0.0,
+            minerVorrang: 0.0,
             missionsModus: 0.0,
             stufe: -1.0,
             rolle: 0.0,
